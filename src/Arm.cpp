@@ -4,11 +4,9 @@ using namespace std;
 
 Arm::Arm(int num_joints) : num_joints(num_joints),
                            component_lengths(num_joints,
-                                             100.f/num_joints),
+                                             1.f/num_joints),
                            current_angles(num_joints, 0.f)
 {
-    current_angles.at(0) = PI/6.f;
-    current_angles.at(1) = 5*PI/3.f;
 }
 
 Arm::Arm(vector<float> components) : num_joints(components.size()),
@@ -24,7 +22,7 @@ Arm::Arm(vector<float> components) : num_joints(components.size()),
     for(vector<float>::iterator i = components.begin();
         i != components.end(); i++)
     {
-        component_lengths.push_back((*i/sum)*100);
+        component_lengths.push_back((*i/sum));
     }
 }
 

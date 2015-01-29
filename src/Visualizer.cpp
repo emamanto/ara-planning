@@ -42,8 +42,8 @@ void Visualizer::paintEvent(QPaintEvent*)
     {
         painter.rotate(arm.get_joint(i)*(180.f/PI));
         painter.drawLine(0, 0, 0,
-                         (arm.get_component(i)/100) * 350);
-        painter.translate(0, (arm.get_component(i)/100) * 350);
+                         (arm.get_component(i) * 350));
+        painter.translate(0, (arm.get_component(i) * 350));
     }
 
     painter.setWorldTransform(original);
@@ -57,7 +57,7 @@ void Visualizer::paintEvent(QPaintEvent*)
     for (int i = 0; i < arm.get_num_joints(); i++)
     {
         painter.rotate(arm.get_joint(i)*(180.f/PI));
-        painter.translate(0, (arm.get_component(i)/100) * 350);
+        painter.translate(0, (arm.get_component(i) * 350));
         painter.drawPoint(0,0);
     }
 }
