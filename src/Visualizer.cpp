@@ -40,7 +40,7 @@ void Visualizer::paintEvent(QPaintEvent*)
 
     for (int i = 0; i < arm.get_num_joints(); i++)
     {
-        painter.rotate(arm.get_joint(i)*(180.f/PI));
+        painter.rotate(arm.get_joint(i));
         painter.drawLine(0, 0, 0,
                          (arm.get_component(i) * 350));
         painter.translate(0, (arm.get_component(i) * 350));
@@ -56,7 +56,7 @@ void Visualizer::paintEvent(QPaintEvent*)
 
     for (int i = 0; i < arm.get_num_joints(); i++)
     {
-        painter.rotate(arm.get_joint(i)*(180.f/PI));
+        painter.rotate(arm.get_joint(i));
         painter.translate(0, (arm.get_component(i) * 350));
         painter.drawPoint(0,0);
     }
