@@ -8,7 +8,8 @@ add_definitions(${QT_DEFINITIONS})
 
 set( srcs main.cpp
   ArmSim.cpp
-  Visualizer.cpp )
+  Visualizer.cpp
+  Arm.cpp )
 
 set( headers ArmSim.h
   Visualizer.h )
