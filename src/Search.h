@@ -26,8 +26,11 @@ public:
     float get_target_y() {return target.y;}
     target_t get_target() {return target;}
 
+    float euclidean_heuristic();
+    float euclidean_heuristic(std::vector<float> position);
+
     const Arm get_current_arm();
-    void set_arm(Arm a);
+    void set_arm(Arm& a);
     void set_arm_position(std::vector<float> angles);
     void set_arm_num_joints(int num_joints);
 

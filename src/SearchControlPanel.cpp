@@ -31,10 +31,22 @@ SearchControlPanel::SearchControlPanel(Search& search,
 
     QPushButton* start = new QPushButton(tr("start"), this);
     layout->addWidget(start, 2, 0);
+
+    QCheckBox* heur = new QCheckBox(tr("heuristic"), this);
+    layout->addWidget(heur, 3, 0);
+
+    connect(heur, SIGNAL(stateChanged(int)), this,
+            SLOT(heuristic(int)));
 }
 
 void SearchControlPanel::updateSearch()
 {
     search.set_target(xbox->value(), ybox->value(), 0, 0);
+    emit(redrawSearchInfo());
+}
+
+void SearchControlPanel::heuristic(int check)
+{
+    emit(drawHeuristic(bool(check)));
     emit(redrawSearchInfo());
 }

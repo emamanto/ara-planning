@@ -26,6 +26,9 @@ public:
     float get_ee_x();
     float get_ee_y();
 
+    float get_ee_x_at(std::vector<float> position);
+    float get_ee_y_at(std::vector<float> position);
+
     bool is_valid(std::vector<float> joint_config);
     bool is_currently_valid();
 

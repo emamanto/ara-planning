@@ -17,4 +17,6 @@ SearchWidget::SearchWidget(QWidget* parent) : QWidget(parent),
             &vis, SLOT(repaint()));
     connect(&searchControls, SIGNAL(redrawSearchInfo()),
             &vis, SLOT(repaint()));
+    connect(&searchControls, SIGNAL(drawHeuristic(bool)),
+            &vis, SLOT(heuristicOn(bool)));
 }

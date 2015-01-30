@@ -85,28 +85,38 @@ bool Arm::set_joint(int joint_number, float angle)
     current_angles.at(joint_number) = angle;
 }
 
-float Arm::get_ee_x()
+float Arm::get_ee_x_at(vector<float> position)
 {
     float x = 0.f;
     float angle_sum = 0.f;
     for(int i = 0; i < num_joints; i++)
     {
-        angle_sum += current_angles.at(i);
+        angle_sum += position.at(i);
         x += component_lengths.at(i)*cos((angle_sum)*DEG_TO_RAD);
     }
     return x;
 }
 
-float Arm::get_ee_y()
+float Arm::get_ee_y_at(vector<float> position)
 {
     float y = 0.f;
     float angle_sum = 0.f;
     for(int i = 0; i < num_joints; i++)
     {
-        angle_sum += current_angles.at(i);
+        angle_sum += position.at(i);
         y += component_lengths.at(i)*sin((angle_sum)*DEG_TO_RAD);
     }
     return y;
+}
+
+float Arm::get_ee_x()
+{
+    return get_ee_x_at(current_angles);
+}
+
+float Arm::get_ee_y()
+{
+    return get_ee_y_at(current_angles);
 }
 
 bool Arm::is_valid(vector<float> joint_config)

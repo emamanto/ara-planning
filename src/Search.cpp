@@ -1,4 +1,5 @@
 #include "Search.h"
+#include <math.h>
 
 using namespace std;
 
@@ -19,12 +20,25 @@ Search::Search(int arm_num_joints) :
 {
 }
 
+float Search::euclidean_heuristic()
+{
+    return euclidean_heuristic(arm.get_joints());
+}
+
+float Search::euclidean_heuristic(vector<float> position)
+{
+    float x = arm.get_ee_x_at(position);
+    float y = arm.get_ee_y_at(position);
+
+    return sqrt(pow(target.x-x, 2) + pow(target.y-y, 2));
+}
+
 const Arm Search::get_current_arm()
 {
     return arm;
 }
 
-void Search::set_arm(Arm a)
+void Search::set_arm(Arm& a)
 {
     arm = a;
 }

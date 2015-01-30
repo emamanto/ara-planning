@@ -12,9 +12,13 @@ Q_OBJECT
 public:
     Visualizer(Arm& arm, Search& search, QWidget* parent = 0);
 
+public slots:
+    void heuristicOn(bool on);
+
 private:
     void paintEvent(QPaintEvent*);
 
     Arm& arm;
     Search& search;
+    bool draw_heuristic;
 };

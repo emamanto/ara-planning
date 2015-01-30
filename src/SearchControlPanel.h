@@ -5,6 +5,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QCheckBox>
 #include "Search.h"
 
 class SearchControlPanel : public QWidget
@@ -16,9 +17,11 @@ public:
 
 signals:
     void redrawSearchInfo();
+    void drawHeuristic(bool);
 
 private slots:
     void updateSearch();
+    void heuristic(int);
 
 private:
     Search& search;
