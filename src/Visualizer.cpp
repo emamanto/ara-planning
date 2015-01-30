@@ -1,9 +1,9 @@
 #include "Visualizer.h"
 
 Visualizer::Visualizer(QWidget* parent) : QWidget(parent),
-                                          arm(2)
+                                          arm(3)
 {
-    setFixedSize(500,400);
+    setFixedSize(610,350);
 }
 
 void Visualizer::paintEvent(QPaintEvent*)
