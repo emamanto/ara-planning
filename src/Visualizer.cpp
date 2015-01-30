@@ -3,7 +3,7 @@
 Visualizer::Visualizer(QWidget* parent) : QWidget(parent),
                                           arm(3)
 {
-    setFixedSize(610,350);
+    setFixedSize(ARM_LENGTH*2+20,ARM_LENGTH+10);
 }
 
 void Visualizer::paintEvent(QPaintEvent*)

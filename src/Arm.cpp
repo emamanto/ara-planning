@@ -1,7 +1,6 @@
 #include "Arm.h"
 #include <math.h>
 
-#define ARM_LENGTH 300.f
 #define DEG_TO_RAD M_PI/180.f
 
 using namespace std;

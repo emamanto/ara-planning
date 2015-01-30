@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#define ARM_LENGTH 300.f
+
 class Arm
 {
 public:
