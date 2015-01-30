@@ -6,7 +6,7 @@ Visualizer::Visualizer(Arm& arm, Search& search, QWidget* parent) :
     search(search),
     draw_heuristic(false)
 {
-    setFixedSize(ARM_LENGTH*2+20,ARM_LENGTH+10);
+    setFixedSize(ARM_LENGTH*2+40,ARM_LENGTH+20);
 }
 
 void Visualizer::paintEvent(QPaintEvent*)
