@@ -1,7 +1,9 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(Arm& arm, QWidget* parent) : QWidget(parent),
-                                                    arm(arm)
+Visualizer::Visualizer(Arm& arm, Search& search, QWidget* parent) :
+    QWidget(parent),
+    arm(arm),
+    search(search)
 {
     setFixedSize(ARM_LENGTH*2+20,ARM_LENGTH+10);
 }
@@ -65,10 +67,11 @@ void Visualizer::paintEvent(QPaintEvent*)
         painter.drawPoint(0,0);
     }
 
+    // Draw search target
     painter.setWorldTransform(original);
     pen.setWidth(5);
     pen.setColor(Qt::green);
     painter.setPen(pen);
-    painter.drawPoint(arm.get_ee_x(),
-                      arm.get_ee_y());
+    painter.drawPoint(search.get_target_x(),
+                      search.get_target_y());
 }

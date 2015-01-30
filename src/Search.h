@@ -19,8 +19,12 @@ class Search
 {
 public:
     Search();
-    Search(Arm start);
+    Search(Arm& start);
     Search(int arm_num_joints);
+
+    float get_target_x() {return target.x;}
+    float get_target_y() {return target.y;}
+    target_t get_target() {return target;}
 
     const Arm get_current_arm();
     void set_arm(Arm a);

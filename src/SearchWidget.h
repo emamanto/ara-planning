@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ArmControlPanel.h"
+#include "SearchControlPanel.h"
 #include "Visualizer.h"
 
 class SearchWidget : public QWidget
@@ -12,6 +13,8 @@ public:
 
 private:
     Arm arm;
-    ArmControlPanel controls;
+    ArmControlPanel armControls;
+    Search search;
+    SearchControlPanel searchControls;
     Visualizer vis;
 };

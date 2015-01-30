@@ -10,7 +10,7 @@ ArmControlPanel::ArmControlPanel(Arm& arm, QWidget* parent) :
 
     for(int i= 0; i < arm.get_num_joints(); i++)
     {
-        QLabel* label =  new QLabel(tr("joint"));
+        QLabel* label =  new QLabel(tr("joint"), this);
         QSpinBox* box = new QSpinBox(this);
         box->setRange(arm.get_joint_min(i),
                       arm.get_joint_max(i));

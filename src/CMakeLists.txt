@@ -12,12 +12,14 @@ set( srcs main.cpp
   Arm.cpp
   ArmControlPanel.cpp
   SearchWidget.cpp
-  Search.cpp )
+  Search.cpp
+  SearchControlPanel.cpp )
 
 set( headers ArmSim.h
   Visualizer.h
   ArmControlPanel.h
-  SearchWidget.h )
+  SearchWidget.h
+  SearchControlPanel.h )
 
 Qt4_wrap_cpp( headers_moc ${headers} )
 

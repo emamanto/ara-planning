@@ -7,7 +7,7 @@ Search::Search() : arm(2),
 {
 }
 
-Search::Search(Arm start) :
+Search::Search(Arm& start) :
     arm(start),
     target(arm.get_ee_x(), arm.get_ee_y(), 0, 0)
 {
