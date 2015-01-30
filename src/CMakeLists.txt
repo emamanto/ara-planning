@@ -11,7 +11,8 @@ set( srcs main.cpp
   Visualizer.cpp
   Arm.cpp
   ArmControlPanel.cpp
-  SearchWidget.cpp )
+  SearchWidget.cpp
+  Search.cpp )
 
 set( headers ArmSim.h
   Visualizer.h
