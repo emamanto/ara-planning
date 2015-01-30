@@ -1,7 +1,7 @@
 #include "Arm.h"
 #include <math.h>
 
-#define ARM_LENGTH 200.f
+#define ARM_LENGTH 300.f
 #define DEG_TO_RAD M_PI/180.f
 
 using namespace std;
@@ -11,7 +11,6 @@ Arm::Arm(int num_joints) : num_joints(num_joints),
                                              ARM_LENGTH/num_joints),
                            current_angles(num_joints, 0.f)
 {
-    current_angles.at(0) = 30.f;
 }
 
 Arm::Arm(vector<float> components) : num_joints(components.size()),

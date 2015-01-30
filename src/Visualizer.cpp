@@ -32,8 +32,10 @@ void Visualizer::paintEvent(QPaintEvent*)
     painter.drawLine(0, 0,
                      0, 0.9*maximumHeight());
 
-    painter.rotate(-90);
     QTransform original = painter.worldTransform();
+
+    painter.rotate(-90);
+    QTransform arm_base = painter.worldTransform();
 
     // Draw arm
     pen.setWidth(3);
@@ -48,7 +50,7 @@ void Visualizer::paintEvent(QPaintEvent*)
         painter.translate(0, (arm.get_component(i)));
     }
 
-    painter.setWorldTransform(original);
+    painter.setWorldTransform(arm_base);
     pen.setWidth(8);
     pen.setColor(Qt::red);
     painter.setPen(pen);
@@ -67,6 +69,6 @@ void Visualizer::paintEvent(QPaintEvent*)
     pen.setWidth(5);
     pen.setColor(Qt::green);
     painter.setPen(pen);
-    painter.drawPoint(-arm.get_ee_y(),
-                      arm.get_ee_x());
+    painter.drawPoint(arm.get_ee_x(),
+                      arm.get_ee_y());
 }
