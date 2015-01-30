@@ -9,10 +9,14 @@ add_definitions(${QT_DEFINITIONS})
 set( srcs main.cpp
   ArmSim.cpp
   Visualizer.cpp
-  Arm.cpp )
+  Arm.cpp
+  ArmControlPanel.cpp
+  SearchWidget.cpp )
 
 set( headers ArmSim.h
-  Visualizer.h )
+  Visualizer.h
+  ArmControlPanel.h
+  SearchWidget.h )
 
 Qt4_wrap_cpp( headers_moc ${headers} )
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QMainWindow>
-#include "Visualizer.h"
+#include "SearchWidget.h"
 
 class ArmSim : public QMainWindow
 {

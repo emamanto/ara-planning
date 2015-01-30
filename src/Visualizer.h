@@ -9,10 +9,10 @@ class Visualizer : public QWidget
 Q_OBJECT
 
 public:
-    Visualizer(QWidget* parent = 0);
+    Visualizer(Arm& arm, QWidget* parent = 0);
 
 private:
     void paintEvent(QPaintEvent*);
 
-    Arm arm;
+    Arm& arm;
 };

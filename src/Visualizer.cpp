@@ -1,7 +1,7 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(QWidget* parent) : QWidget(parent),
-                                          arm(3)
+Visualizer::Visualizer(Arm& arm, QWidget* parent) : QWidget(parent),
+                                                    arm(arm)
 {
     setFixedSize(ARM_LENGTH*2+20,ARM_LENGTH+10);
 }
