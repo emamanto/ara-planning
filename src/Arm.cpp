@@ -1,12 +1,17 @@
 #include "Arm.h"
+#include <math.h>
+
+#define ARM_LENGTH 200.f
+#define DEG_TO_RAD M_PI/180.f
 
 using namespace std;
 
 Arm::Arm(int num_joints) : num_joints(num_joints),
                            component_lengths(num_joints,
-                                             1.f/num_joints),
+                                             ARM_LENGTH/num_joints),
                            current_angles(num_joints, 0.f)
 {
+    current_angles.at(0) = 30.f;
 }
 
 Arm::Arm(vector<float> components) : num_joints(components.size()),
@@ -22,7 +27,7 @@ Arm::Arm(vector<float> components) : num_joints(components.size()),
     for(vector<float>::iterator i = components.begin();
         i != components.end(); i++)
     {
-        component_lengths.push_back((*i/sum));
+        component_lengths.push_back((*i/sum)*ARM_LENGTH);
     }
 }
 
@@ -44,4 +49,28 @@ vector<float> Arm::get_joints()
 vector<float> Arm::get_components()
 {
     return component_lengths;
+}
+
+float Arm::get_ee_x()
+{
+    float x = 0.f;
+    float angle_sum = 0.f;
+    for(int i = 0; i < num_joints; i++)
+    {
+        angle_sum += current_angles.at(i);
+        x += component_lengths.at(i)*cos((angle_sum)*DEG_TO_RAD);
+    }
+    return x;
+}
+
+float Arm::get_ee_y()
+{
+    float y = 0.f;
+    float angle_sum = 0.f;
+    for(int i = 0; i < num_joints; i++)
+    {
+        angle_sum += current_angles.at(i);
+        y += component_lengths.at(i)*sin((angle_sum)*DEG_TO_RAD);
+    }
+    return y;
 }

@@ -2,8 +2,6 @@
 
 #include <vector>
 
-#define PI 3.14159f
-
 class Arm
 {
 public:
@@ -16,8 +14,8 @@ public:
     std::vector<float> get_joints();
     std::vector<float> get_components();
 
-    // float get_ee_x();
-    // float get_ee_y();
+    float get_ee_x();
+    float get_ee_y();
 
 private:
     int num_joints;
