@@ -27,21 +27,20 @@ public:
     target_t get_target() {return target;}
 
     float euclidean_heuristic();
-    float euclidean_heuristic(std::vector<float> position);
+    float euclidean_heuristic(pose position);
 
     const Arm get_current_arm();
     void set_arm(Arm& a);
-    void set_arm_position(std::vector<float> angles);
+    void set_arm_position(pose angles);
     void set_arm_num_joints(int num_joints);
 
     void set_target(target_t target);
     void set_target(float x, float y, float err_x, float err_y);
 
-    std::vector<float> astar(Arm start, target_t target);
-    std::vector<float> astar(target_t target);
-    std::vector<float> astar(std::vector<float> start,
-                             target_t target);
-    std::vector<float> astar();
+    plan astar(Arm start, target_t target);
+    plan astar(target_t target);
+    plan astar(pose start, target_t target);
+    plan astar();
 
 private:
     Arm arm;

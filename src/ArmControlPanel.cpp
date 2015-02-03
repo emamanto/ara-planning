@@ -1,7 +1,5 @@
 #include "ArmControlPanel.h"
 
-using namespace std;
-
 ArmControlPanel::ArmControlPanel(Arm& arm, QWidget* parent) :
     QWidget(parent),
     arm(arm)
@@ -25,7 +23,7 @@ ArmControlPanel::ArmControlPanel(Arm& arm, QWidget* parent) :
 
 void ArmControlPanel::updateArm()
 {
-    vector<float> angles;
+    pose angles;
     for(int i = 0; i < arm.get_num_joints(); i++)
     {
         angles.push_back(float(jointMap[i]->value()));

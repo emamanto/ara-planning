@@ -4,38 +4,42 @@
 
 #define ARM_LENGTH 300.f
 
+typedef std::vector<float> pose;
+typedef std::vector<float> length_config;
+typedef std::vector<pose> plan;
+
 class Arm
 {
 public:
     Arm(int num_joints);
-    Arm(std::vector<float> components);
+    Arm(length_config components);
 
     int get_num_joints() {return num_joints;}
     float get_joint(int joint_number);
     float get_component(int component_number);
     float get_joint_max(int joint_number);
     float get_joint_min(int joint_number);
-    std::vector<float> get_joints();
-    std::vector<float> get_components();
-    std::vector<float> get_max_angles();
-    std::vector<float> get_min_angles();
+    pose get_joints();
+    length_config get_components();
+    pose get_max_angles();
+    pose get_min_angles();
 
-    bool set_joints(std::vector<float> angles);
+    bool set_joints(pose angles);
     bool set_joint(int joint_number, float angle);
 
     float get_ee_x();
     float get_ee_y();
 
-    float get_ee_x_at(std::vector<float> position);
-    float get_ee_y_at(std::vector<float> position);
+    float get_ee_x_at(pose position);
+    float get_ee_y_at(pose position);
 
-    bool is_valid(std::vector<float> joint_config);
+    bool is_valid(pose joint_config);
     bool is_currently_valid();
 
 private:
     int num_joints;
-    std::vector<float> component_lengths;
-    std::vector<float> current_angles;
-    std::vector<float> max_angles;
-    std::vector<float> min_angles;
+    length_config component_lengths;
+    pose current_angles;
+    pose max_angles;
+    pose min_angles;
 };
