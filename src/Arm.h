@@ -6,7 +6,6 @@
 
 typedef std::vector<float> pose;
 typedef std::vector<float> length_config;
-typedef std::vector<pose> plan;
 
 class Arm
 {

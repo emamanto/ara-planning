@@ -1,7 +1,10 @@
 #pragma once
 
+#include <set>
 #include "Arm.h"
 
+// Rectangle centered at x, y with error err_x, err_y in each
+// dimension
 struct target_t
 {
     float x;
@@ -13,6 +16,34 @@ struct target_t
                                                     y(y),
                                                     err_x(ex),
                                                     err_y(ey) {}
+};
+
+// Change joint by change degrees
+struct action
+{
+    int joint;
+    float change;
+
+    action(int j, float c): joint(j), change(c) {}
+};
+
+typedef std::vector<action> plan;
+
+// Search node
+struct node
+{
+    pose joints;
+    action primitive;
+    node* parent;
+    float cost;
+
+    node(pose j, action pr, node* pa, float c = 0) : joints(j),
+                                                     primitive(pr),
+                                                     parent(pa),
+                                                     cost(c) {}
+
+    bool operator < (const node& other) const {return cost > other.cost; }
+    bool operator > (const node& other) const {return cost < other.cost; }
 };
 
 class Search
@@ -37,6 +68,8 @@ public:
     void set_target(target_t target);
     void set_target(float x, float y, float err_x, float err_y);
 
+    bool is_in_goal(pose pos);
+
     plan astar(Arm start, target_t target);
     plan astar(target_t target);
     plan astar(pose start, target_t target);
@@ -45,4 +78,5 @@ public:
 private:
     Arm arm;
     target_t target;
+    std::set<action> primitives;
 };
