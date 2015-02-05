@@ -14,6 +14,7 @@ public:
 
 public slots:
     void heuristicOn(bool on);
+    void newPlan();
 
 private:
     void paintEvent(QPaintEvent*);

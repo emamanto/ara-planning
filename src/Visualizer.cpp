@@ -100,3 +100,8 @@ void Visualizer::heuristicOn(bool on)
 {
     draw_heuristic = on;
 }
+
+void Visualizer::newPlan()
+{
+    latest_plan = Search::the_instance()->run_search(arm, goal);
+}

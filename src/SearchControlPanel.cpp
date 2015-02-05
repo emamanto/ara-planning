@@ -29,8 +29,10 @@ SearchControlPanel::SearchControlPanel(target_t& goal,
     connect(ybox, SIGNAL(valueChanged(int)), this,
             SLOT(updateTarget()));
 
-    QPushButton* start = new QPushButton(tr("start"), this);
+    QPushButton* start = new QPushButton(tr("search"), this);
     layout->addWidget(start, 2, 0);
+    connect(start, SIGNAL(clicked()), this,
+            SLOT(startSearch()));
 
     QCheckBox* heur = new QCheckBox(tr("heuristic"), this);
     layout->addWidget(heur, 3, 0);
@@ -50,4 +52,9 @@ void SearchControlPanel::heuristic(int check)
 {
     emit(drawHeuristic(bool(check)));
     emit(redrawTargetInfo());
+}
+
+void SearchControlPanel::startSearch()
+{
+    emit(initiateSearch());
 }

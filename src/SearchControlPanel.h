@@ -18,10 +18,12 @@ public:
 signals:
     void redrawTargetInfo();
     void drawHeuristic(bool);
+    void initiateSearch();
 
 private slots:
     void updateTarget();
     void heuristic(int);
+    void startSearch();
 
 private:
     target_t& goal;
