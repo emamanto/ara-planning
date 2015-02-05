@@ -4,8 +4,18 @@
 
 #define ARM_LENGTH 300.f
 
+// Change joint by change degrees
+struct action
+{
+    int joint;
+    float change;
+
+    action(int j, float c): joint(j), change(c) {}
+};
+
 typedef std::vector<float> pose;
 typedef std::vector<float> length_config;
+typedef std::vector<action> plan;
 
 class Arm
 {
@@ -34,6 +44,9 @@ public:
 
     bool is_valid(pose joint_config);
     bool is_currently_valid();
+
+    bool apply(action a);
+    bool apply(plan p);
 
 private:
     int num_joints;

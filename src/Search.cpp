@@ -5,30 +5,18 @@
 Search::Search() : arm(2),
                    target(arm.get_ee_x(), arm.get_ee_y(), 0, 0)
 {
-    for (int i = 0; i < arm.get_num_joints(); i++)
-    {
-        primitives.insert(action(i, 10.f));
-    }
 }
 
 Search::Search(Arm& start) :
     arm(start),
     target(arm.get_ee_x(), arm.get_ee_y(), 0, 0)
 {
-    for (int i = 0; i < arm.get_num_joints(); i++)
-    {
-        primitives.insert(action(i, 10.f));
-    }
 }
 
 Search::Search(int arm_num_joints) :
     arm(arm_num_joints),
     target(arm.get_ee_x(), arm.get_ee_y(), 0, 0)
 {
-    for (int i = 0; i < arm.get_num_joints(); i++)
-    {
-        primitives.insert(action(i, 10.f));
-    }
 }
 
 float Search::euclidean_heuristic()
@@ -113,46 +101,5 @@ plan Search::astar(pose start, target_t target)
 plan Search::astar()
 {
     plan p;
-
-    std::priority_queue<node> open;
-    std::set<pose> expanded;
-
-    if(is_in_goal(arm.getJoints()))
-    {
-        p.push_back(action(0,0));
-        return p;
-    }
-
-    node start(arm.getJoints(), action(0,0), NULL);
-    node end;
-
-    while (!expanded_goal)
-    {
-        node current = open.top();
-        open.pop();
-
-        for (std::set<action>::iterator it=primitives.begin();
-             it != primitives.end(); it++)
-        {
-            pose successor(current.joints);
-            successor.at(it->joint) = (successor.at(it->joint) +
-                                       it->change);
-
-            if (!arm.is_valid(successor)) continue;
-
-            if (!expanded.count(successor) ||)
-
-
-            if (is_in_goal(successor))
-            {
-                expanded_goal = true;
-            }
-        }
-
-        open
-    }
-
-    /////////////////////
-    p.push_back(pose(arm.get_num_joints(), 0.f));
     return p;
 }

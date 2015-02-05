@@ -18,34 +18,6 @@ struct target_t
                                                     err_y(ey) {}
 };
 
-// Change joint by change degrees
-struct action
-{
-    int joint;
-    float change;
-
-    action(int j, float c): joint(j), change(c) {}
-};
-
-typedef std::vector<action> plan;
-
-// Search node
-struct node
-{
-    pose joints;
-    action primitive;
-    node* parent;
-    float cost;
-
-    node(pose j, action pr, node* pa, float c = 0) : joints(j),
-                                                     primitive(pr),
-                                                     parent(pa),
-                                                     cost(c) {}
-
-    bool operator < (const node& other) const {return cost > other.cost; }
-    bool operator > (const node& other) const {return cost < other.cost; }
-};
-
 class Search
 {
 public:

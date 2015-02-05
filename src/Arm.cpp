@@ -146,3 +146,20 @@ bool Arm::is_currently_valid()
     }
     return valid;
 }
+
+bool Arm::apply(action a)
+{
+    current_angles.at(a.joint) = (current_angles.at(a.joint) +
+                                  a.change);
+    return is_currently_valid();
+}
+
+bool Arm::apply(plan p)
+{
+    for (plan::iterator i = p.begin(); i != p.end(); i++)
+    {
+        apply(*i);
+    }
+    return is_currently_valid();
+}
+
