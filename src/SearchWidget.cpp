@@ -2,11 +2,12 @@
 
 SearchWidget::SearchWidget(QWidget* parent) : QWidget(parent),
                                               arm(3),
+                                              goal(arm.get_ee_x(),
+                                                   arm.get_ee_y(),
+                                                   0, 0),
                                               armControls(arm, this),
-                                              search(arm),
-                                              searchControls(search,
-                                                             this),
-                                              vis(arm, search, this)
+                                              searchControls(goal, this),
+                                              vis(arm, goal, this)
 {
     QGridLayout* layout = new QGridLayout(this);
     layout->addWidget(&vis, 0, 0);
@@ -15,7 +16,7 @@ SearchWidget::SearchWidget(QWidget* parent) : QWidget(parent),
     setLayout(layout);
     connect(&armControls, SIGNAL(redrawArm()),
             &vis, SLOT(repaint()));
-    connect(&searchControls, SIGNAL(redrawSearchInfo()),
+    connect(&searchControls, SIGNAL(redrawTargetInfo()),
             &vis, SLOT(repaint()));
     connect(&searchControls, SIGNAL(drawHeuristic(bool)),
             &vis, SLOT(heuristicOn(bool)));

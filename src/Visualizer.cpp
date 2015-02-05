@@ -1,10 +1,11 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(Arm& arm, Search& search, QWidget* parent) :
+Visualizer::Visualizer(Arm& arm, target_t& goal, QWidget* parent) :
     QWidget(parent),
     arm(arm),
-    search(search),
-    draw_heuristic(false)
+    goal(goal),
+    draw_heuristic(false),
+    draw_plan(false)
 {
     setFixedSize(ARM_LENGTH*2+40,ARM_LENGTH+20);
 }
@@ -73,8 +74,7 @@ void Visualizer::paintEvent(QPaintEvent*)
     pen.setWidth(5);
     pen.setColor(Qt::green);
     painter.setPen(pen);
-    painter.drawPoint(search.get_target_x(),
-                      search.get_target_y());
+    painter.drawPoint(goal.x, goal.y);
 
     if(draw_heuristic)
     {
@@ -85,14 +85,14 @@ void Visualizer::paintEvent(QPaintEvent*)
 
         painter.drawLine(arm.get_ee_x(),
                          arm.get_ee_y(),
-                         search.get_target_x(),
-                         search.get_target_y());
+                         goal.x,
+                         goal.y);
 
-        float h = search.euclidean_heuristic(arm.get_joints());
+        float h = Search::the_instance()->euclidean_heuristic(arm, goal);
         QString s = QString::number(h);
         painter.scale(1.0,-1.0);
-        painter.drawText(search.get_target_x()+5,
-                         -search.get_target_y(), s);
+        painter.drawText(goal.x+5,
+                         -goal.y, s);
     }
 }
 

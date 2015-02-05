@@ -10,7 +10,7 @@ class Visualizer : public QWidget
 Q_OBJECT
 
 public:
-    Visualizer(Arm& arm, Search& search, QWidget* parent = 0);
+    Visualizer(Arm& arm, target_t& goal, QWidget* parent = 0);
 
 public slots:
     void heuristicOn(bool on);
@@ -19,6 +19,8 @@ private:
     void paintEvent(QPaintEvent*);
 
     Arm& arm;
-    Search& search;
+    target_t& goal;
+    plan latest_plan;
     bool draw_heuristic;
+    bool draw_plan;
 };

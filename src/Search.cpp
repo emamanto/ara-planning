@@ -2,75 +2,36 @@
 #include <math.h>
 #include <queue>
 
-Search::Search() : arm(2),
-                   target(arm.get_ee_x(), arm.get_ee_y(), 0, 0)
+Search* Search::instance = 0;
+
+Search* Search::the_instance()
 {
+    if (!instance) instance = new Search();
+    return instance;
 }
 
-Search::Search(Arm& start) :
-    arm(start),
-    target(arm.get_ee_x(), arm.get_ee_y(), 0, 0)
+plan Search::run_search(Arm start, target_t goal)
 {
+    return astar(start, goal);
 }
 
-Search::Search(int arm_num_joints) :
-    arm(arm_num_joints),
-    target(arm.get_ee_x(), arm.get_ee_y(), 0, 0)
+float Search::euclidean_heuristic(Arm& a, target_t goal)
 {
+    float x = a.get_ee_x();
+    float y = a.get_ee_y();
+
+    return sqrt(pow(goal.x-x, 2) + pow(goal.y-y, 2));
 }
 
-float Search::euclidean_heuristic()
+bool Search::is_in_goal(float ee_x, float ee_y, target_t goal)
 {
-    return euclidean_heuristic(arm.get_joints());
-}
-
-float Search::euclidean_heuristic(pose position)
-{
-    float x = arm.get_ee_x_at(position);
-    float y = arm.get_ee_y_at(position);
-
-    return sqrt(pow(target.x-x, 2) + pow(target.y-y, 2));
-}
-
-const Arm Search::get_current_arm()
-{
-    return arm;
-}
-
-void Search::set_arm(Arm& a)
-{
-    arm = a;
-}
-
-void Search::set_arm_position(pose angles)
-{
-    arm.set_joints(angles);
-}
-
-void Search::set_arm_num_joints(int num_joints)
-{
-    arm = Arm(num_joints);
-}
-
-void Search::set_target(target_t target)
-{
-    target = target;
-}
-
-void Search::set_target(float x, float y, float err_x, float err_y)
-{
-    target = target_t(x, y, err_x, err_y);
-}
-
-bool Search::is_in_goal(pose pos)
-{
-    if(arm.get_ee_x() > (target.x + target.err_x) ||
-       arm.get_ee_x() < (target.x - target.err_x))
+    if(ee_x > (goal.x + goal.err_x) ||
+       ee_x < (goal.x - goal.err_x))
     {
         return false;
     }
-    if(arm.get_ee_y() > (target.y + target.err_y) ||
-       arm.get_ee_y() < (target.y - target.err_y))
+    if(ee_y > (goal.y + goal.err_y) ||
+       ee_y < (goal.y - goal.err_y))
     {
         return false;
     }
@@ -80,26 +41,8 @@ bool Search::is_in_goal(pose pos)
 
 plan Search::astar(Arm start, target_t target)
 {
-    set_arm(start);
-    set_target(target);
-    return astar();
-}
-
-plan Search::astar(target_t target)
-{
-    set_target(target);
-    return astar();
-}
-
-plan Search::astar(pose start, target_t target)
-{
-    set_arm_position(start);
-    set_target(target);
-    return astar();
-}
-
-plan Search::astar()
-{
+    // Fake ASTAR
     plan p;
+    p.push_back(action(0,10));
     return p;
 }

@@ -1,9 +1,9 @@
 #include "SearchControlPanel.h"
 
-SearchControlPanel::SearchControlPanel(Search& search,
+SearchControlPanel::SearchControlPanel(target_t& goal,
                                        QWidget* parent) :
     QWidget(parent),
-    search(search)
+    goal(goal)
 {
     QGridLayout* layout = new QGridLayout(this);
 
@@ -11,23 +11,23 @@ SearchControlPanel::SearchControlPanel(Search& search,
     xbox = new QSpinBox(this);
     xbox->setRange(-ARM_LENGTH, ARM_LENGTH);
     xbox->setSingleStep(10);
-    xbox->setValue(search.get_target_x());
+    xbox->setValue(goal.x);
     layout->addWidget(xlabel, 0, 0);
     layout->addWidget(xbox, 0, 1);
 
     connect(xbox, SIGNAL(valueChanged(int)), this,
-            SLOT(updateSearch()));
+            SLOT(updateTarget()));
 
     QLabel* ylabel =  new QLabel(tr("target y"), this);
     ybox = new QSpinBox(this);
     ybox->setRange(0, ARM_LENGTH);
     ybox->setSingleStep(10);
-    ybox->setValue(search.get_target_y());
+    ybox->setValue(goal.y);
     layout->addWidget(ylabel, 1, 0);
     layout->addWidget(ybox, 1, 1);
 
     connect(ybox, SIGNAL(valueChanged(int)), this,
-            SLOT(updateSearch()));
+            SLOT(updateTarget()));
 
     QPushButton* start = new QPushButton(tr("start"), this);
     layout->addWidget(start, 2, 0);
@@ -39,14 +39,15 @@ SearchControlPanel::SearchControlPanel(Search& search,
             SLOT(heuristic(int)));
 }
 
-void SearchControlPanel::updateSearch()
+void SearchControlPanel::updateTarget()
 {
-    search.set_target(xbox->value(), ybox->value(), 0, 0);
-    emit(redrawSearchInfo());
+    goal.x = xbox->value();
+    goal.y = ybox->value();
+    emit(redrawTargetInfo());
 }
 
 void SearchControlPanel::heuristic(int check)
 {
     emit(drawHeuristic(bool(check)));
-    emit(redrawSearchInfo());
+    emit(redrawTargetInfo());
 }

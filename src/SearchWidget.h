@@ -13,8 +13,8 @@ public:
 
 private:
     Arm arm;
+    target_t goal;
     ArmControlPanel armControls;
-    Search search;
     SearchControlPanel searchControls;
     Visualizer vis;
 };
