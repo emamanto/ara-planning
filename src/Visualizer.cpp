@@ -150,3 +150,10 @@ void Visualizer::newPlan()
     draw_plan = true;
     repaint();
 }
+
+void Visualizer::clearPlan()
+{
+    latest_plan.clear();
+    draw_plan = false;
+    repaint();
+}

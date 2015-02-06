@@ -18,6 +18,7 @@ signals:
 public slots:
     void heuristicOn(bool on);
     void newPlan();
+    void clearPlan();
 
 private:
     void paintEvent(QPaintEvent*);

@@ -22,6 +22,8 @@ SearchWidget::SearchWidget(QWidget* parent) : QWidget(parent),
             &vis, SLOT(heuristicOn(bool)));
     connect(&searchControls, SIGNAL(initiateSearch()),
             &vis, SLOT(newPlan()));
+    connect(&searchControls, SIGNAL(clearSearchVis()),
+            &vis, SLOT(clearPlan()));
     connect(&vis, SIGNAL(synchronizeArmControls()),
             &armControls, SLOT(synchronize()));
 }

@@ -19,11 +19,13 @@ signals:
     void redrawTargetInfo();
     void drawHeuristic(bool);
     void initiateSearch();
+    void clearSearchVis();
 
 private slots:
     void updateTarget();
     void heuristic(int);
     void startSearch();
+    void clearSearch();
 
 private:
     target_t& goal;
