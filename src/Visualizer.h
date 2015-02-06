@@ -12,6 +12,9 @@ Q_OBJECT
 public:
     Visualizer(Arm& arm, target_t& goal, QWidget* parent = 0);
 
+signals:
+    void synchronizeArmControls();
+
 public slots:
     void heuristicOn(bool on);
     void newPlan();
@@ -22,9 +25,11 @@ private:
     void drawArm(Arm& a, QPainter* p, bool main);
     void drawTarget(QPainter* p);
     void drawHeuristic(QPainter* p);
+    void drawPlan(QPainter* p);
 
     Arm& arm;
     target_t& goal;
+    Arm latest_plan_start;
     plan latest_plan;
     bool draw_heuristic;
     bool draw_plan;

@@ -17,6 +17,9 @@ public:
 signals:
     void redrawArm();
 
+public slots:
+    void synchronize();
+
 private slots:
     void updateArm();
 

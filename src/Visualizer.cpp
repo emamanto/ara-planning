@@ -4,6 +4,7 @@ Visualizer::Visualizer(Arm& arm, target_t& goal, QWidget* parent) :
     QWidget(parent),
     arm(arm),
     goal(goal),
+    latest_plan_start(arm),
     draw_heuristic(false),
     draw_plan(false)
 {
@@ -43,6 +44,11 @@ void Visualizer::paintEvent(QPaintEvent*)
 
     painter.rotate(-90);
     QTransform arm_base = painter.worldTransform();
+
+    if(draw_plan)
+    {
+        drawPlan(&painter);
+    }
 
     // Draw main arm
     drawArm(arm, &painter, true);
@@ -117,6 +123,19 @@ void Visualizer::drawHeuristic(QPainter* p)
                      -goal.y, s);
 }
 
+void Visualizer::drawPlan(QPainter* p)
+{
+    pose joints = latest_plan_start.get_joints();
+    drawArm(latest_plan_start, p, false);
+    for (plan::iterator i = latest_plan.begin();
+         i != latest_plan.end(); i++)
+    {
+        latest_plan_start.apply(*i);
+        drawArm(latest_plan_start, p, false);
+    }
+    latest_plan_start.set_joints(joints);
+}
+
 void Visualizer::heuristicOn(bool on)
 {
     draw_heuristic = on;
@@ -124,5 +143,10 @@ void Visualizer::heuristicOn(bool on)
 
 void Visualizer::newPlan()
 {
+    latest_plan_start = arm;
     latest_plan = Search::the_instance()->run_search(arm, goal);
+    arm.apply(latest_plan);
+    emit(synchronizeArmControls());
+    draw_plan = true;
+    repaint();
 }
