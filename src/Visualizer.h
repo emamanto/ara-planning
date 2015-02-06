@@ -19,9 +19,14 @@ public slots:
 private:
     void paintEvent(QPaintEvent*);
 
+    void drawArm(Arm& a, QPainter* p, bool main);
+    void drawTarget(QPainter* p);
+    void drawHeuristic(QPainter* p);
+
     Arm& arm;
     target_t& goal;
     plan latest_plan;
     bool draw_heuristic;
     bool draw_plan;
+    QTransform original, arm_base;
 };
