@@ -11,6 +11,11 @@ struct action
     float change;
 
     action(int j, float c): joint(j), change(c) {}
+    action(): joint(0), change(0) {}
+    bool operator < (const action& other) const
+    {return joint > other.joint; }
+    bool operator > (const action& other) const
+    {return joint < other.joint; }
 };
 
 typedef std::vector<float> pose;

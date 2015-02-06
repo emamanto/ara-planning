@@ -39,12 +39,40 @@ bool Search::is_in_goal(float ee_x, float ee_y, target_t goal)
     return true;
 }
 
+struct node
+{
+    pose state;
+    float f_value;
+    node* parent;
+    action cause;
+
+    bool operator < (const node& other) const
+    {return f_value > other.f_value; }
+    bool operator > (const node& other) const
+    {return f_value < other.f_value; }
+};
+
 plan Search::astar(Arm start, target_t target)
 {
-    // Fake ASTAR
+    // Possible actions to take from each state
+    std::set<action> primitives;
+    for (int i = 0; i < start.get_num_joints(); i++)
+    {
+        primitives.insert(action(i, 10));
+        primitives.insert(action(i, -10));
+    }
+
+    // Cost function g(s)
+    std::map<pose, float> costs;
+
+    // g(s) = 0
+    node start_state;
+    start_state.state = start.get_joints();
+    costs[start_state.state] = 0.f;
+
+    // OPEN = empty
+    std::priority_queue<node> OPEN;
+
     plan p;
-    p.push_back(action(0,10));
-    p.push_back(action(1,-10));
-    p.push_back(action(2,-10));
     return p;
 }

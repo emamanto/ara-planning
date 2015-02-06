@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <map>
 #include "Arm.h"
 
 // Rectangle centered at x, y with error err_x, err_y in each
@@ -35,6 +36,4 @@ private:
     plan astar(Arm start, target_t target);
 
     static Search* instance;
-
-    std::set<action> primitives;
 };
