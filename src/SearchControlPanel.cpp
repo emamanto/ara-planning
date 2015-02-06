@@ -18,29 +18,51 @@ SearchControlPanel::SearchControlPanel(target_t& goal,
     connect(xbox, SIGNAL(valueChanged(int)), this,
             SLOT(updateTarget()));
 
+    QLabel* xerrlabel =  new QLabel(tr("x+/-"), this);
+    xerrbox = new QSpinBox(this);
+    xerrbox->setRange(-50, 50);
+    xerrbox->setSingleStep(5);
+    xerrbox->setValue(0);
+    layout->addWidget(xerrlabel, 1, 0);
+    layout->addWidget(xerrbox, 1, 1);
+
+    connect(xerrbox, SIGNAL(valueChanged(int)), this,
+            SLOT(updateTarget()));
+
     QLabel* ylabel =  new QLabel(tr("target y"), this);
     ybox = new QSpinBox(this);
     ybox->setRange(0, ARM_LENGTH);
     ybox->setSingleStep(10);
     ybox->setValue(goal.y);
-    layout->addWidget(ylabel, 1, 0);
-    layout->addWidget(ybox, 1, 1);
+    layout->addWidget(ylabel, 2, 0);
+    layout->addWidget(ybox, 2, 1);
 
     connect(ybox, SIGNAL(valueChanged(int)), this,
             SLOT(updateTarget()));
 
+    QLabel* yerrlabel =  new QLabel(tr("y+/-"), this);
+    yerrbox = new QSpinBox(this);
+    yerrbox->setRange(-50, 50);
+    yerrbox->setSingleStep(5);
+    yerrbox->setValue(0);
+    layout->addWidget(yerrlabel, 3, 0);
+    layout->addWidget(yerrbox, 3, 1);
+
+    connect(yerrbox, SIGNAL(valueChanged(int)), this,
+            SLOT(updateTarget()));
+
     QPushButton* start = new QPushButton(tr("search"), this);
-    layout->addWidget(start, 2, 0);
+    layout->addWidget(start, 4, 0);
     connect(start, SIGNAL(clicked()), this,
             SLOT(startSearch()));
 
     QPushButton* clear = new QPushButton(tr("clear"), this);
-    layout->addWidget(clear, 2, 1);
+    layout->addWidget(clear, 4, 1);
     connect(clear, SIGNAL(clicked()), this,
             SLOT(clearSearch()));
 
     QCheckBox* heur = new QCheckBox(tr("heuristic"), this);
-    layout->addWidget(heur, 3, 0);
+    layout->addWidget(heur, 5, 0);
 
     connect(heur, SIGNAL(stateChanged(int)), this,
             SLOT(heuristic(int)));
@@ -50,6 +72,8 @@ void SearchControlPanel::updateTarget()
 {
     goal.x = xbox->value();
     goal.y = ybox->value();
+    goal.err_x = xerrbox->value();
+    goal.err_y = yerrbox->value();
     emit(redrawTargetInfo());
 }
 

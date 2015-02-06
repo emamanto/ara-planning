@@ -30,5 +30,7 @@ private slots:
 private:
     target_t& goal;
     QSpinBox* xbox;
+    QSpinBox* xerrbox;
     QSpinBox* ybox;
+    QSpinBox* yerrbox;
 };
