@@ -52,6 +52,7 @@ public:
 
     bool apply(action a);
     bool apply(plan p);
+    pose apply_at(action a, pose start);
 
 private:
     int num_joints;

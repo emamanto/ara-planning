@@ -163,3 +163,11 @@ bool Arm::apply(plan p)
     return is_currently_valid();
 }
 
+pose Arm::apply_at(action a, pose start)
+{
+    pose end = start;
+    end.at(a.joint) = (start.at(a.joint) +
+                       a.change);
+    return end;
+}
+

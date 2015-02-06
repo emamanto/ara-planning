@@ -26,6 +26,7 @@ public:
 
     plan run_search(Arm start, target_t goal);
     float euclidean_heuristic(Arm& a, target_t goal);
+    float euclidean_heuristic(float x, float y, target_t goal);
 
 private:
     Search() {};
@@ -33,7 +34,8 @@ private:
     Search& operator=(Search const&) {};
 
     bool is_in_goal(float ee_x, float ee_y, target_t goal);
-    plan astar(Arm start, target_t target);
+    float cost(Arm& start, pose from, pose to);
+    plan astar(Arm start, target_t target, float epsilon = 1.f);
 
     static Search* instance;
 };
