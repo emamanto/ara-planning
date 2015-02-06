@@ -44,6 +44,7 @@ plan Search::astar(Arm start, target_t target)
     // Fake ASTAR
     plan p;
     p.push_back(action(0,10));
-    p.push_back(action(0,10));
+    p.push_back(action(1,-10));
+    p.push_back(action(2,-10));
     return p;
 }

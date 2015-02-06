@@ -23,9 +23,10 @@ ArmControlPanel::ArmControlPanel(Arm& arm, QWidget* parent) :
 
 void ArmControlPanel::synchronize()
 {
-    for (int i = 0; i < arm.get_num_joints(); i++)
+    Arm values = arm;
+    for (int i = 0; i < values.get_num_joints(); i++)
     {
-        jointMap[i]->setValue(arm.get_joint(i));
+        jointMap[i]->setValue(values.get_joint(i));
     }
 }
 
