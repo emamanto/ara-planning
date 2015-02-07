@@ -113,6 +113,7 @@ plan Search::astar(Arm start, target_t target, float epsilon)
         // remove s with smallest f-value from OPEN
         node current = OPEN.top();
         OPEN.pop();
+
         if (is_in_goal(start.get_ee_x_at(current.state),
                        start.get_ee_y_at(current.state),
                        target))
@@ -124,15 +125,14 @@ plan Search::astar(Arm start, target_t target, float epsilon)
             break;
         }
 
+        pose next_pose;
         // for each successor s' of s
         for (std::vector<action>::iterator p = primitives.begin();
              p != primitives.end(); p++)
         {
-            pose next_pose = start.apply_at(*p, current.state);
+            next_pose = start.apply_at(*p, current.state);
             if (!start.is_valid(next_pose)) continue;
 
-            node successor;
-            successor.state = next_pose;
             float new_cost = (costs[current.state] +
                               cost(start, current.state, next_pose));
 
@@ -148,9 +148,11 @@ plan Search::astar(Arm start, target_t target, float epsilon)
                 float h = euclidean_heuristic(start.get_ee_x_at(next_pose),
                                               start.get_ee_y_at(next_pose),
                                               target);
-                successor.f_value = (new_cost + epsilon*h);
+                node successor;
+                successor.state = next_pose;
                 successor.parent = &current;
                 successor.cause = *p;
+                successor.f_value = (new_cost + epsilon*h);
                 // insert s' into OPEN with above f(s')
                 OPEN.push(successor);
             }
@@ -166,16 +168,12 @@ plan Search::astar(Arm start, target_t target, float epsilon)
     std::cout << "The [reversed] path to the goal is:" << std::endl;
 #endif
 
-    while (path->parent)
-    {
-        p.push_back(path->cause);
 #ifdef DEBUG
         std::cout << "  joint " << path->cause.joint << " by "
                   << path->cause.change << std::endl;
+        std::cout << "  joint " << path->parent->cause.joint << " by "
+                  << path->parent->cause.change << std::endl;
 #endif
-
-        path = path->parent;
-    }
 
     return p;
 }
