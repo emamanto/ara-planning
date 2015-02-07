@@ -1,6 +1,10 @@
 #include "Search.h"
 #include <math.h>
 #include <queue>
+#include <map>
+#include <iostream>
+
+#define DEBUG
 
 Search* Search::instance = 0;
 
@@ -67,18 +71,29 @@ struct node
 plan Search::astar(Arm start, target_t target, float epsilon)
 {
     // Possible actions to take from each state
-    std::set<action> primitives;
+    std::vector<action> primitives;
     for (int i = 0; i < start.get_num_joints(); i++)
     {
-        primitives.insert(action(i, 10));
-        primitives.insert(action(i, -10));
+        primitives.push_back(action(i, 10));
+        primitives.push_back(action(i, -10));
     }
+
+#ifdef DEBUG
+    std::cout << "THE POSSIBLE ACTIONS ARE:" << std::endl;
+    for (std::vector<action>::iterator p = primitives.begin();
+         p != primitives.end(); p++)
+    {
+        std::cout << "  joint " << p->joint << " by "
+                  << p->change << std::endl;
+    }
+#endif
 
     // Cost function g(s)
     std::map<pose, float> costs;
 
     // g(s) = 0
     node start_state;
+    start_state.parent = NULL;
     start_state.state = start.get_joints();
     // f(start) = epsilon * heuristic(start)
     start_state.f_value = (epsilon *
@@ -102,12 +117,15 @@ plan Search::astar(Arm start, target_t target, float epsilon)
                        start.get_ee_y_at(current.state),
                        target))
         {
+#ifdef DEBUG
+            std::cout << "*Found a goal state!*" << std::endl;
+#endif
             end = current;
             break;
         }
 
         // for each successor s' of s
-        for (std::set<action>::iterator p = primitives.begin();
+        for (std::vector<action>::iterator p = primitives.begin();
              p != primitives.end(); p++)
         {
             pose next_pose = start.apply_at(*p, current.state);
@@ -133,19 +151,29 @@ plan Search::astar(Arm start, target_t target, float epsilon)
                 successor.f_value = (new_cost + epsilon*h);
                 successor.parent = &current;
                 successor.cause = *p;
+                // insert s' into OPEN with above f(s')
                 OPEN.push(successor);
             }
         }
     }
 
     plan p;
-
     if (end.f_value == -1) return p;
 
     node* path = &end;
-    while (path)
+
+#ifdef DEBUG
+    std::cout << "The [reversed] path to the goal is:" << std::endl;
+#endif
+
+    while (path->parent)
     {
         p.push_back(path->cause);
+#ifdef DEBUG
+        std::cout << "  joint " << path->cause.joint << " by "
+                  << path->cause.change << std::endl;
+#endif
+
         path = path->parent;
     }
 
