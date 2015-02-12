@@ -4,8 +4,6 @@
 #include <map>
 #include <iostream>
 
-#define DEBUG
-
 Search* Search::instance = 0;
 
 Search* Search::the_instance()
@@ -59,8 +57,7 @@ struct node
 {
     pose state;
     float f_value;
-    node* parent;
-    action cause;
+    plan path;
 
     bool operator < (const node& other) const
     {return f_value > other.f_value; }
@@ -78,26 +75,16 @@ plan Search::astar(Arm start, target_t target, float epsilon)
         primitives.push_back(action(i, -10));
     }
 
-#ifdef DEBUG
-    std::cout << "THE POSSIBLE ACTIONS ARE:" << std::endl;
-    for (std::vector<action>::iterator p = primitives.begin();
-         p != primitives.end(); p++)
-    {
-        std::cout << "  joint " << p->joint << " by "
-                  << p->change << std::endl;
-    }
-#endif
-
     // Cost function g(s)
     std::map<pose, float> costs;
 
     // g(s) = 0
     node start_state;
-    start_state.parent = NULL;
     start_state.state = start.get_joints();
     // f(start) = epsilon * heuristic(start)
     start_state.f_value = (epsilon *
                            euclidean_heuristic(start, target));
+
     costs[start_state.state] = 0.f;
 
     // OPEN = empty
@@ -111,16 +98,13 @@ plan Search::astar(Arm start, target_t target, float epsilon)
     while(true)
     {
         // remove s with smallest f-value from OPEN
-        node current = OPEN.top();
+        node current(OPEN.top());
         OPEN.pop();
 
         if (is_in_goal(start.get_ee_x_at(current.state),
                        start.get_ee_y_at(current.state),
                        target))
         {
-#ifdef DEBUG
-            std::cout << "*Found a goal state!*" << std::endl;
-#endif
             end = current;
             break;
         }
@@ -150,8 +134,8 @@ plan Search::astar(Arm start, target_t target, float epsilon)
                                               target);
                 node successor;
                 successor.state = next_pose;
-                successor.parent = &current;
-                successor.cause = *p;
+                successor.path = current.path;
+                successor.path.push_back(*p);
                 successor.f_value = (new_cost + epsilon*h);
                 // insert s' into OPEN with above f(s')
                 OPEN.push(successor);
@@ -159,21 +143,5 @@ plan Search::astar(Arm start, target_t target, float epsilon)
         }
     }
 
-    plan p;
-    if (end.f_value == -1) return p;
-
-    node* path = &end;
-
-#ifdef DEBUG
-    std::cout << "The [reversed] path to the goal is:" << std::endl;
-#endif
-
-#ifdef DEBUG
-        std::cout << "  joint " << path->cause.joint << " by "
-                  << path->cause.change << std::endl;
-        std::cout << "  joint " << path->parent->cause.joint << " by "
-                  << path->parent->cause.change << std::endl;
-#endif
-
-    return p;
+    return end.path;
 }
