@@ -7,19 +7,21 @@ include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 
 set( srcs main.cpp
-  ArmSim.cpp
-  Visualizer.cpp
+  #ArmSim.cpp
+  #Visualizer.cpp
   Arm.cpp
-  ArmControlPanel.cpp
-  SearchWidget.cpp
+  #ArmControlPanel.cpp
+  #SearchWidget.cpp
   Search.cpp
-  SearchControlPanel.cpp )
+  #SearchControlPanel.cpp
+  MazeWidget.cpp )
 
-set( headers ArmSim.h
-  Visualizer.h
-  ArmControlPanel.h
-  SearchWidget.h
-  SearchControlPanel.h )
+set( headers #ArmSim.h
+  #Visualizer.h
+  #ArmControlPanel.h
+  #SearchWidget.h
+  #SearchControlPanel.h
+  MazeWidget.h )
 
 Qt4_wrap_cpp( headers_moc ${headers} )
 
