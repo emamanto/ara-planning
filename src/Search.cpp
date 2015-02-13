@@ -201,9 +201,9 @@ maze_solution Search::maze_astar(maze_boxes obs, float epsilon)
 
         box next;
         // for each successor s' of s
-        for (int i = 1; i >= -1; i--)
+        for (int i = -1; i <= 1; i++)
         {
-            for (int j = 1; j >= -1; j--)
+            for (int j = -1; j <= 1; j++)
             {
                 if (i==0 && j==0) continue;
                 next = std::make_pair(current.state.first + i,
@@ -218,7 +218,7 @@ maze_solution Search::maze_astar(maze_boxes obs, float epsilon)
                 // if s' not visited before (g(s') = inf)
                 // or g(s') > g(s) + c(s, s')
                 if ( !costs.count(next) ||
-                     costs[next] >  new_cost)
+                     costs[next] > new_cost)
                 {
                     // g(s') = g(s) + c(s, s')
                     costs[next] = new_cost;
@@ -229,11 +229,12 @@ maze_solution Search::maze_astar(maze_boxes obs, float epsilon)
                     successor.state = next;
                     successor.path = current.path;
                     successor.path.push_back(next);
-                    successor.f_value = (new_cost + epsilon*h);
+                    successor.f_value = new_cost + epsilon*h;
 
                     std::cout << "\tAdded (" << next.first << ", "
                               << next.second << ") to pqueue with "
                               << "fval " << successor.f_value
+                              << ", updated cost " << new_cost
                               << std::endl;
 
                     // insert s' into OPEN with above f(s')
