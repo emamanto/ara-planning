@@ -47,7 +47,7 @@ void MazeWidget::paintEvent(QPaintEvent*)
         painter.drawLine(0, i, 6*BOX_WIDTH, i);
     }
 
-    for(vector<pair<int, int> >::iterator i = obstacles.begin();
+    for(maze_boxes::iterator i = obstacles.begin();
             i != obstacles.end(); i++)
     {
         painter.fillRect(i->first*BOX_WIDTH, i->second*BOX_HEIGHT,

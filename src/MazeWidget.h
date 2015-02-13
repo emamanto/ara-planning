@@ -5,9 +5,6 @@
 #include <QWidget>
 #include <QPainter>
 
-#include <vector>
-#include <utility>
-
 class MazeWidget : public QWidget
 {
     Q_OBJECT;
@@ -17,5 +14,5 @@ public:
 
 private:
     void paintEvent(QPaintEvent*);
-    std::vector<std::pair<int, int> > obstacles;
+    maze_boxes obstacles;
 };
