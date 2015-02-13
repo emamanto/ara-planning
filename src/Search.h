@@ -3,6 +3,7 @@
 #include "Arm.h"
 #include <vector>
 #include <utility>
+#include <map>
 
 // Rectangle centered at x, y with error err_x, err_y in each
 // dimension
@@ -20,6 +21,7 @@ struct target_t
 };
 
 typedef std::vector<std::pair<int, int> > maze_boxes;
+typedef std::pair<int, int> box;
 
 struct maze_solution
 {
@@ -41,6 +43,9 @@ private:
     Search() {};
     Search(Search const&) {};
     Search& operator=(Search const&) {};
+
+    int maze_heuristic(box cell);
+    bool obstacle(box cell, maze_boxes obs);
 
 //    bool is_in_goal(float ee_x, float ee_y, target_t goal);
 //    float cost(Arm& start, pose from, pose to);

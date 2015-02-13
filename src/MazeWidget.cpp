@@ -32,11 +32,20 @@ MazeWidget::MazeWidget(QWidget* parent)
     obstacles.push_back(make_pair(4,4));
     obstacles.push_back(make_pair(4,5));
     obstacles.push_back(make_pair(4,6));
+
+    solution = Search::the_instance()->maze_astar(obstacles, 2.5);
 }
 
 void MazeWidget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
+
+    for(maze_boxes::iterator i = solution.expanded.begin();
+            i != solution.expanded.end(); i++)
+    {
+        painter.fillRect(i->first*BOX_WIDTH, i->second*BOX_HEIGHT,
+                         BOX_WIDTH, BOX_HEIGHT, Qt::lightGray);
+    }
 
     for (int i = 0; i <= 6*BOX_WIDTH; i+=BOX_WIDTH)
     {
@@ -52,5 +61,20 @@ void MazeWidget::paintEvent(QPaintEvent*)
     {
         painter.fillRect(i->first*BOX_WIDTH, i->second*BOX_HEIGHT,
                          BOX_WIDTH, BOX_HEIGHT, Qt::black);
+    }
+
+    box past = std::make_pair(0, 0);
+    QPen p = QPen(Qt::cyan);
+    p.setWidth(3);
+    painter.setPen(p);
+    for(maze_boxes::iterator s = solution.path.begin();
+            s != solution.path.end(); s++)
+    {
+        painter.drawLine(past.first*BOX_WIDTH + (BOX_WIDTH/2),
+                         past.second*BOX_HEIGHT + (BOX_HEIGHT/2),
+                         s->first*BOX_WIDTH + (BOX_WIDTH/2),
+                         s->second*BOX_HEIGHT + (BOX_HEIGHT/2));
+        past.first = s->first;
+        past.second = s->second;
     }
 }

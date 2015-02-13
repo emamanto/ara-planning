@@ -4,6 +4,7 @@
 
 #include <QWidget>
 #include <QPainter>
+#include <QPen>
 
 class MazeWidget : public QWidget
 {
@@ -15,4 +16,5 @@ public:
 private:
     void paintEvent(QPaintEvent*);
     maze_boxes obstacles;
+    maze_solution solution;
 };
