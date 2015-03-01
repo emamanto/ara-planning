@@ -77,12 +77,13 @@ private:
     public:
         ARAStarUnifier(maze_boxes obs, float e_start) :
             obstacles(obs),
-            epsilon(e_start) {};
+            epsilon(e_start) { goal = std::make_pair(5, 6); }
         arastar_solution run();
 
     private:
         void improve_path();
         float fvalue(box state);
+        arastar_solution solutions;
 
         std::set<box> CLOSED;
         std::set<box> INCONS;
@@ -90,5 +91,6 @@ private:
         std::map<box, int> costs;
         maze_boxes obstacles;
         float epsilon;
+        box goal;
     };
 };

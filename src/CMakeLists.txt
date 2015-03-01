@@ -3,6 +3,8 @@ project( ara )
 
 find_package(Qt4 REQUIRED)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 

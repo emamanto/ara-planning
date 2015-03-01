@@ -34,13 +34,13 @@ MazeWidget::MazeWidget(QWidget* parent)
     obstacles.push_back(make_pair(4,5));
     obstacles.push_back(make_pair(4,6));
 
-    solution = Search::the_instance()->maze_astar(obstacles,
-                                                  EPSILON);
+    solutions = Search::the_instance()->maze_arastar(obstacles);
 }
 
 void MazeWidget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
+    maze_solution solution = solutions.at(0);
 
     for(maze_boxes::iterator i = solution.expanded.begin();
             i != solution.expanded.end(); i++)
