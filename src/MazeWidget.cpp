@@ -8,7 +8,6 @@ using namespace std;
 
 MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
 {
-    setFixedSize(6*BOX_WIDTH, 7*BOX_HEIGHT + 50);
     setWindowTitle("aMaze");
 
     obstacles.push_back(make_pair(0,1));
@@ -35,56 +34,68 @@ MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
     obstacles.push_back(make_pair(4,6));
 
     solutions = Search::the_instance()->maze_arastar(obstacles);
+    int num_iterations = solutions.size();
+    setFixedSize(num_iterations*(6*BOX_WIDTH + 10),
+                 7*BOX_HEIGHT + 50);
 }
 
 void MazeWidget::paintEvent(QPaintEvent*)
 {
-    maze_solution solution = solutions.at(0);
     QPainter painter(this);
 
-    for(maze_boxes::iterator i = solution.expanded.begin();
+    for (int s = 0; s < solutions.size(); s++)
+    {
+        QPen p = QPen(Qt::black);
+        p.setWidth(1);
+        painter.setPen(p);
+
+        maze_solution solution = solutions.at(s);
+        for(maze_boxes::iterator i = solution.expanded.begin();
             i != solution.expanded.end(); i++)
-    {
-        painter.fillRect(i->first*BOX_WIDTH, i->second*BOX_HEIGHT,
-                         BOX_WIDTH, BOX_HEIGHT, Qt::lightGray);
-    }
+        {
+            painter.fillRect(i->first*BOX_WIDTH, i->second*BOX_HEIGHT,
+                             BOX_WIDTH, BOX_HEIGHT, Qt::lightGray);
+        }
 
-    for (int i = 0; i <= 6*BOX_WIDTH; i+=BOX_WIDTH)
-    {
-        painter.drawLine(i, 0, i, 7*BOX_HEIGHT);
-    }
-    for (int i = 0; i <= 7*18; i+=18)
-    {
-        painter.drawLine(0, i, 6*BOX_WIDTH, i);
-    }
+        for (int i = 0; i <= 6*BOX_WIDTH; i+=BOX_WIDTH)
+        {
+            painter.drawLine(i, 0, i, 7*BOX_HEIGHT);
+        }
+        for (int i = 0; i <= 7*18; i+=18)
+        {
+            painter.drawLine(0, i, 6*BOX_WIDTH, i);
+        }
 
-    QString n_ex = QString::number(solution.expanded.size());
-    QString e = QString::number(EPSILON);
-    painter.drawText(5, 8*BOX_HEIGHT + 5, QString("Expanded"));
-    painter.drawText(100, 8*BOX_HEIGHT + 5, n_ex);
+        QString n_ex = QString::number(solution.expanded.size());
+        QString e = QString::number(2.5-0.5*s);
+        painter.drawText(5, 8*BOX_HEIGHT + 5, QString("Expanded"));
+        painter.drawText(100, 8*BOX_HEIGHT + 5, n_ex);
 
-    painter.drawText(5, 8*BOX_HEIGHT + 20, QString("Epsilon"));
-    painter.drawText(100, 8*BOX_HEIGHT + 20, e);
+        painter.drawText(5, 8*BOX_HEIGHT + 20, QString("Epsilon"));
+        painter.drawText(100, 8*BOX_HEIGHT + 20, e);
 
-    for(maze_boxes::iterator i = obstacles.begin();
+        for(maze_boxes::iterator i = obstacles.begin();
             i != obstacles.end(); i++)
-    {
-        painter.fillRect(i->first*BOX_WIDTH, i->second*BOX_HEIGHT,
-                         BOX_WIDTH, BOX_HEIGHT, Qt::black);
-    }
+        {
+            painter.fillRect(i->first*BOX_WIDTH, i->second*BOX_HEIGHT,
+                             BOX_WIDTH, BOX_HEIGHT, Qt::black);
+        }
 
-    box past = std::make_pair(0, 0);
-    QPen p = QPen(Qt::cyan);
-    p.setWidth(3);
-    painter.setPen(p);
-    for(maze_boxes::iterator s = solution.path.begin();
+        box past = std::make_pair(0, 0);
+        p = QPen(Qt::cyan);
+        p.setWidth(3);
+        painter.setPen(p);
+        for(maze_boxes::iterator s = solution.path.begin();
             s != solution.path.end(); s++)
-    {
-        painter.drawLine(past.first*BOX_WIDTH + (BOX_WIDTH/2),
-                         past.second*BOX_HEIGHT + (BOX_HEIGHT/2),
-                         s->first*BOX_WIDTH + (BOX_WIDTH/2),
-                         s->second*BOX_HEIGHT + (BOX_HEIGHT/2));
-        past.first = s->first;
-        past.second = s->second;
+        {
+            painter.drawLine(past.first*BOX_WIDTH + (BOX_WIDTH/2),
+                             past.second*BOX_HEIGHT + (BOX_HEIGHT/2),
+                             s->first*BOX_WIDTH + (BOX_WIDTH/2),
+                             s->second*BOX_HEIGHT + (BOX_HEIGHT/2));
+            past.first = s->first;
+            past.second = s->second;
+        }
+
+        painter.translate(6*BOX_WIDTH + 10, 0);
     }
 }

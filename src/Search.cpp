@@ -110,6 +110,7 @@ arastar_solution Search::maze_arastar(maze_boxes obs, float e_start)
     OPEN.push(start_node);
 
     improve_path();
+    best_path = solutions.at(0).path;
 
     // g(goal)/min{s E OPEN U INCONS} (g+h)
     float alt = costs[goal] / min_gh();
@@ -186,7 +187,7 @@ bool Search::obstacle(box cell)
 void Search::improve_path()
 {
     maze_solution sol;
-    maze_boxes path_to_goal;
+    sol.path = best_path;
 
     while(fvalue(goal) > OPEN.top().f_value || costs[goal] == -1)
     {
@@ -229,7 +230,7 @@ void Search::improve_path()
                     if (s_prime.first == 5 &&
                         s_prime.second == 6)
                     {
-                        path_to_goal = snode.path;
+                        sol.path = snode.path;
                     }
 
                     if (!CLOSED.count(s_prime))
@@ -246,7 +247,10 @@ void Search::improve_path()
         }
     }
 
-    sol.path = path_to_goal;
+    if (sol.path != best_path)
+    {
+        best_path = sol.path;
+    }
     solutions.push_back(sol);
 }
 

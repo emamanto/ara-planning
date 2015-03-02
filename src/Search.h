@@ -30,6 +30,7 @@ struct maze_solution
 {
     maze_boxes path;
     maze_boxes expanded;
+    maze_boxes incons;
 };
 
 typedef std::vector<maze_solution> arastar_solution;
@@ -53,7 +54,7 @@ public:
 
     maze_solution maze_astar(maze_boxes obs, float eps = 1.f);
     arastar_solution maze_arastar(maze_boxes obs,
-                                  float e_start = 5.f);
+                                  float e_start = 2.5f);
 
 private:
     Search();
@@ -72,6 +73,7 @@ private:
     // These things should be cleared out every
     // search round.
     arastar_solution solutions;
+    maze_boxes best_path;
     std::set<box> CLOSED;
     std::set<node> INCONS;
     std::priority_queue<node> OPEN;
