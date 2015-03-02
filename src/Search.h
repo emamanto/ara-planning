@@ -53,7 +53,7 @@ public:
 
     maze_solution maze_astar(maze_boxes obs, float eps = 1.f);
     arastar_solution maze_arastar(maze_boxes obs,
-                                  float e_start = 2.f);
+                                  float e_start = 5.f);
 
 private:
     Search();
@@ -64,6 +64,7 @@ private:
     bool obstacle(box cell);
     float fvalue(box state);
     void improve_path();
+    float min_gh();
 
     static Search* instance;
     box goal;
@@ -72,7 +73,7 @@ private:
     // search round.
     arastar_solution solutions;
     std::set<box> CLOSED;
-    std::set<box> INCONS;
+    std::set<node> INCONS;
     std::priority_queue<node> OPEN;
     std::map<box, int> costs;
     maze_boxes obstacles;

@@ -111,6 +111,55 @@ arastar_solution Search::maze_arastar(maze_boxes obs, float e_start)
 
     improve_path();
 
+    // g(goal)/min{s E OPEN U INCONS} (g+h)
+    float alt = costs[goal] / min_gh();
+
+    float e_prime = epsilon;
+    if (alt < e_prime) e_prime = alt;
+    std::cout << "The first solution is suboptimal by: " <<
+        e_prime << std::endl;
+
+    while (e_prime > 1.f)
+    {
+        // decrease epsilon
+        epsilon = epsilon - 0.5;
+
+        // Move states from INCONS to OPEN
+        for (std::set<node>::iterator i = INCONS.begin();
+         i != INCONS.end(); i++)
+        {
+            OPEN.push(*i);
+        }
+        INCONS.clear();
+
+        // Update priorities of all states in OPEN
+        std::vector<node> OPEN_update;
+        while (!OPEN.empty())
+        {
+            OPEN_update.push_back(OPEN.top());
+            OPEN.pop();
+        }
+        for (std::vector<node>::iterator o = OPEN_update.begin();
+             o != OPEN_update.end(); o++)
+        {
+            o->f_value = fvalue(o->state);
+            OPEN.push(*o);
+        }
+
+        // Closed = empty
+        CLOSED.clear();
+
+        improve_path();
+
+        // g(goal)/min{s E OPEN U INCONS} (g+h)
+        float alt = costs[goal] / min_gh();
+
+        e_prime = epsilon;
+        if (alt < e_prime) e_prime = alt;
+        std::cout << "Next solution is suboptimal by: " <<
+            e_prime << std::endl;
+    }
+
     epsilon = 1.f;
     return solutions;
 }
@@ -172,25 +221,25 @@ void Search::improve_path()
                      costs[s_prime] == -1)
                 {
                     costs[s_prime] = new_cost;
+                    node snode;
+                    snode.state = s_prime;
+                    snode.path = s.path;
+                    snode.path.push_back(s_prime);
+                    snode.f_value = fvalue(s_prime);
+                    if (s_prime.first == 5 &&
+                        s_prime.second == 6)
+                    {
+                        path_to_goal = snode.path;
+                    }
+
                     if (!CLOSED.count(s_prime))
                     {
                         // f(s') = g(s') + epsilon*heuristic(s')
-                        int h = Search::the_instance()->maze_heuristic(s_prime);
-                        node snode;
-                        snode.state = s_prime;
-                        snode.path = s.path;
-                        snode.path.push_back(s_prime);
-                        snode.f_value = fvalue(s_prime);
-                        if (s_prime.first == 5 &&
-                            s_prime.second == 6)
-                        {
-                            path_to_goal = snode.path;
-                        }
                         OPEN.push(snode);
                     }
                     else
                     {
-                        INCONS.insert(s_prime);
+                        INCONS.insert(snode);
                     }
                 }
             }
@@ -204,4 +253,32 @@ void Search::improve_path()
 float Search::fvalue(box state)
 {
     return (costs[state] + epsilon*(maze_heuristic(state)));
+}
+
+float Search::min_gh()
+{
+    // Min over s in OPEN, INCONS g(s) + h(s)
+    float min_g_plus_h = (costs[OPEN.top().state] +
+                          maze_heuristic(OPEN.top().state));
+    std::priority_queue<node> OPEN_copy(OPEN);
+    while (!OPEN_copy.empty())
+    {
+        OPEN_copy.pop();
+        float g_h = (costs[OPEN_copy.top().state] +
+                     maze_heuristic(OPEN_copy.top().state));
+        if ( g_h < min_g_plus_h)
+        {
+            min_g_plus_h = g_h;
+        }
+    }
+    for (std::set<node>::iterator i = INCONS.begin();
+         i != INCONS.end(); i++)
+    {
+        float g_h = (costs[i->state] + maze_heuristic(i->state));
+        if ( g_h < min_g_plus_h)
+        {
+            min_g_plus_h = g_h;
+        }
+    }
+    return min_g_plus_h;
 }
