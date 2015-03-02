@@ -140,7 +140,6 @@ arastar_solution Search::ARAStarUnifier::run()
         epsilon*Search::the_instance()->maze_heuristic(start);
     OPEN.push(start_node);
 
-    std::cout << "Calling improve_path" << std::endl;
     improve_path();
 
     return solutions;
@@ -151,18 +150,15 @@ void Search::ARAStarUnifier::improve_path()
     maze_solution sol;
     maze_boxes path_to_goal;
 
-    std::cout << "Starting improve_path loop" << std::endl;
-    while(fvalue(goal) > OPEN.top().f_value || costs[goal] == -1
-          && !OPEN.empty())
+    while(fvalue(goal) > OPEN.top().f_value || costs[goal] == -1)
     {
+        std::cout << "Goal fval: " << fvalue(goal) <<
+            " Min fval: " << OPEN.top().f_value << std::endl;
+
         // remove s with smallest fvalue from OPEN
-        std::cout << "About to pop" << std::endl;
         node s = OPEN.top();
-        std::cout << "Pulled s" << std::endl;
         OPEN.pop();
-        std::cout << "Popped top" << std::endl;
         sol.expanded.push_back(s.state);
-        std::cout << "Popped state to expand" << std::endl;
 
         // CLOSED = CLOSED U s
         CLOSED.insert(s.state);
@@ -186,7 +182,8 @@ void Search::ARAStarUnifier::improve_path()
                 // if s' not visited before (g(s') = inf)
                 // or g(s') > g(s) + c(s, s')
                 if ( !costs.count(next) ||
-                     costs[next] > new_cost)
+                     costs[next] > new_cost ||
+                     costs[next] == -1)
                 {
                     costs[next] = new_cost;
                     if (!CLOSED.count(next))
@@ -214,6 +211,8 @@ void Search::ARAStarUnifier::improve_path()
     }
 
     sol.path = path_to_goal;
+    std::cout << "Size of path: " << sol.path.size() << std::endl;
+    std::cout << "Expanded: " << sol.expanded.size() << std::endl;
     solutions.push_back(sol);
 }
 
