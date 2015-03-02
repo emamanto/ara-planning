@@ -53,7 +53,7 @@ public:
 
     maze_solution maze_astar(maze_boxes obs, float eps = 1.f);
     arastar_solution maze_arastar(maze_boxes obs,
-                                  float e_start = 5.f);
+                                  float e_start = 2.f);
 
 private:
     Search();
@@ -61,7 +61,7 @@ private:
     Search& operator=(Search const&) {};
 
     int maze_heuristic(box cell);
-    bool obstacle(box cell, maze_boxes obs);
+    bool obstacle(box cell);
     float fvalue(box state);
     void improve_path();
 

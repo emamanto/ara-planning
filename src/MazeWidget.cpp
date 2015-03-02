@@ -34,11 +34,12 @@ MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
     obstacles.push_back(make_pair(4,5));
     obstacles.push_back(make_pair(4,6));
 
-    solution = Search::the_instance()->maze_astar(obstacles);
+    solutions = Search::the_instance()->maze_arastar(obstacles);
 }
 
 void MazeWidget::paintEvent(QPaintEvent*)
 {
+    maze_solution solution = solutions.at(0);
     QPainter painter(this);
 
     for(maze_boxes::iterator i = solution.expanded.begin();

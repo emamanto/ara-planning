@@ -17,6 +17,7 @@ Search::Search() : goal(std::make_pair(5, 6)),
 
 maze_solution Search::maze_astar(maze_boxes obs, float eps)
 {
+    obstacles = obs;
     epsilon = eps;
     OPEN = std::priority_queue<node>();
     maze_solution sol;
@@ -59,7 +60,7 @@ maze_solution Search::maze_astar(maze_boxes obs, float eps)
                 if (s_prime.first < 0 || s_prime.first > 5 ||
                     s_prime.second < 0 || s_prime.second > 6)
                     continue;
-                if (obstacle(s_prime, obs)) continue;
+                if (obstacle(s_prime)) continue;
 
                 int new_cost = costs[s.state] + 1;
 
@@ -86,26 +87,31 @@ maze_solution Search::maze_astar(maze_boxes obs, float eps)
 
     sol.path = final_path;
     epsilon = 1.f;
+    obstacles.clear();
     return sol;
 }
 
 arastar_solution Search::maze_arastar(maze_boxes obs, float e_start)
 {
+    OPEN = std::priority_queue<node>();
+    CLOSED.clear();
+    INCONS.clear();
+    obstacles = obs;
+    epsilon = e_start;
     box start = std::make_pair(0, 0);
 
     // g(goal) = inf; g(start) = 0;
     costs[goal] = -1;
     costs[start] = 0;
 
-    // OPEN/CLOSED/INCONS already initialized
     node start_node;
     start_node.state = start;
-    start_node.f_value =
-        epsilon*Search::the_instance()->maze_heuristic(start);
+    start_node.f_value = maze_heuristic(start);
     OPEN.push(start_node);
 
     improve_path();
 
+    epsilon = 1.f;
     return solutions;
 }
 
@@ -117,10 +123,10 @@ int Search::maze_heuristic(box cell)
     return xdist;
 }
 
-bool Search::obstacle(box cell, maze_boxes obs)
+bool Search::obstacle(box cell)
 {
-    for (maze_boxes::iterator o = obs.begin(); o != obs.end();
-        o++)
+    for (maze_boxes::iterator o = obstacles.begin();
+         o != obstacles.end(); o++)
     {
         if (o->first == cell.first && o->second == cell.second)
             return true;
@@ -135,58 +141,56 @@ void Search::improve_path()
 
     while(fvalue(goal) > OPEN.top().f_value || costs[goal] == -1)
     {
-        std::cout << "Goal fval: " << fvalue(goal) <<
-            " Min fval: " << OPEN.top().f_value << std::endl;
-
         // remove s with smallest fvalue from OPEN
-        node s = OPEN.top();
+        node s(OPEN.top());
         OPEN.pop();
         sol.expanded.push_back(s.state);
 
         // CLOSED = CLOSED U s
         CLOSED.insert(s.state);
 
-        box next;
+        box s_prime;
         // for each successor s' of s
         for (int i = -1; i <= 1; i++)
         {
             for (int j = -1; j <= 1; j++)
             {
                 if (i==0 && j==0) continue;
-                next = std::make_pair(s.state.first + i,
+                s_prime = std::make_pair(s.state.first + i,
                                       s.state.second + j);
-                if (next.first < 0 || next.first > 5 ||
-                    next.second < 0 || next.second > 6)
+                if (s_prime.first < 0 || s_prime.first > 5 ||
+                    s_prime.second < 0 || s_prime.second > 6)
                     continue;
-                if (Search::the_instance()->obstacle(next, obstacles)) continue;
+                if (obstacle(s_prime)) continue;
 
                 int new_cost = costs[s.state] + 1;
 
                 // if s' not visited before (g(s') = inf)
                 // or g(s') > g(s) + c(s, s')
-                if ( !costs.count(next) ||
-                     costs[next] > new_cost ||
-                     costs[next] == -1)
+                if ( !costs.count(s_prime) ||
+                     costs[s_prime] > new_cost ||
+                     costs[s_prime] == -1)
                 {
-                    costs[next] = new_cost;
-                    if (!CLOSED.count(next))
+                    costs[s_prime] = new_cost;
+                    if (!CLOSED.count(s_prime))
                     {
                         // f(s') = g(s') + epsilon*heuristic(s')
-                        int h = Search::the_instance()->maze_heuristic(next);
-                        node successor;
-                        successor.state = next;
-                        successor.path = s.path;
-                        successor.path.push_back(next);
-                        successor.f_value = new_cost + epsilon*h;
-                        if (next.first == 5 && next.second == 6)
+                        int h = Search::the_instance()->maze_heuristic(s_prime);
+                        node snode;
+                        snode.state = s_prime;
+                        snode.path = s.path;
+                        snode.path.push_back(s_prime);
+                        snode.f_value = fvalue(s_prime);
+                        if (s_prime.first == 5 &&
+                            s_prime.second == 6)
                         {
-                            path_to_goal = successor.path;
+                            path_to_goal = snode.path;
                         }
-                        OPEN.push(successor);
+                        OPEN.push(snode);
                     }
                     else
                     {
-                        INCONS.insert(next);
+                        INCONS.insert(s_prime);
                     }
                 }
             }
@@ -194,8 +198,6 @@ void Search::improve_path()
     }
 
     sol.path = path_to_goal;
-    std::cout << "Size of path: " << sol.path.size() << std::endl;
-    std::cout << "Expanded: " << sol.expanded.size() << std::endl;
     solutions.push_back(sol);
 }
 
