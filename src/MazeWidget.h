@@ -17,4 +17,5 @@ private:
     void paintEvent(QPaintEvent*);
     maze_boxes obstacles;
     arastar_solution solutions;
+    std::vector<float> desired_epsilons;
 };

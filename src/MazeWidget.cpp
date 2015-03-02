@@ -36,9 +36,14 @@ MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
     obstacles.push_back(make_pair(4,6));
 
 #ifdef ASTAR
-    for (float e = EPSILON_START; e >= 1.f; e-=0.5)
+    desired_epsilons.push_back(3.5);
+    desired_epsilons.push_back(1.5);
+    desired_epsilons.push_back(1.0);
+
+    for (std::vector<float>::iterator e = desired_epsilons.begin();
+         e != desired_epsilons.end(); e++)
     {
-        solutions.push_back(Search::the_instance()->maze_astar(obstacles, e));
+        solutions.push_back(Search::the_instance()->maze_astar(obstacles, *e));
     }
 #else
     solutions = Search::the_instance()->maze_arastar(obstacles,
@@ -46,7 +51,7 @@ MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
 #endif
 
 #ifdef ASTAR
-    int num_valid_iterations = 2*EPSILON_START - 1;
+    int num_valid_iterations = solutions.size();
 #else
     int num_valid_iterations = 0;
     for (arastar_solution::iterator s = solutions.begin();
@@ -67,7 +72,11 @@ void MazeWidget::paintEvent(QPaintEvent*)
 
     for (int s = 0; s < solutions.size(); s++)
     {
+#ifndef ASTAR
         epsilon -= 0.5;
+#else
+        epsilon = desired_epsilons.at(s);
+#endif
         if (solutions.at(s).expanded.empty()) continue;
         QPen p = QPen(Qt::black);
         p.setWidth(3);
