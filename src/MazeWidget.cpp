@@ -1,10 +1,12 @@
 #include "MazeWidget.h"
+#include <iostream>
 
 using namespace std;
 
 #define BOX_WIDTH 21
 #define BOX_HEIGHT 18
-#define EPSILON 1.f
+#define EPSILON_START 3.5f
+//#define ASTAR
 
 MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
 {
@@ -33,20 +35,42 @@ MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
     obstacles.push_back(make_pair(4,5));
     obstacles.push_back(make_pair(4,6));
 
-    solutions = Search::the_instance()->maze_arastar(obstacles);
-    int num_iterations = solutions.size();
-    setFixedSize(num_iterations*(6*BOX_WIDTH + 10),
+#ifdef ASTAR
+    for (float e = EPSILON_START; e >= 1.f; e-=0.5)
+    {
+        solutions.push_back(Search::the_instance()->maze_astar(obstacles, e));
+    }
+#else
+    solutions = Search::the_instance()->maze_arastar(obstacles,
+                                                     EPSILON_START);
+#endif
+
+#ifdef ASTAR
+    int num_valid_iterations = 2*EPSILON_START - 1;
+#else
+    int num_valid_iterations = 0;
+    for (arastar_solution::iterator s = solutions.begin();
+         s!= solutions.end(); s++)
+    {
+        if (!s->expanded.empty()) num_valid_iterations++;
+    }
+#endif
+
+    setFixedSize(num_valid_iterations*(6*BOX_WIDTH + 10),
                  7*BOX_HEIGHT + 50);
 }
 
 void MazeWidget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
+    float epsilon = EPSILON_START + 0.5;
 
     for (int s = 0; s < solutions.size(); s++)
     {
+        epsilon -= 0.5;
+        if (solutions.at(s).expanded.empty()) continue;
         QPen p = QPen(Qt::black);
-        p.setWidth(1);
+        p.setWidth(3);
         painter.setPen(p);
 
         maze_solution solution = solutions.at(s);
@@ -54,8 +78,20 @@ void MazeWidget::paintEvent(QPaintEvent*)
             i != solution.expanded.end(); i++)
         {
             painter.fillRect(i->first*BOX_WIDTH, i->second*BOX_HEIGHT,
-                             BOX_WIDTH, BOX_HEIGHT, Qt::lightGray);
+                             BOX_WIDTH, BOX_HEIGHT, Qt::darkGray);
         }
+
+#ifndef ASTAR
+        for(maze_boxes::iterator i = solution.incons.begin();
+            i != solution.incons.end(); i++)
+        {
+            painter.drawPoint(i->first*BOX_WIDTH + BOX_WIDTH/2,
+                              i->second*BOX_HEIGHT + BOX_HEIGHT/2);
+        }
+#endif
+
+        p.setWidth(1);
+        painter.setPen(p);
 
         for (int i = 0; i <= 6*BOX_WIDTH; i+=BOX_WIDTH)
         {
@@ -67,7 +103,7 @@ void MazeWidget::paintEvent(QPaintEvent*)
         }
 
         QString n_ex = QString::number(solution.expanded.size());
-        QString e = QString::number(2.5-0.5*s);
+        QString e = QString::number(epsilon);
         painter.drawText(5, 8*BOX_HEIGHT + 5, QString("Expanded"));
         painter.drawText(100, 8*BOX_HEIGHT + 5, n_ex);
 

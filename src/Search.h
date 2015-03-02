@@ -54,7 +54,7 @@ public:
 
     maze_solution maze_astar(maze_boxes obs, float eps = 1.f);
     arastar_solution maze_arastar(maze_boxes obs,
-                                  float e_start = 2.5f);
+                                  float e_start = 5.f);
 
 private:
     Search();

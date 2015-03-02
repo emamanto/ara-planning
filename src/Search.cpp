@@ -20,6 +20,7 @@ maze_solution Search::maze_astar(maze_boxes obs, float eps)
     obstacles = obs;
     epsilon = eps;
     OPEN = std::priority_queue<node>();
+    costs.clear();
     maze_solution sol;
 
     // g(s) = 0
@@ -251,6 +252,19 @@ void Search::improve_path()
     {
         best_path = sol.path;
     }
+
+    for (std::set<node>::iterator i = INCONS.begin();
+         i != INCONS.end(); i++)
+    {
+        sol.incons.push_back(i->state);
+    }
+    std::priority_queue<node> cop(OPEN);
+    while(!cop.empty())
+    {
+        sol.incons.push_back(cop.top().state);
+        cop.pop();
+    }
+
     solutions.push_back(sol);
 }
 
