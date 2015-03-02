@@ -51,46 +51,30 @@ class Search
 public:
     static Search* the_instance();
 
-//    plan run_search(Arm start, target_t goal);
-//    float euclidean_heuristic(Arm& a, target_t goal);
-//    float euclidean_heuristic(float x, float y, target_t goal);
-    maze_solution maze_astar(maze_boxes obs, float epsilon = 1.f);
+    maze_solution maze_astar(maze_boxes obs, float eps = 1.f);
     arastar_solution maze_arastar(maze_boxes obs,
                                   float e_start = 5.f);
 
 private:
-    Search() {};
+    Search();
     Search(Search const&) {};
     Search& operator=(Search const&) {};
 
     int maze_heuristic(box cell);
     bool obstacle(box cell, maze_boxes obs);
-
-//    bool is_in_goal(float ee_x, float ee_y, target_t goal);
-//    float cost(Arm& start, pose from, pose to);
-//    plan astar(Arm start, target_t target, float epsilon = 1.f);
+    float fvalue(box state);
+    void improve_path();
 
     static Search* instance;
+    box goal;
 
-    class ARAStarUnifier
-    {
-    public:
-        ARAStarUnifier(maze_boxes obs, float e_start) :
-            obstacles(obs),
-            epsilon(e_start) { goal = std::make_pair(5, 6); }
-        arastar_solution run();
-
-    private:
-        void improve_path();
-        float fvalue(box state);
-        arastar_solution solutions;
-
-        std::set<box> CLOSED;
-        std::set<box> INCONS;
-        std::priority_queue<node> OPEN;
-        std::map<box, int> costs;
-        maze_boxes obstacles;
-        float epsilon;
-        box goal;
-    };
+    // These things should be cleared out every
+    // search round.
+    arastar_solution solutions;
+    std::set<box> CLOSED;
+    std::set<box> INCONS;
+    std::priority_queue<node> OPEN;
+    std::map<box, int> costs;
+    maze_boxes obstacles;
+    float epsilon;
 };

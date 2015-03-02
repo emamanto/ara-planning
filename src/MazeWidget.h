@@ -16,5 +16,5 @@ public:
 private:
     void paintEvent(QPaintEvent*);
     maze_boxes obstacles;
-    arastar_solution solutions;
+    maze_solution solution;
 };

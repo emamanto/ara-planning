@@ -4,9 +4,9 @@ using namespace std;
 
 #define BOX_WIDTH 21
 #define BOX_HEIGHT 18
-#define EPSILON 1
+#define EPSILON 1.f
 
-MazeWidget::MazeWidget(QWidget* parent)
+MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
 {
     setFixedSize(6*BOX_WIDTH, 7*BOX_HEIGHT + 50);
     setWindowTitle("aMaze");
@@ -34,13 +34,12 @@ MazeWidget::MazeWidget(QWidget* parent)
     obstacles.push_back(make_pair(4,5));
     obstacles.push_back(make_pair(4,6));
 
-    solutions = Search::the_instance()->maze_arastar(obstacles);
+    solution = Search::the_instance()->maze_astar(obstacles);
 }
 
 void MazeWidget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
-    maze_solution solution = solutions.at(0);
 
     for(maze_boxes::iterator i = solution.expanded.begin();
             i != solution.expanded.end(); i++)
