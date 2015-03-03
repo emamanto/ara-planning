@@ -64,6 +64,12 @@ bool box::valid() const
     return true;
 }
 
+bool box::is_goal() const
+{
+    if (x == 5 && y == 6) return true;
+    return false;
+}
+
 float box::heuristic(box goal)
 {
     int xdiff = std::abs(goal.x - x);

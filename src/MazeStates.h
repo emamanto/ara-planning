@@ -14,6 +14,7 @@ public:
     bool operator > (const box& other) const;
     std::map<box, float> children();
     bool valid() const;
+    bool is_goal() const;
     float heuristic(box goal);
     void print() const;
 };

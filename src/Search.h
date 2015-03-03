@@ -68,7 +68,7 @@ public:
             search_node<S> s(OPEN.top());
             OPEN.pop();
 
-            if (s.state == end)
+            if (s.state.is_goal())
             {
                 sol.path = s.path;
                 break;
@@ -233,7 +233,7 @@ private:
                     nnode.path.push_back(i->first);
                     nnode.f_value = fvalue(i->first);
 
-                    if (nnode.state == goal)
+                    if (nnode.state.is_goal())
                     {
                         result.path = nnode.path;
                     }
