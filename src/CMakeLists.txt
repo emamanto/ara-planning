@@ -16,7 +16,7 @@ set( srcs main.cpp
   #SearchWidget.cpp
   #Search.cpp
   #SearchControlPanel.cpp
-  MazeSearch.cpp
+  MazeStates.cpp
   MazeWidget.cpp )
 
 set( headers #ArmSim.h

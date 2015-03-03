@@ -1,6 +1,7 @@
-#include "MazeSearch.h"
+#include "MazeStates.h"
 #include <cmath>
 #include <iostream>
+#include <utility>
 
 bool box::operator == (const box& other) const
 {
