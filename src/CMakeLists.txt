@@ -14,8 +14,9 @@ set( srcs main.cpp
   Arm.cpp
   #ArmControlPanel.cpp
   #SearchWidget.cpp
-  Search.cpp
+  #Search.cpp
   #SearchControlPanel.cpp
+  MazeSearch.cpp
   MazeWidget.cpp )
 
 set( headers #ArmSim.h

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Search.h"
+#include "MazeSearch.h"
 
 #include <QWidget>
 #include <QPainter>
@@ -15,7 +15,6 @@ public:
 
 private:
     void paintEvent(QPaintEvent*);
-    maze_boxes obstacles;
-    arastar_solution solutions;
+    search_result<box> solution;
     std::vector<float> desired_epsilons;
 };
