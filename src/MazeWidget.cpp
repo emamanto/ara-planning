@@ -6,7 +6,7 @@ using namespace std;
 #define BOX_WIDTH 21
 #define BOX_HEIGHT 18
 #define EPSILON_START 3.5f
-#define ASTAR
+//#define ASTAR
 
 MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
 {
