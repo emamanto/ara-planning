@@ -11,11 +11,12 @@ using namespace std;
 MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
 {
     setWindowTitle("aMaze");
+    Search<box> s;
+
+#ifdef ASTAR
     desired_epsilons.push_back(3.5);
     desired_epsilons.push_back(1.5);
     desired_epsilons.push_back(1.0);
-
-    Search<box> s;
 
     for (std::vector<float>::iterator e = desired_epsilons.begin();
          e != desired_epsilons.end(); e++)
@@ -23,9 +24,21 @@ MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
         solutions.push_back(s.astar(box(0, 0),
                                     box(5, 6), *e));
     }
-    int num_valid_iterations = desired_epsilons.size();
+#else
+    float epsilon = 3.5;
+    std::vector<search_result<box> > all_solutions = s.arastar(box(0, 0), box(5, 6), epsilon);
 
-    setFixedSize(num_valid_iterations*(6*BOX_WIDTH + 10),
+    epsilon += 0.5;
+    for (std::vector<search_result<box> >::iterator s = all_solutions.begin(); s != all_solutions.end(); s++)
+    {
+        epsilon -= 0.5;
+        if (s->expanded.size() == 0) continue;
+        solutions.push_back(*s);
+        desired_epsilons.push_back(epsilon);
+    }
+#endif
+
+    setFixedSize(desired_epsilons.size()*(6*BOX_WIDTH + 10),
                  7*BOX_HEIGHT + 50);
 }
 
@@ -50,11 +63,11 @@ void MazeWidget::paintEvent(QPaintEvent*)
          }
 
 #ifndef ASTAR
-         for(maze_boxes::iterator i = solution.incons.begin();
-             i != solution.incons.end(); i++)
+         for(std::set<box>::iterator i = solution.inconsistent.begin();
+             i != solution.inconsistent.end(); i++)
          {
-             painter.drawPoint(i->first*BOX_WIDTH + BOX_WIDTH/2,
-                               i->second*BOX_HEIGHT + BOX_HEIGHT/2);
+             painter.drawPoint(i->x*BOX_WIDTH + BOX_WIDTH/2,
+                               i->y*BOX_HEIGHT + BOX_HEIGHT/2);
          }
 #endif
 
