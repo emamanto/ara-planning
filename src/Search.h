@@ -40,9 +40,10 @@ public:
     Search() {};
 
     search_result<S, P> astar(S begin,
-                              std::vector<P> primitives,
+                              std::vector<P> prs,
                               float eps = 1.f)
     {
+        primitives = prs;
         epsilon = eps;
         OPEN = std::priority_queue<search_node<S, P> >();
         costs.clear();
@@ -106,10 +107,11 @@ public:
     }
 
     std::vector<search_result<S, P> > arastar(S begin,
-                                           S end,
-                                           float e_start = 5.f)
+                                              std::vector<P> prs,
+                                              float e_start = 5.f)
     {
-        goal = end;
+        primitives = prs;
+        goal_found = false;
         OPEN = std::priority_queue<search_node<S, P> >();
         CLOSED.clear();
         INCONS.clear();
@@ -117,7 +119,6 @@ public:
         epsilon = e_start;
 
         // g(goal) = inf; g(start) = 0;
-        costs[goal] = -1;
         costs[begin] = 0;
 
         search_node<S, P> snode;
@@ -194,7 +195,7 @@ private:
         search_result<S, P> result;
         result.path = best_path;
 
-        while(fvalue(goal) > OPEN.top().f_value || costs[goal] == -1)
+        while(!goal_found || fvalue(goal) > OPEN.top().f_value)
         {
             // remove s with smallest fvalue from OPEN
             search_node<S, P> s(OPEN.top());
@@ -204,38 +205,35 @@ private:
             // CLOSED = CLOSED U s
             CLOSED.insert(s.state);
 
-
-            std::map<S, float> next = s.state.children();
-
-            for (typename std::map<S, float>::iterator i = next.begin();
-                 i != next.end(); i++)
+            for (typename std::vector<P>::iterator p = primitives.begin();
+                 p != primitives.end(); p++)
             {
-                //i->first.print();
-                if (!i->first.valid()) continue;
-
-                float new_cost = costs[s.state] + i->second;
+                S child = s.state.apply(*p);
+                if (!child.valid()) continue;
+                float new_cost = costs[s.state] + s.state.cost(*p);
 
                 // if s' not visited before (g(s') = inf)
                 // or g(s') > g(s) + c(s, s')
-                if ( !costs.count(i->first) ||
-                     costs[i->first] > new_cost ||
-                     costs[i->first] == -1)
+                if ( !costs.count(child) ||
+                     costs[child] > new_cost)
                 {
                     // g(s') = g(s) + c(s, s')
-                    costs[i->first] = new_cost;
+                    costs[child] = new_cost;
 
                     search_node<S, P> nnode;
-                    nnode.state = i->first;
+                    nnode.state = child;
                     nnode.path = s.path;
-                    nnode.path.push_back(i->first);
-                    nnode.f_value = fvalue(i->first);
+                    nnode.path.push_back(*p);
+                    nnode.f_value = fvalue(child);
 
                     if (nnode.state.is_goal())
                     {
                         result.path = nnode.path;
+                        goal = nnode.state;
+                        goal_found = true;
                     }
 
-                    if (!CLOSED.count(i->first))
+                    if (!CLOSED.count(child))
                     {
                         // f(s') = g(s') + epsilon*heuristic(s')
                         OPEN.push(nnode);
@@ -298,7 +296,9 @@ private:
 
     // These things should be cleared out every
     // search round.
+    bool goal_found;
     S goal;
+    std::vector<P> primitives;
     std::vector<search_result<S, P> >solutions;
     std::vector<P> best_path;
     std::set<S> CLOSED;

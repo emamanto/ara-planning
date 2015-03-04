@@ -15,7 +15,7 @@ public:
     bool operator == (const box& other) const;
     bool operator < (const box& other) const;
     bool operator > (const box& other) const;
-    std::map<box, float> children();
+
     box apply(primitive p);
     float cost(primitive p);
     bool valid() const;

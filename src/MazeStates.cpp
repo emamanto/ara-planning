@@ -19,21 +19,6 @@ bool box::operator > (const box& other) const
     return std::make_pair(x, y) > std::make_pair(other.x, other.y);
 }
 
-std::map<box, float> box::children()
-{
-    std::map<box, float> cs;
-    for (int i = -1; i <= 1; i++)
-    {
-        for (int j = -1; j <= 1; j++)
-        {
-            if (i == 0 && j == 0) continue;
-            box c(x + i, y + j);
-            cs[c] = 1.f;
-        }
-    }
-    return cs;
-}
-
 box box::apply(primitive p)
 {
     return box(x + p.first, y + p.second);
