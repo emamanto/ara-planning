@@ -175,20 +175,6 @@ pose Arm::apply_at(action a, pose start)
     return end;
 }
 
-action Arm::diff(pose before, pose after)
-{
-    action a(0, 0);
-    for (int i = 0; i < num_joints; i++)
-    {
-        if (before.at(i) != after.at(i))
-        {
-            a.joint = i;
-            a.change = (before.at(i) - after.at(i));
-        }
-    }
-    return a;
-}
-
 std::vector<action> Arm::get_primitives()
 {
     return primitives;

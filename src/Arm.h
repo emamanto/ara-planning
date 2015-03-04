@@ -54,7 +54,6 @@ public:
     bool apply(action a);
     bool apply(plan p);
     pose apply_at(action a, pose start);
-    action diff(pose before, pose after);
 
     std::vector<action> get_primitives();
     void set_primitive_change(float c);
