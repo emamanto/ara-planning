@@ -162,11 +162,16 @@ void Visualizer::heuristicOn(bool on)
 void Visualizer::newPlan()
 {
     latest_plan_start = arm->get_joints();
-    search_result<arm_state, action> res = search.astar(arm_state(arm->get_joints()),
+    // search_result<arm_state, action> res = search.astar(arm_state(arm->get_joints()),
+    //                                                     arm->get_primitives(),
+    //                                                     5.f);
+
+    std::vector<search_result<arm_state, action> > res = search.arastar(arm_state(arm->get_joints()),
                                                         arm->get_primitives(),
                                                         5.f);
 
-    latest_plan = res.path;
+    search_result<arm_state, action> final = res.at(res.size() - 1);
+    latest_plan = final.path;
     arm->apply(latest_plan);
     emit(synchronizeArmControls());
     draw_plan = true;

@@ -12,6 +12,8 @@ struct action
 
     action(int j, float c): joint(j), change(c) {}
     action(): joint(0), change(0) {}
+    bool operator == (const action& other) const
+    { return (joint == other.joint && change == other.change); }
     bool operator < (const action& other) const
     {return joint > other.joint; }
     bool operator > (const action& other) const
