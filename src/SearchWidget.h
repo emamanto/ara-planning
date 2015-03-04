@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Search.h"
+#include "ArmStates.h"
 #include "ArmControlPanel.h"
 #include "SearchControlPanel.h"
 #include "Visualizer.h"
@@ -12,8 +14,9 @@ public:
     SearchWidget(QWidget* parent = 0);
 
 private:
-    Arm arm;
-    target_t goal;
+    Arm* arm;
+    target* goal;
+    Search<arm_state> search;
     ArmControlPanel armControls;
     SearchControlPanel searchControls;
     Visualizer vis;

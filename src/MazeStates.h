@@ -15,6 +15,6 @@ public:
     std::map<box, float> children();
     bool valid() const;
     bool is_goal() const;
-    float heuristic(box goal);
+    float heuristic();
     void print() const;
 };

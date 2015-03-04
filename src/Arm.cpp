@@ -1,36 +1,26 @@
 #include "Arm.h"
 #include <math.h>
+#include <iostream>
 
 #define DEG_TO_RAD M_PI/180.f
 
-Arm::Arm(int num_joints) : num_joints(num_joints),
-                           component_lengths(num_joints,
-                                             ARM_LENGTH/num_joints),
-                           current_angles(num_joints, 0.f),
-                           max_angles(num_joints, 180.f),
-                           min_angles(num_joints, -180.f)
+Arm* Arm::instance = 0;
+
+Arm* Arm::the_instance()
 {
-    min_angles.at(0) = 0.f;
+    if (!instance) instance = new Arm;
+    return instance;
 }
 
-Arm::Arm(length_config components) : num_joints(components.size()),
-                                     current_angles(num_joints, 0.f),
-                                     max_angles(num_joints, 180.f),
-                                     min_angles(num_joints, -180.f)
+Arm::Arm() : num_joints(3),
+             component_lengths(num_joints,
+                               ARM_LENGTH/num_joints),
+             current_angles(num_joints, 0.f),
+             max_angles(num_joints, 180.f),
+             min_angles(num_joints, -180.f)
 {
     min_angles.at(0) = 0.f;
-    float sum = 0;
-    for(length_config::iterator i = components.begin();
-        i != components.end(); i++)
-    {
-        sum += *i;
-    }
-
-    for(length_config::iterator i = components.begin();
-        i != components.end(); i++)
-    {
-        component_lengths.push_back((*i/sum)*ARM_LENGTH);
-    }
+    set_primitive_change(10.f);
 }
 
 float Arm::get_joint(int joint_number)
@@ -75,12 +65,26 @@ pose Arm::get_min_angles()
 
 bool Arm::set_joints(pose angles)
 {
+    if (angles.size() != num_joints)
+    {
+        std::cout << "ARM ERROR: Wrong number of joints."
+                  << std::endl;
+        return false;
+    }
     current_angles = angles;
+    return true;
 }
 
 bool Arm::set_joint(int joint_number, float angle)
 {
+    if (joint_number < 0 || joint_number >= num_joints)
+    {
+        std::cout << "ARM ERROR: Invalid joint number."
+                  << std::endl;
+        return false;
+    }
     current_angles.at(joint_number) = angle;
+    return true;
 }
 
 float Arm::get_ee_x_at(pose position)
@@ -171,3 +175,31 @@ pose Arm::apply_at(action a, pose start)
     return end;
 }
 
+action Arm::diff(pose before, pose after)
+{
+    action a(0, 0);
+    for (int i = 0; i < num_joints; i++)
+    {
+        if (before.at(i) != after.at(i))
+        {
+            a.joint = i;
+            a.change = (after.at(i) - before.at(i));
+        }
+    }
+    return a;
+}
+
+std::vector<action> Arm::get_primitives()
+{
+    return primitives;
+}
+
+void Arm::set_primitive_change(float c)
+{
+    primitives.clear();
+    for (int i = 0; i < num_joints; i++)
+    {
+        primitives.push_back(action(i, c));
+        primitives.push_back(action(i, -c));
+    }
+}

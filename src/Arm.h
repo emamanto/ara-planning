@@ -25,8 +25,7 @@ typedef std::vector<action> plan;
 class Arm
 {
 public:
-    Arm(int num_joints);
-    Arm(length_config components);
+    static Arm* the_instance();
 
     int get_num_joints() {return num_joints;}
     float get_joint(int joint_number);
@@ -53,11 +52,21 @@ public:
     bool apply(action a);
     bool apply(plan p);
     pose apply_at(action a, pose start);
+    action diff(pose before, pose after);
+
+    std::vector<action> get_primitives();
+    void set_primitive_change(float c);
 
 private:
+    Arm();
+    Arm(Arm const&) {};
+    Arm& operator=(Arm const&) {};
+    static Arm* instance;
+
     int num_joints;
     length_config component_lengths;
     pose current_angles;
     pose max_angles;
     pose min_angles;
+    std::vector<action> primitives;
 };

@@ -1,6 +1,6 @@
 #include "SearchControlPanel.h"
 
-SearchControlPanel::SearchControlPanel(target_t& goal,
+SearchControlPanel::SearchControlPanel(target* goal,
                                        QWidget* parent) :
     QWidget(parent),
     goal(goal)
@@ -11,7 +11,7 @@ SearchControlPanel::SearchControlPanel(target_t& goal,
     xbox = new QSpinBox(this);
     xbox->setRange(-ARM_LENGTH, ARM_LENGTH);
     xbox->setSingleStep(10);
-    xbox->setValue(goal.x);
+    xbox->setValue(goal->x);
     layout->addWidget(xlabel, 0, 0);
     layout->addWidget(xbox, 0, 1);
 
@@ -33,7 +33,7 @@ SearchControlPanel::SearchControlPanel(target_t& goal,
     ybox = new QSpinBox(this);
     ybox->setRange(0, ARM_LENGTH);
     ybox->setSingleStep(10);
-    ybox->setValue(goal.y);
+    ybox->setValue(goal->y);
     layout->addWidget(ylabel, 2, 0);
     layout->addWidget(ybox, 2, 1);
 
@@ -70,10 +70,10 @@ SearchControlPanel::SearchControlPanel(target_t& goal,
 
 void SearchControlPanel::updateTarget()
 {
-    goal.x = xbox->value();
-    goal.y = ybox->value();
-    goal.err_x = xerrbox->value();
-    goal.err_y = yerrbox->value();
+    goal->x = xbox->value();
+    goal->y = ybox->value();
+    goal->err_x = xerrbox->value();
+    goal->err_y = yerrbox->value();
     emit(redrawTargetInfo());
 }
 

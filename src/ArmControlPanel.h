@@ -12,7 +12,7 @@ class ArmControlPanel : public QWidget
 Q_OBJECT
 
 public:
-    ArmControlPanel(Arm& arm, QWidget* parent = 0);
+    ArmControlPanel(Arm* arm, QWidget* parent = 0);
 
 signals:
     void redrawArm();
@@ -24,6 +24,6 @@ private slots:
     void updateArm();
 
 private:
-    Arm& arm;
+    Arm* arm;
     std::map<int, QSpinBox*> jointMap;
 };

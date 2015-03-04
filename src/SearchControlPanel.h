@@ -6,14 +6,14 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QCheckBox>
-#include "Search.h"
+#include "ArmStates.h"
 
 class SearchControlPanel : public QWidget
 {
 Q_OBJECT
 
 public:
-    SearchControlPanel(target_t& goal, QWidget* parent = 0);
+    SearchControlPanel(target* goal, QWidget* parent = 0);
 
 signals:
     void redrawTargetInfo();
@@ -28,7 +28,7 @@ private slots:
     void clearSearch();
 
 private:
-    target_t& goal;
+    target* goal;
     QSpinBox* xbox;
     QSpinBox* xerrbox;
     QSpinBox* ybox;

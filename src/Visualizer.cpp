@@ -1,10 +1,12 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(Arm& arm, target_t& goal, QWidget* parent) :
+Visualizer::Visualizer(Arm* arm, target* goal,
+                       Search<arm_state>& search, QWidget* parent) :
     QWidget(parent),
     arm(arm),
     goal(goal),
-    latest_plan_start(arm),
+    search(search),
+    latest_plan_start(arm->get_joints()),
     draw_heuristic(false),
     draw_plan(false)
 {
@@ -60,7 +62,7 @@ void Visualizer::paintEvent(QPaintEvent*)
     }
 }
 
-void Visualizer::drawArm(Arm& a, QPainter* p, bool main)
+void Visualizer::drawArm(Arm* a, QPainter* p, bool main)
 {
     p->setWorldTransform(arm_base);
 
@@ -69,12 +71,12 @@ void Visualizer::drawArm(Arm& a, QPainter* p, bool main)
     pen.setWidth(3);
     p->setPen(pen);
 
-    for (int i = 0; i < a.get_num_joints(); i++)
+    for (int i = 0; i < a->get_num_joints(); i++)
     {
-        p->rotate(a.get_joint(i));
+        p->rotate(a->get_joint(i));
         p->drawLine(0, 0, 0,
-                         (a.get_component(i)));
-        p->translate(0, (a.get_component(i)));
+                         (a->get_component(i)));
+        p->translate(0, (a->get_component(i)));
     }
 
     p->setWorldTransform(arm_base);
@@ -85,9 +87,9 @@ void Visualizer::drawArm(Arm& a, QPainter* p, bool main)
     pen.setColor(Qt::darkMagenta);
     p->setPen(pen);
     QColor c(30, 150, 50);
-    int interval = int((150.f - 50.f)/a.get_num_joints());
+    int interval = int((150.f - 50.f)/a->get_num_joints());
 
-    for (int i = 0; i < a.get_num_joints(); i++)
+    for (int i = 0; i < a->get_num_joints(); i++)
     {
         if (!main)
         {
@@ -97,8 +99,8 @@ void Visualizer::drawArm(Arm& a, QPainter* p, bool main)
             p->setPen(pen);
         }
 
-        p->rotate(a.get_joint(i));
-        p->translate(0, (a.get_component(i)));
+        p->rotate(a->get_joint(i));
+        p->translate(0, (a->get_component(i)));
         p->drawPoint(0,0);
     }
 }
@@ -110,12 +112,12 @@ void Visualizer::drawTarget(QPainter* p)
     QPen pen = QPen(Qt::darkGreen);
     pen.setWidth(2);
     p->setPen(pen);
-    p->drawRect(goal.x-goal.err_x, goal.y-goal.err_y,
-                2*goal.err_x, 2*goal.err_y);
+    p->drawRect(goal->x-goal->err_x, goal->y-goal->err_y,
+                2*goal->err_x, 2*goal->err_y);
     pen.setWidth(5);
     pen.setColor(Qt::green);
     p->setPen(pen);
-    p->drawPoint(goal.x, goal.y);
+    p->drawPoint(goal->x, goal->y);
 }
 
 void Visualizer::drawHeuristic(QPainter* p)
@@ -125,29 +127,30 @@ void Visualizer::drawHeuristic(QPainter* p)
     pen.setStyle(Qt::DashLine);
     p->setPen(pen);
 
-    p->drawLine(arm.get_ee_x(),
-                     arm.get_ee_y(),
-                     goal.x,
-                     goal.y);
+    p->drawLine(arm->get_ee_x(),
+                     arm->get_ee_y(),
+                     goal->x,
+                     goal->y);
 
-    float h = Search::the_instance()->euclidean_heuristic(arm, goal);
+    float h = arm_state(arm->get_joints()).heuristic();
     QString s = QString::number(h);
     p->scale(1.0,-1.0);
-    p->drawText(goal.x+5,
-                     -goal.y, s);
+    p->drawText(goal->x+5,
+                     -goal->y, s);
 }
 
 void Visualizer::drawPlan(QPainter* p)
 {
-    pose joints = latest_plan_start.get_joints();
-    drawArm(latest_plan_start, p, false);
+    pose joints = arm->get_joints();
+    arm->set_joints(latest_plan_start);
+    drawArm(arm, p, false);
     for (plan::iterator i = latest_plan.begin();
          i != latest_plan.end(); i++)
     {
-        latest_plan_start.apply(*i);
-        drawArm(latest_plan_start, p, false);
+        arm->apply(*i);
+        drawArm(arm, p, false);
     }
-    latest_plan_start.set_joints(joints);
+    arm->set_joints(joints);
 }
 
 void Visualizer::heuristicOn(bool on)
@@ -157,9 +160,23 @@ void Visualizer::heuristicOn(bool on)
 
 void Visualizer::newPlan()
 {
-    latest_plan_start = arm;
-    latest_plan = Search::the_instance()->run_search(arm, goal);
-    arm.apply(latest_plan);
+    latest_plan_start = arm->get_joints();
+    search_result<arm_state> res = search.astar(arm_state(arm->get_joints()),
+                               arm_state(arm->get_joints()),
+                               5.f);
+
+    pose past = latest_plan_start;
+    latest_plan.clear();
+
+    for (std::vector<arm_state>::iterator s = res.path.begin();
+         s != res.path.end(); s++)
+    {
+        if (s == res.path.begin()) continue;
+        latest_plan.push_back(arm->diff(s->position, past));
+        past = s->position;
+    }
+
+    arm->apply(latest_plan);
     emit(synchronizeArmControls());
     draw_plan = true;
     repaint();

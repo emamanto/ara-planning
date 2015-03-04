@@ -1,13 +1,13 @@
 #include "SearchWidget.h"
 
-SearchWidget::SearchWidget(QWidget* parent) : QWidget(parent),
-                                              arm(3),
-                                              goal(arm.get_ee_x(),
-                                                   arm.get_ee_y(),
-                                                   0, 0),
-                                              armControls(arm, this),
-                                              searchControls(goal, this),
-                                              vis(arm, goal, this)
+SearchWidget::SearchWidget(QWidget* parent) :
+    QWidget(parent),
+    arm(Arm::the_instance()),
+    goal(target::the_instance()),
+    search(),
+    armControls(arm, this),
+    searchControls(goal, this),
+    vis(arm, goal, search, this)
 {
     QGridLayout* layout = new QGridLayout(this);
     layout->addWidget(&vis, 0, 0);

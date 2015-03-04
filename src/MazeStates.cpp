@@ -70,10 +70,10 @@ bool box::is_goal() const
     return false;
 }
 
-float box::heuristic(box goal)
+float box::heuristic()
 {
-    int xdiff = std::abs(goal.x - x);
-    int ydiff = std::abs(goal.y - y);
+    int xdiff = std::abs(5 - x);
+    int ydiff = std::abs(6 - y);
 
     if (xdiff > ydiff) return xdiff;
     return ydiff;

@@ -10,6 +10,7 @@ add_definitions(${QT_DEFINITIONS})
 
 set( srcs main.cpp
   Arm.cpp
+  ArmStates.cpp
   ArmSim.cpp
   Visualizer.cpp
   ArmControlPanel.cpp

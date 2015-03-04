@@ -188,7 +188,7 @@ private:
     Search(Search const&) {};
     Search& operator=(Search const&) {};
 
-    virtual float heuristic(S s) { return s.heuristic(goal); }
+    virtual float heuristic(S s) { return s.heuristic(); }
     virtual float fvalue(S s) { return (costs[s] +
                                         epsilon*heuristic(s));}
 
