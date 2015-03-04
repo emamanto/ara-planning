@@ -20,7 +20,7 @@ SearchControlPanel::SearchControlPanel(target* goal,
 
     QLabel* xerrlabel =  new QLabel(tr("x+/-"), this);
     xerrbox = new QSpinBox(this);
-    xerrbox->setRange(-50, 50);
+    xerrbox->setRange(0, 50);
     xerrbox->setSingleStep(5);
     xerrbox->setValue(0);
     layout->addWidget(xerrlabel, 1, 0);
@@ -42,7 +42,7 @@ SearchControlPanel::SearchControlPanel(target* goal,
 
     QLabel* yerrlabel =  new QLabel(tr("y+/-"), this);
     yerrbox = new QSpinBox(this);
-    yerrbox->setRange(-50, 50);
+    yerrbox->setRange(0, 50);
     yerrbox->setSingleStep(5);
     yerrbox->setValue(0);
     layout->addWidget(yerrlabel, 3, 0);
