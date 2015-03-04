@@ -16,7 +16,7 @@ public:
 private:
     Arm* arm;
     target* goal;
-    Search<arm_state> search;
+    Search<arm_state, action> search;
     ArmControlPanel armControls;
     SearchControlPanel searchControls;
     Visualizer vis;

@@ -28,7 +28,9 @@ public:
     bool operator == (const arm_state& other) const;
     bool operator < (const arm_state& other) const;
     bool operator > (const arm_state& other) const;
-    std::map<arm_state, float> children();
+
+    arm_state apply(action a);
+    float cost(action a);
     bool valid() const;
     bool is_goal() const;
     float heuristic();

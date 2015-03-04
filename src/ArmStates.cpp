@@ -34,22 +34,20 @@ bool arm_state::operator > (const arm_state& other) const
     return (position > other.position);
 }
 
-std::map<arm_state, float> arm_state::children()
+arm_state arm_state::apply(action a)
 {
-    std::map<arm_state, float> cs;
-    std::vector<action> primitives = Arm::the_instance()->get_primitives();
-    for (std::vector<action>::iterator p = primitives.begin();
-         p != primitives.end(); p++)
-    {
-        Arm* a = Arm::the_instance();
-        pose next = a->apply_at(*p, position);
-        float dx = a->get_ee_x_at(position) - a->get_ee_x_at(next);
-        float dy = a->get_ee_y_at(position) - a->get_ee_y_at(next);
-        float cost = sqrt(pow(dx, 2) + pow(dy, 2));
+    Arm* arm = Arm::the_instance();
+    pose next = arm->apply_at(a, position);
+    return arm_state(next);
+}
 
-        cs[arm_state(next)] = cost;
-    }
-    return cs;
+float arm_state::cost(action a)
+{
+    Arm* arm = Arm::the_instance();
+    pose next = arm->apply_at(a, position);
+    float dx = arm->get_ee_x_at(position) - arm->get_ee_x_at(next);
+    float dy = arm->get_ee_y_at(position) - arm->get_ee_y_at(next);
+    return sqrt(pow(dx, 2) + pow(dy, 2));
 }
 
 bool arm_state::valid() const

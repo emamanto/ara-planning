@@ -1,7 +1,8 @@
 #include "Visualizer.h"
 
 Visualizer::Visualizer(Arm* arm, target* goal,
-                       Search<arm_state>& search, QWidget* parent) :
+                       Search<arm_state, action>& search,
+                       QWidget* parent) :
     QWidget(parent),
     arm(arm),
     goal(goal),
@@ -161,21 +162,11 @@ void Visualizer::heuristicOn(bool on)
 void Visualizer::newPlan()
 {
     latest_plan_start = arm->get_joints();
-    search_result<arm_state> res = search.astar(arm_state(arm->get_joints()),
-                               arm_state(arm->get_joints()),
-                               5.f);
+    search_result<arm_state, action> res = search.astar(arm_state(arm->get_joints()),
+                                                        arm->get_primitives(),
+                                                        5.f);
 
-    pose past = latest_plan_start;
-    latest_plan.clear();
-
-    for (std::vector<arm_state>::iterator s = res.path.begin();
-         s != res.path.end(); s++)
-    {
-        if (s == res.path.begin()) continue;
-        latest_plan.push_back(arm->diff(s->position, past));
-        past = s->position;
-    }
-
+    latest_plan = res.path;
     arm->apply(latest_plan);
     emit(synchronizeArmControls());
     draw_plan = true;

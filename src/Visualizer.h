@@ -12,7 +12,8 @@ Q_OBJECT
 
 public:
     Visualizer(Arm* arm, target* goal,
-               Search<arm_state>& search, QWidget* parent = 0);
+               Search<arm_state, action>& search,
+               QWidget* parent = 0);
 
 signals:
     void synchronizeArmControls();
@@ -32,7 +33,7 @@ private:
 
     Arm* arm;
     target* goal;
-    Search<arm_state>& search;
+    Search<arm_state, action>& search;
     pose latest_plan_start;
     plan latest_plan;
     bool draw_heuristic;
