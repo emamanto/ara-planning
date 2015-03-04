@@ -183,7 +183,7 @@ action Arm::diff(pose before, pose after)
         if (before.at(i) != after.at(i))
         {
             a.joint = i;
-            a.change = (after.at(i) - before.at(i));
+            a.change = (before.at(i) - after.at(i));
         }
     }
     return a;
