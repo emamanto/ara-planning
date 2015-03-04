@@ -16,6 +16,6 @@ public:
 
 private:
     void paintEvent(QPaintEvent*);
-    std::vector<search_result<box> > solutions;
+    std::vector<search_result<box, primitive> > solutions;
     std::vector<float> desired_epsilons;
 };

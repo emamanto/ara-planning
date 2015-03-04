@@ -34,6 +34,16 @@ std::map<box, float> box::children()
     return cs;
 }
 
+box box::apply(primitive p)
+{
+    return box(x + p.first, y + p.second);
+}
+
+float box::cost(primitive p)
+{
+    return 1.f;
+}
+
 bool box::valid() const
 {
     if (x < 0 || x > 5 || y < 0 || y > 6) return false;

@@ -6,12 +6,22 @@ using namespace std;
 #define BOX_WIDTH 21
 #define BOX_HEIGHT 18
 #define EPSILON_START 3.5f
-//#define ASTAR
+#define ASTAR
 
 MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
 {
     setWindowTitle("aMaze");
-    Search<box> s;
+    Search<box, primitive> s;
+
+    std::vector<primitive> ps;
+    for (int i = -1; i <= 1; i++)
+    {
+        for (int j = -1; j <= 1; j++)
+        {
+            if (i == 0 && j == 0) continue;
+            ps.push_back(std::make_pair(i, j));
+        }
+    }
 
 #ifdef ASTAR
     desired_epsilons.push_back(3.5);
@@ -21,8 +31,7 @@ MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
     for (std::vector<float>::iterator e = desired_epsilons.begin();
          e != desired_epsilons.end(); e++)
     {
-        solutions.push_back(s.astar(box(0, 0),
-                                    box(5, 6), *e));
+        solutions.push_back(s.astar(box(0, 0), ps, *e));
     }
 #else
     float epsilon = 3.5;
@@ -49,7 +58,7 @@ void MazeWidget::paintEvent(QPaintEvent*)
 
      for (int s = 0; s < solutions.size(); s++)
      {
-         search_result<box> solution = solutions.at(s);
+         search_result<box, primitive> solution = solutions.at(s);
 
          QPen p = QPen(Qt::black);
          p.setWidth(3);
@@ -92,26 +101,29 @@ void MazeWidget::paintEvent(QPaintEvent*)
          painter.drawText(100, 8*BOX_HEIGHT + 20, e);
 
          for(int i = 0; i <= 5; i++)
+         {
              for (int j = 0; j <= 6; j++)
              {
                  if (box(i, j).valid()) continue;
                  painter.fillRect(i*BOX_WIDTH, j*BOX_HEIGHT,
                                   BOX_WIDTH, BOX_HEIGHT, Qt::black);
              }
+         }
 
          box past = box(0, 0);
          p = QPen(Qt::cyan);
          p.setWidth(3);
          painter.setPen(p);
-         for(std::vector<box>::iterator s = solution.path.begin();
-             s != solution.path.end(); s++)
+         for(std::vector<primitive>::iterator p = solution.path.begin();
+             p != solution.path.end(); p++)
          {
+             box current = past.apply(*p);
              painter.drawLine(past.x*BOX_WIDTH + (BOX_WIDTH/2),
                               past.y*BOX_HEIGHT + (BOX_HEIGHT/2),
-                              s->x*BOX_WIDTH + (BOX_WIDTH/2),
-                              s->y*BOX_HEIGHT + (BOX_HEIGHT/2));
-             past.x = s->x;
-             past.y = s->y;
+                              current.x*BOX_WIDTH + (BOX_WIDTH/2),
+                              current.y*BOX_HEIGHT + (BOX_HEIGHT/2));
+             past.x = current.x;
+             past.y = current.y;
          }
 
          painter.translate(6*BOX_WIDTH + 10, 0);
