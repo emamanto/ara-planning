@@ -64,6 +64,14 @@ public:
 
         while(true)
         {
+            if (OPEN.empty())
+            {
+                sol.path.clear();
+                std::cout << "No solution found by astar"
+                          << std::endl;
+                return sol;
+            }
+
             // remove s with smallest f-value from OPEN
             search_node<S, P> s(OPEN.top());
             OPEN.pop();
@@ -197,6 +205,14 @@ private:
 
         while(!goal_found || fvalue(goal) > OPEN.top().f_value)
         {
+            if (OPEN.empty())
+            {
+                result.path.clear();
+                solutions.push_back(result);
+                std::cout << "No solution found by improve_path"
+                          << std::endl;
+                return;
+            }
             // remove s with smallest fvalue from OPEN
             search_node<S, P> s(OPEN.top());
             OPEN.pop();

@@ -89,19 +89,19 @@ bool Arm::set_joint(int joint_number, float angle)
 
 float Arm::get_ee_x_at(pose position)
 {
-    return get_joint_x_at(num_joints, position);
+    return get_joint_x_at(num_joints-1, position);
 }
 
 float Arm::get_ee_y_at(pose position)
 {
-    return get_joint_y_at(num_joints, position);
+    return get_joint_y_at(num_joints-1, position);
 }
 
 float Arm::get_joint_x_at(int joint, pose position)
 {
     float x = 0.f;
     float angle_sum = 0.f;
-    for(int i = 0; i < joint; i++)
+    for(int i = 0; i <= joint; i++)
     {
         angle_sum += position.at(i);
         x += component_lengths.at(i)*cos((angle_sum)*DEG_TO_RAD);
@@ -113,7 +113,7 @@ float Arm::get_joint_y_at(int joint, pose position)
 {
     float y = 0.f;
     float angle_sum = 0.f;
-    for(int i = 0; i < joint; i++)
+    for(int i = 0; i <= joint; i++)
     {
         angle_sum += position.at(i);
         y += component_lengths.at(i)*sin((angle_sum)*DEG_TO_RAD);
@@ -134,31 +134,31 @@ float Arm::get_ee_y()
 bool Arm::is_valid(pose joint_config)
 {
     bool valid = true;
+
     for(int i = 0; i < num_joints; i++)
     {
+        // Joints not over max or under min
         if (joint_config.at(i) > max_angles.at(i) ||
             joint_config.at(i) < min_angles.at(i))
         {
             valid = false;
             break;
         }
-    }
-    return valid;
-}
 
-bool Arm::is_currently_valid()
-{
-    bool valid = true;
-    for(int i = 0; i < num_joints; i++)
-    {
-        if (current_angles.at(i) > max_angles.at(i) ||
-            current_angles.at(i) < min_angles.at(i))
+        // Table collision
+        if (get_joint_y_at(i, joint_config) < 0)
         {
             valid = false;
             break;
         }
     }
+
     return valid;
+}
+
+bool Arm::is_currently_valid()
+{
+    return is_valid(current_angles);
 }
 
 bool Arm::apply(action a)
