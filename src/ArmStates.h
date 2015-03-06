@@ -13,7 +13,7 @@ public:
 
 private:
     static target* instance;
-    target() {};
+    target() : x(0), y(0), err_x(0), err_y(0) {};
     target(target const&) {};
 };
 

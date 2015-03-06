@@ -6,7 +6,7 @@ target* target::instance = 0;
 
 target* target::the_instance()
 {
-    if (!instance) instance = new target;
+    if (!instance) instance = new target();
     return instance;
 }
 

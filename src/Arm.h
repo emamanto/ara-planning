@@ -54,6 +54,8 @@ public:
     bool is_valid(pose joint_config);
     bool is_currently_valid();
 
+    bool intersect(int seg1, int seg2, pose position);
+
     bool apply(action a);
     bool apply(plan p);
     pose apply_at(action a, pose start);

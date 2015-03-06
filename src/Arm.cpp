@@ -89,19 +89,19 @@ bool Arm::set_joint(int joint_number, float angle)
 
 float Arm::get_ee_x_at(pose position)
 {
-    return get_joint_x_at(num_joints-1, position);
+    return get_joint_x_at(num_joints, position);
 }
 
 float Arm::get_ee_y_at(pose position)
 {
-    return get_joint_y_at(num_joints-1, position);
+    return get_joint_y_at(num_joints, position);
 }
 
 float Arm::get_joint_x_at(int joint, pose position)
 {
     float x = 0.f;
     float angle_sum = 0.f;
-    for(int i = 0; i <= joint; i++)
+    for(int i = 0; i < joint; i++)
     {
         angle_sum += position.at(i);
         x += component_lengths.at(i)*cos((angle_sum)*DEG_TO_RAD);
@@ -113,7 +113,7 @@ float Arm::get_joint_y_at(int joint, pose position)
 {
     float y = 0.f;
     float angle_sum = 0.f;
-    for(int i = 0; i <= joint; i++)
+    for(int i = 0; i < joint; i++)
     {
         angle_sum += position.at(i);
         y += component_lengths.at(i)*sin((angle_sum)*DEG_TO_RAD);
@@ -141,24 +141,66 @@ bool Arm::is_valid(pose joint_config)
         if (joint_config.at(i) > max_angles.at(i) ||
             joint_config.at(i) < min_angles.at(i))
         {
-            valid = false;
-            break;
+            return false;
         }
 
         // Table collision
         if (get_joint_y_at(i, joint_config) < 0)
         {
-            valid = false;
-            break;
+            return false;
+        }
+
+        //Self collision
+        for (int j = 0; j < num_joints; j++)
+        {
+            if (j == i - 1 || j == i || j == i + 1) continue;
+            if (intersect(i, j, joint_config))
+            {
+                return false;
+            }
         }
     }
 
-    return valid;
+    return true;
 }
 
 bool Arm::is_currently_valid()
 {
     return is_valid(current_angles);
+}
+
+// http://geomalgorithms.com/a05-_intersect-1.html
+bool Arm::intersect(int seg1, int seg2, pose position)
+{
+    float u_x = (get_joint_x_at(seg1+1, position) -
+               get_joint_x_at(seg1, position));
+
+    float u_y = (get_joint_y_at(seg1+1, position) -
+               get_joint_y_at(seg1, position));
+
+    float v_x = (get_joint_x_at(seg2+1, position) -
+               get_joint_x_at(seg2, position));
+
+    float v_y = (get_joint_y_at(seg2+1, position) -
+               get_joint_y_at(seg2, position));
+
+    float w_x = (get_joint_x_at(seg1, position) -
+               get_joint_x_at(seg2, position));
+
+    float w_y = (get_joint_y_at(seg1, position) -
+               get_joint_y_at(seg2, position));
+
+    float D = u_x*v_y - u_y*v_x;
+
+    if (D < 0.0000001) return false;
+
+    float s = (v_x*w_y - v_y*w_x)/D;
+    float t = (u_x*w_y - u_y*w_x)/D;
+
+    if (s < 0 || s > 1) return false;
+    if (t < 0 || t > 1) return false;
+
+    return true;
 }
 
 bool Arm::apply(action a)
