@@ -89,9 +89,19 @@ bool Arm::set_joint(int joint_number, float angle)
 
 float Arm::get_ee_x_at(pose position)
 {
+    return get_joint_x_at(num_joints, position);
+}
+
+float Arm::get_ee_y_at(pose position)
+{
+    return get_joint_y_at(num_joints, position);
+}
+
+float Arm::get_joint_x_at(int joint, pose position)
+{
     float x = 0.f;
     float angle_sum = 0.f;
-    for(int i = 0; i < num_joints; i++)
+    for(int i = 0; i < joint; i++)
     {
         angle_sum += position.at(i);
         x += component_lengths.at(i)*cos((angle_sum)*DEG_TO_RAD);
@@ -99,11 +109,11 @@ float Arm::get_ee_x_at(pose position)
     return x;
 }
 
-float Arm::get_ee_y_at(pose position)
+float Arm::get_joint_y_at(int joint, pose position)
 {
     float y = 0.f;
     float angle_sum = 0.f;
-    for(int i = 0; i < num_joints; i++)
+    for(int i = 0; i < joint; i++)
     {
         angle_sum += position.at(i);
         y += component_lengths.at(i)*sin((angle_sum)*DEG_TO_RAD);

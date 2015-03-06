@@ -48,6 +48,9 @@ public:
     float get_ee_x_at(pose position);
     float get_ee_y_at(pose position);
 
+    float get_joint_x_at(int joint, pose position);
+    float get_joint_y_at(int joint, pose position);
+
     bool is_valid(pose joint_config);
     bool is_currently_valid();
 
