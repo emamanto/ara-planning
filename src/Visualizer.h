@@ -12,6 +12,7 @@ Q_OBJECT
 
 public:
     Visualizer(Arm* arm, target* goal,
+               obstacles* obs,
                Search<arm_state, action>& search,
                QWidget* parent = 0);
 
@@ -30,9 +31,11 @@ private:
     void drawTarget(QPainter* p);
     void drawHeuristic(QPainter* p);
     void drawPlan(QPainter* p);
+    void drawObstacles(QPainter* p);
 
     Arm* arm;
     target* goal;
+    obstacles* obs;
     Search<arm_state, action>& search;
     pose latest_plan_start;
     plan latest_plan;

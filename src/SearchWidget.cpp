@@ -4,11 +4,19 @@ SearchWidget::SearchWidget(QWidget* parent) :
     QWidget(parent),
     arm(Arm::the_instance()),
     goal(target::the_instance()),
+    obs(obstacles::the_instance()),
     search(),
     armControls(arm, this),
     searchControls(goal, this),
-    vis(arm, goal, search, this)
+    vis(arm, goal, obs, search, this)
 {
+    std::vector<obstacle> the_obstacles;
+    the_obstacles.push_back(obstacle(-50, 250, 30, 150));
+    the_obstacles.push_back(obstacle(100, 100, 50, 20));
+    the_obstacles.push_back(obstacle(160, 190, 90, 10));
+    the_obstacles.push_back(obstacle(-200, 60, 10, 40));
+    obs->init(the_obstacles);
+
     QGridLayout* layout = new QGridLayout(this);
     layout->addWidget(&vis, 0, 0);
     layout->addWidget(&armControls, 0, 1);

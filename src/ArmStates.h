@@ -24,6 +24,7 @@ public:
     std::vector<obstacle> get_obstacles() { return obs; }
     obstacle obstacle_num(int i) { return obs.at(i); }
     int num_obstacles() { return obs.size(); }
+    void init(std::vector<obstacle> i) { obs = i; }
 
 private:
     static obstacles* instance;

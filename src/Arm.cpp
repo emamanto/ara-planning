@@ -212,7 +212,7 @@ bool Arm::collision(obstacle o, pose position)
             }
         }
     }
-    return true;
+    return false;
 }
 
 // http://geomalgorithms.com/a05-_intersect-1.html

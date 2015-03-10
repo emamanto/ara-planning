@@ -16,6 +16,7 @@ public:
 private:
     Arm* arm;
     target* goal;
+    obstacles* obs;
     Search<arm_state, action> search;
     ArmControlPanel armControls;
     SearchControlPanel searchControls;

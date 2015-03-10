@@ -1,12 +1,14 @@
 #include "Visualizer.h"
+#include <iostream>
 //#define ASTAR
 
-Visualizer::Visualizer(Arm* arm, target* goal,
+Visualizer::Visualizer(Arm* arm, target* goal, obstacles* obs,
                        Search<arm_state, action>& search,
                        QWidget* parent) :
     QWidget(parent),
     arm(arm),
     goal(goal),
+    obs(obs),
     search(search),
     latest_plan_start(arm->get_joints()),
     draw_heuristic(false),
@@ -55,6 +57,7 @@ void Visualizer::paintEvent(QPaintEvent*)
     }
 
     // Draw main arm
+    drawObstacles(&painter);
     drawArm(arm, &painter, true);
     drawTarget(&painter);
 
@@ -153,6 +156,23 @@ void Visualizer::drawPlan(QPainter* p)
         drawArm(arm, p, false);
     }
     arm->set_joints(joints);
+}
+
+void Visualizer::drawObstacles(QPainter* p)
+{
+    p->setTransform(original);
+    std::vector<obstacle> o = obs->get_obstacles();
+
+    for (std::vector<obstacle>::iterator i = o.begin();
+         i != o.end(); i++)
+    {
+        p->fillRect(i->x, i->y, i->width, -i->height, Qt::darkGray);
+
+        QPen pen = QPen(Qt::white);
+        pen.setWidth(2);
+        p->setPen(pen);
+        p->drawRect(i->x, i->y, i->width, -i->height);
+    }
 }
 
 void Visualizer::heuristicOn(bool on)
