@@ -4,6 +4,16 @@
 
 #define DEG_TO_RAD M_PI/180.f
 
+std::vector<line_segment> obstacle::get_segments()
+{
+    std::vector<line_segment> segs;
+    segs.push_back(line_segment(x, y, x+width, y));
+    segs.push_back(line_segment(x, y, x, y-height));
+    segs.push_back(line_segment(x+width, y, x+width, y-height));
+    segs.push_back(line_segment(x, y-height, x+width, y-height));
+    return segs;
+}
+
 Arm* Arm::instance = 0;
 
 Arm* Arm::the_instance()
@@ -186,6 +196,23 @@ bool Arm::intersect(int seg1, int seg2, pose position)
 {
     return intersect(arm_segment(seg1, position),
                      arm_segment(seg2, position));
+}
+
+bool Arm::collision(obstacle o, pose position)
+{
+    std::vector<line_segment> segs = o.get_segments();
+    for (std::vector<line_segment>::iterator s = segs.begin();
+         s != segs.end(); s++)
+    {
+        for (int j = 0; j < num_joints; j++)
+        {
+            if (intersect(*s, arm_segment(j, position)))
+            {
+                return true;
+            }
+        }
+    }
+    return true;
 }
 
 // http://geomalgorithms.com/a05-_intersect-1.html

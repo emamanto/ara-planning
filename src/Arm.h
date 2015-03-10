@@ -32,6 +32,22 @@ struct line_segment
                                                        y2 (d) {}
 };
 
+class obstacle
+{
+public:
+    // top left corner
+    float x, y;
+    float width, height;
+
+    obstacle() : x(0), y(0), width(0), height(0) {}
+    obstacle(float a, float b, float c, float d) : x(a),
+                                                   y(b),
+                                                   width(c),
+                                                   height(d) {}
+
+    std::vector<line_segment> get_segments();
+};
+
 typedef std::vector<float> pose;
 typedef std::vector<float> length_config;
 typedef std::vector<action> plan;
@@ -68,6 +84,7 @@ public:
 
     line_segment arm_segment(int seg, pose position);
     bool intersect(int seg1, int seg2, pose position);
+    bool collision(obstacle o, pose position);
     bool intersect(line_segment seg1, line_segment seg2);
 
     bool apply(action a);

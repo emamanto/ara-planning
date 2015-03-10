@@ -37,6 +37,13 @@ void ArmControlPanel::updateArm()
     {
         angles.push_back(float(jointMap[i]->value()));
     }
-    arm->set_joints(angles);
-    emit(redrawArm());
+    if (arm_state(angles).valid())
+    {
+        arm->set_joints(angles);
+        emit(redrawArm());
+    }
+    else
+    {
+        synchronize();
+    }
 }

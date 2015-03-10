@@ -10,6 +10,14 @@ target* target::the_instance()
     return instance;
 }
 
+obstacles* obstacles::instance = 0;
+
+obstacles* obstacles::the_instance()
+{
+    if (!instance) instance = new obstacles();
+    return instance;
+}
+
 arm_state::arm_state() :
     position(Arm::the_instance()->get_num_joints(), 0)
 {
@@ -52,7 +60,18 @@ float arm_state::cost(action a)
 
 bool arm_state::valid() const
 {
-    return Arm::the_instance()->is_valid(position);
+    Arm* a = Arm::the_instance();
+    if (!a->is_valid(position)) return false;
+
+    std::vector<obstacle> obs = obstacles::the_instance()->get_obstacles();
+
+    for (std::vector<obstacle>::iterator o = obs.begin();
+         o != obs.end(); o++)
+    {
+        if (a->collision(*o, position)) return false;
+    }
+
+    return true;
 }
 
 bool arm_state::is_goal() const

@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <map>
 #include "Arm.h"
+#include "ArmStates.h"
 
 class ArmControlPanel : public QWidget
 {

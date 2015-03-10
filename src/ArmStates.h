@@ -17,6 +17,22 @@ private:
     target(target const&) {};
 };
 
+class obstacles
+{
+public:
+    static obstacles* the_instance();
+    std::vector<obstacle> get_obstacles() { return obs; }
+    obstacle obstacle_num(int i) { return obs.at(i); }
+    int num_obstacles() { return obs.size(); }
+
+private:
+    static obstacles* instance;
+    obstacles() {};
+    obstacles(obstacles const&) {};
+
+    std::vector<obstacle> obs;
+};
+
 class arm_state
 {
 public:
