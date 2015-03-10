@@ -30,7 +30,7 @@ Arm::Arm() : num_joints(3),
              min_angles(num_joints, -180.f)
 {
     min_angles.at(0) = 0.f;
-    set_primitive_change(10.f);
+    set_primitive_change(8.f);
 }
 
 float Arm::get_joint(int joint_number)
@@ -275,17 +275,25 @@ pose Arm::apply_at(action a, pose start)
     return end;
 }
 
-std::vector<action> Arm::get_primitives()
+std::vector<action> Arm::get_big_primitives()
 {
-    return primitives;
+    return big_primitives;
+}
+
+std::vector<action> Arm::get_small_primitives()
+{
+    return small_primitives;
 }
 
 void Arm::set_primitive_change(float c)
 {
-    primitives.clear();
+    big_primitives.clear();
+    small_primitives.clear();
     for (int i = 0; i < num_joints; i++)
     {
-        primitives.push_back(action(i, c));
-        primitives.push_back(action(i, -c));
+        big_primitives.push_back(action(i, c));
+        big_primitives.push_back(action(i, -c));
+        small_primitives.push_back(action(i, c/2.f));
+        small_primitives.push_back(action(i, -c/2.f));
     }
 }

@@ -49,7 +49,8 @@ public:
     arm_state apply(action a);
     float cost(action a);
     bool valid() const;
+    bool small_steps() const;
     bool is_goal() const;
-    float heuristic();
+    float heuristic() const;
     void print() const;
 };

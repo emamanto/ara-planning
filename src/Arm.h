@@ -89,7 +89,9 @@ public:
     bool apply(plan p);
     pose apply_at(action a, pose start);
 
-    std::vector<action> get_primitives();
+    std::vector<action> get_big_primitives();
+    std::vector<action> get_small_primitives();
+    // Sets big, small will be 1/2
     void set_primitive_change(float c);
 
 private:
@@ -103,5 +105,6 @@ private:
     pose current_angles;
     pose max_angles;
     pose min_angles;
-    std::vector<action> primitives;
+    std::vector<action> big_primitives;
+    std::vector<action> small_primitives;
 };

@@ -40,10 +40,12 @@ public:
     Search() {};
 
     search_result<S, P> astar(S begin,
-                              std::vector<P> prs,
+                              std::vector<P> large_prs,
+                              std::vector<P> small_prs,
                               float eps = 1.f)
     {
-        primitives = prs;
+        big_primitives = large_prs;
+        small_primitives = small_prs;
         epsilon = eps;
         OPEN = std::priority_queue<search_node<S, P> >();
         costs.clear();
@@ -61,6 +63,7 @@ public:
         OPEN.push(snode);
 
         std::vector<P> final_path;
+        std::vector<P>* primitives;
 
         while(true)
         {
@@ -83,6 +86,15 @@ public:
             }
 
             sol.expanded.insert(s.state);
+
+            if (s.state.small_steps())
+            {
+                primitives = &small_primitives;
+            }
+            else
+            {
+                primitives = &big_primitives;
+            }
 
             for (typename std::vector<P>::iterator p = primitives.begin();
                  p != primitives.end(); p++)
@@ -115,10 +127,12 @@ public:
     }
 
     std::vector<search_result<S, P> > arastar(S begin,
-                                              std::vector<P> prs,
+                                              std::vector<P> big_prs,
+                                              std::vector<P> s_prs,
                                               float e_start = 5.f)
     {
-        primitives = prs;
+        big_primitives = big_prs;
+        small_primitives = s_prs;
         goal_found = false;
         OPEN = std::priority_queue<search_node<S, P> >();
         CLOSED.clear();
@@ -202,6 +216,7 @@ private:
     {
         search_result<S, P> result;
         result.path = best_path;
+        std::vector<P>* primitives;
 
         while(!goal_found || fvalue(goal) > OPEN.top().f_value)
         {
@@ -221,8 +236,17 @@ private:
             // CLOSED = CLOSED U s
             CLOSED.insert(s.state);
 
-            for (typename std::vector<P>::iterator p = primitives.begin();
-                 p != primitives.end(); p++)
+            if (s.state.small_steps())
+            {
+                primitives = &small_primitives;
+            }
+            else
+            {
+                primitives = &big_primitives;
+            }
+
+            for (typename std::vector<P>::iterator p = primitives->begin();
+                 p != primitives->end(); p++)
             {
                 S child = s.state.apply(*p);
                 if (!child.valid()) continue;
@@ -314,7 +338,8 @@ private:
     // search round.
     bool goal_found;
     S goal;
-    std::vector<P> primitives;
+    std::vector<P> big_primitives;
+    std::vector<P> small_primitives;
     std::vector<search_result<S, P> >solutions;
     std::vector<P> best_path;
     std::set<S> CLOSED;

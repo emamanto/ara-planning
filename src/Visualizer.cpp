@@ -185,13 +185,17 @@ void Visualizer::newPlan()
     latest_plan_start = arm->get_joints();
 
 #ifdef ASTAR
-    search_result<arm_state, action> final = search.astar(arm_state(arm->get_joints()),
-                                                        arm->get_primitives(),
-                                                        5.f);
+    search_result<arm_state, action> final =
+        search.astar(arm_state(arm->get_joints()),
+                     arm->get_big_primitives(),
+                     arm->get_small_primitives(),
+                     5.f);
 #else
-    std::vector<search_result<arm_state, action> > res = search.arastar(arm_state(arm->get_joints()),
-                                                        arm->get_primitives(),
-                                                        5.f);
+    std::vector<search_result<arm_state, action> > res =
+        search.arastar(arm_state(arm->get_joints()),
+                       arm->get_big_primitives(),
+                       arm->get_small_primitives(),
+                       5.f);
 
     search_result<arm_state, action> final = res.at(res.size() - 1);
 #endif

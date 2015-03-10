@@ -74,6 +74,12 @@ bool arm_state::valid() const
     return true;
 }
 
+bool arm_state::small_steps() const
+{
+    if (heuristic() < 30.f) return true;
+    return false;
+}
+
 bool arm_state::is_goal() const
 {
     float x = Arm::the_instance()->get_ee_x_at(position);
@@ -85,7 +91,7 @@ bool arm_state::is_goal() const
     return true;
 }
 
-float arm_state::heuristic()
+float arm_state::heuristic() const
 {
     float x = Arm::the_instance()->get_ee_x_at(position);
     float y = Arm::the_instance()->get_ee_y_at(position);
