@@ -20,6 +20,18 @@ struct action
     {return joint < other.joint; }
 };
 
+struct line_segment
+{
+    float x1, y1;
+    float x2, y2;
+
+    line_segment() : x1(0), y1(0), x2(0), y2(0) {}
+    line_segment(float a, float b, float c, float d) : x1 (a),
+                                                       y1 (b),
+                                                       x2 (c),
+                                                       y2 (d) {}
+};
+
 typedef std::vector<float> pose;
 typedef std::vector<float> length_config;
 typedef std::vector<action> plan;
@@ -54,7 +66,9 @@ public:
     bool is_valid(pose joint_config);
     bool is_currently_valid();
 
+    line_segment arm_segment(int seg, pose position);
     bool intersect(int seg1, int seg2, pose position);
+    bool intersect(line_segment seg1, line_segment seg2);
 
     bool apply(action a);
     bool apply(plan p);

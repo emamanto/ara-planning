@@ -161,6 +161,8 @@ bool Arm::is_valid(pose joint_config)
         }
     }
 
+    if (get_ee_y_at(joint_config) < 0) return false;
+
     return true;
 }
 
@@ -169,30 +171,41 @@ bool Arm::is_currently_valid()
     return is_valid(current_angles);
 }
 
-// http://geomalgorithms.com/a05-_intersect-1.html
+line_segment Arm::arm_segment(int seg, pose position)
+{
+    line_segment s;
+    s.x1 = get_joint_x_at(seg, position);
+    s.y1 = get_joint_y_at(seg, position);
+
+    s.x2 = get_joint_x_at(seg+1, position);
+    s.y2 = get_joint_y_at(seg+1, position);
+    return s;
+}
+
 bool Arm::intersect(int seg1, int seg2, pose position)
 {
-    float u_x = (get_joint_x_at(seg1+1, position) -
-               get_joint_x_at(seg1, position));
+    return intersect(arm_segment(seg1, position),
+                     arm_segment(seg2, position));
+}
 
-    float u_y = (get_joint_y_at(seg1+1, position) -
-               get_joint_y_at(seg1, position));
+// http://geomalgorithms.com/a05-_intersect-1.html
+bool Arm::intersect(line_segment seg1, line_segment seg2)
+{
+    float u_x = (seg1.x2 - seg1.x1);
 
-    float v_x = (get_joint_x_at(seg2+1, position) -
-               get_joint_x_at(seg2, position));
+    float u_y = (seg1.y2 - seg1.y1);
 
-    float v_y = (get_joint_y_at(seg2+1, position) -
-               get_joint_y_at(seg2, position));
+    float v_x = (seg2.x2 - seg2.x1);
 
-    float w_x = (get_joint_x_at(seg1, position) -
-               get_joint_x_at(seg2, position));
+    float v_y = (seg2.y2 - seg2.y1);
 
-    float w_y = (get_joint_y_at(seg1, position) -
-               get_joint_y_at(seg2, position));
+    float w_x = (seg1.x1 - seg2.x1);
+
+    float w_y = (seg1.y1 - seg2.y1);
 
     float D = u_x*v_y - u_y*v_x;
 
-    if (D < 0.0000001) return false;
+    if (fabs(D) < 0.0000001) return false;
 
     float s = (v_x*w_y - v_y*w_x)/D;
     float t = (u_x*w_y - u_y*w_x)/D;
