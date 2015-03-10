@@ -4,6 +4,7 @@ project( ara )
 find_package(Qt4 REQUIRED)
 
 set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS "-I /usr/include/eigen3/")
 
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
