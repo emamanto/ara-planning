@@ -65,7 +65,7 @@ bool box::is_goal() const
     return false;
 }
 
-float box::heuristic()
+float box::heuristic() const
 {
     int xdiff = std::abs(5 - x);
     int ydiff = std::abs(6 - y);

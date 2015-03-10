@@ -96,8 +96,9 @@ public:
                 primitives = &big_primitives;
             }
 
-            for (typename std::vector<P>::iterator p = primitives.begin();
-                 p != primitives.end(); p++)
+            for (typename std::vector<P>::iterator p =
+                     primitives->begin();
+                 p != primitives->end(); p++)
             {
                 S child = s.state.apply(*p);
                 if (!child.valid()) continue;

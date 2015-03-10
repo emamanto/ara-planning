@@ -19,7 +19,8 @@ public:
     box apply(primitive p);
     float cost(primitive p);
     bool valid() const;
+    bool small_steps() const { return false; }
     bool is_goal() const;
-    float heuristic();
+    float heuristic() const;
     void print() const;
 };
