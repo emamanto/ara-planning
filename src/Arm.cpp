@@ -245,8 +245,12 @@ bool Arm::intersect(line_segment seg1, line_segment seg2)
 
 bool Arm::apply(action a)
 {
-    current_angles.at(a.joint) = (current_angles.at(a.joint) +
-                                  a.change);
+    for (change_vector::iterator it = a.changes.begin();
+         it != a.changes.end(); it++)
+    {
+        current_angles.at(it->first) = (current_angles.at(it->first)
+                                        + it->second);
+    }
     return is_currently_valid();
 }
 
@@ -262,8 +266,12 @@ bool Arm::apply(plan p)
 pose Arm::apply_at(action a, pose start)
 {
     pose end = start;
-    end.at(a.joint) = (start.at(a.joint) +
-                       a.change);
+    for (change_vector::iterator it = a.changes.begin();
+         it != a.changes.end(); it++)
+    {
+        end.at(it->first) = (start.at(it->first)
+                             + it->second);
+    }
     return end;
 }
 
