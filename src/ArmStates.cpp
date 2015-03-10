@@ -76,7 +76,7 @@ bool arm_state::valid() const
 
 bool arm_state::small_steps() const
 {
-    if (heuristic() < 30.f) return true;
+    if (heuristic() < D_SMALL) return true;
     return false;
 }
 

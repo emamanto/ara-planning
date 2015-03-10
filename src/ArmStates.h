@@ -3,6 +3,8 @@
 #include "Arm.h"
 #include <map>
 
+#define D_SMALL 30.f
+
 class target
 {
 public:
