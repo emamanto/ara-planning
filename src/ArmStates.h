@@ -2,7 +2,6 @@
 
 #include "Arm.h"
 #include <map>
-#include <Eigen/Dense>
 
 #define D_SMALL 30.f
 

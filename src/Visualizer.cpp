@@ -29,6 +29,12 @@ void Visualizer::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
 
+    if (arm->get_joint(0) == 10.f && arm->get_joint(1) == 10.f)
+    {
+        action act = arm->solve_ik(270, 100, arm->get_joints());
+        arm->apply(act);
+    }
+
     // Black background
     painter.fillRect(0, 0,
                      maximumWidth(),

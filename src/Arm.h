@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <map>
+#include <Eigen/Dense>
 
 #define ARM_LENGTH 300.f
 
@@ -88,6 +89,8 @@ public:
     bool apply(action a);
     bool apply(plan p);
     pose apply_at(action a, pose start);
+
+    action solve_ik(float x, float y, pose position);
 
     std::vector<action> get_big_primitives();
     std::vector<action> get_small_primitives();

@@ -275,6 +275,66 @@ pose Arm::apply_at(action a, pose start)
     return end;
 }
 
+action Arm::solve_ik(float x, float y, pose position)
+{
+    action a;
+
+    Eigen::MatrixXf fk_jacobian(2, num_joints);
+    pose cur_joints = position;
+    Eigen::VectorXf joint_change;
+
+    // while (true)
+    // {
+    //     if (fabs(x - get_ee_x_at(cur_joints)) < 0.01 &&
+    //         fabs(y - get_ee_y_at(cur_joints)) < 0.01)
+    //     {
+    //         break;
+    //     }
+
+        float fx = get_ee_x_at(cur_joints);
+        float fy = get_ee_y_at(cur_joints);
+
+        for (int i = 0; i < num_joints; i++)
+        {
+            float delta = cur_joints.at(i)*pow(10, -4);
+            if ( delta < pow(10, -6)) delta = pow(10, -6);
+            pose posd = cur_joints;
+            posd.at(i) = cur_joints.at(i) + delta;
+            fk_jacobian(0, i) = (get_ee_x_at(posd) - fx) / delta;
+            fk_jacobian(1, i) = (get_ee_y_at(posd) - fy) / delta;
+        }
+
+        Eigen::JacobiSVD<Eigen::MatrixXf> svd(fk_jacobian,
+                                              (Eigen::ComputeFullU |
+                                               Eigen::ComputeFullV));
+
+        Eigen::MatrixXf sigma_pseudoinv =
+            Eigen::MatrixXf::Zero(2, num_joints);
+        sigma_pseudoinv.diagonal() = svd.singularValues();
+        sigma_pseudoinv(0, 0) = 1.f/sigma_pseudoinv(0, 0);
+        sigma_pseudoinv(1, 1) = 1.f/sigma_pseudoinv(1, 1);
+        sigma_pseudoinv.transposeInPlace();
+
+        Eigen::MatrixXf jacobian_plus =
+            svd.matrixV()*sigma_pseudoinv*(svd.matrixU().transpose());
+
+        Eigen::Vector2f dp;
+        dp << (x - fx), (y - fy);
+        joint_change = jacobian_plus*dp;
+        for (int i = 0; i < num_joints; i++)
+        {
+            cur_joints.at(i) += joint_change(i);
+        }
+//    }
+
+    for (int i = 0; i < num_joints; i++)
+    {
+        a.changes[i] = joint_change(i);
+    }
+    std::cout << "Decided to change joints by " << joint_change << std::endl;
+    return a;
+}
+
 std::vector<action> Arm::get_big_primitives()
 {
     return big_primitives;
