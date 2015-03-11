@@ -20,6 +20,8 @@ public:
     float cost(primitive p);
     bool valid() const;
     bool small_steps() const { return false; }
+    bool use_finisher() const { return false; }
+    primitive compute_finisher() const {return std::make_pair(0, 0);}
     bool is_goal() const;
     float heuristic() const;
     void print() const;

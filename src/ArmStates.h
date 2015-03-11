@@ -55,7 +55,6 @@ public:
     bool small_steps() const;
     bool use_finisher() const;
     action compute_finisher() const;
-    bool check_valid_finisher() const;
     bool is_goal() const;
     float heuristic() const;
     void print() const;
