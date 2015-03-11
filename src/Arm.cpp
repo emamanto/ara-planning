@@ -275,24 +275,36 @@ pose Arm::apply_at(action a, pose start)
     return end;
 }
 
+// Pseudoinverse method
+// http://en.wikipedia.org/wiki/Inverse_kinematics#The_Jacobian_inverse_technique
 action Arm::solve_ik(float x, float y, pose position)
 {
     action a;
+    float scaling_factor = 0.1f;
+
+    for (int i = 0; i < num_joints; i++)
+    {
+        a.changes[i] = 0;
+    }
 
     Eigen::MatrixXf fk_jacobian(2, num_joints);
     pose cur_joints = position;
     Eigen::VectorXf joint_change;
+    int i = 0;
+    float fx, fy;
 
-    // while (true)
-    // {
-    //     if (fabs(x - get_ee_x_at(cur_joints)) < 0.01 &&
-    //         fabs(y - get_ee_y_at(cur_joints)) < 0.01)
-    //     {
-    //         break;
-    //     }
+    while (true)
+    {
+        i++;
+        fx = get_ee_x_at(cur_joints);
+        fy = get_ee_y_at(cur_joints);
+        if (sqrt(pow(x - fx, 2) + pow(y - fy, 2)) < 0.01 || i > 100)
+        {
+            break;
+        }
 
-        float fx = get_ee_x_at(cur_joints);
-        float fy = get_ee_y_at(cur_joints);
+        std::cout << "err x " << x - fx << " err y "
+                  << y - fy << std::endl;
 
         for (int i = 0; i < num_joints; i++)
         {
@@ -311,6 +323,8 @@ action Arm::solve_ik(float x, float y, pose position)
         Eigen::MatrixXf sigma_pseudoinv =
             Eigen::MatrixXf::Zero(2, num_joints);
         sigma_pseudoinv.diagonal() = svd.singularValues();
+        if (sigma_pseudoinv(0, 0) < 0.000001 ||
+            sigma_pseudoinv(1, 1) < 0.000001) break;
         sigma_pseudoinv(0, 0) = 1.f/sigma_pseudoinv(0, 0);
         sigma_pseudoinv(1, 1) = 1.f/sigma_pseudoinv(1, 1);
         sigma_pseudoinv.transposeInPlace();
@@ -321,18 +335,17 @@ action Arm::solve_ik(float x, float y, pose position)
         Eigen::Vector2f dp;
         dp << (x - fx), (y - fy);
         joint_change = jacobian_plus*dp;
+        std::cout << "Decided to change joints by " << joint_change << std::endl;
+
         for (int i = 0; i < num_joints; i++)
         {
-            cur_joints.at(i) += joint_change(i);
+            cur_joints.at(i) += scaling_factor*joint_change(i);
+            a.changes[i] += scaling_factor*joint_change(i);
         }
-//    }
-
-    for (int i = 0; i < num_joints; i++)
-    {
-        a.changes[i] = joint_change(i);
     }
-    std::cout << "Decided to change joints by " << joint_change << std::endl;
-    return a;
+
+    if (sqrt(pow(x - fx, 2) + pow(y - fy, 2)) < 0.01) return a;
+    else return action(-1, -1);
 }
 
 std::vector<action> Arm::get_big_primitives()
