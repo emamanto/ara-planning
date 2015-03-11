@@ -201,6 +201,7 @@ void Visualizer::newPlan()
 #endif
 
     latest_plan = final.path;
+    arm->set_joints(latest_plan_start);
     arm->apply(latest_plan);
     emit(synchronizeArmControls());
     draw_plan = true;
