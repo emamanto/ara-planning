@@ -89,7 +89,15 @@ public:
 
             if (s.state.small_steps())
             {
-                primitives = &small_primitives;
+                if (s.state.use_finisher())
+                {
+                    primitives = small_primitives;
+                    primitives.push_back(s.compute_finisher());
+                }
+                else
+                {
+                    primitives = &small_primitives;
+                }
             }
             else
             {
@@ -218,6 +226,7 @@ private:
         search_result<S, P> result;
         result.path = best_path;
         std::vector<P>* primitives;
+        bool extra_prim = false;
 
         while(!goal_found || fvalue(goal) > OPEN.top().f_value)
         {
@@ -240,6 +249,11 @@ private:
             if (s.state.small_steps())
             {
                 primitives = &small_primitives;
+                if (s.state.use_finisher())
+                {
+                    primitives->push_back(s.state.compute_finisher());
+                    extra_prim = true;
+                }
             }
             else
             {
@@ -284,6 +298,11 @@ private:
                         INCONS.insert(nnode);
                     }
                 }
+            }
+            if (extra_prim)
+            {
+                primitives->pop_back();
+                extra_prim = false;
             }
         }
 

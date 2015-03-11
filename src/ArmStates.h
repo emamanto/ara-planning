@@ -4,6 +4,7 @@
 #include <map>
 
 #define D_SMALL 30.f
+#define D_IK 15.f
 
 class target
 {
@@ -52,6 +53,9 @@ public:
     float cost(action a);
     bool valid() const;
     bool small_steps() const;
+    bool use_finisher() const;
+    action compute_finisher() const;
+    bool check_valid_finisher() const;
     bool is_goal() const;
     float heuristic() const;
     void print() const;

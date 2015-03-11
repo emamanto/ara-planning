@@ -80,15 +80,23 @@ bool arm_state::small_steps() const
     return false;
 }
 
+bool arm_state::use_finisher() const
+{
+    if (heuristic() < D_IK) return true;
+    return false;
+}
+
+action arm_state::compute_finisher() const
+{
+    return Arm::the_instance()->solve_ik(target::the_instance()->x,
+                                         target::the_instance()->y,
+                                         position);
+}
+
 bool arm_state::is_goal() const
 {
-    float x = Arm::the_instance()->get_ee_x_at(position);
-    float y = Arm::the_instance()->get_ee_y_at(position);
-
-    target* t = target::the_instance();
-    if (x < (t->x - t->err_x) || x > (t->x + t->err_x)) return false;
-    if (y < (t->y - t->err_y) || y > (t->y + t->err_y)) return false;
-    return true;
+    if (heuristic() < 0.01) return true;
+    else return false;
 }
 
 float arm_state::heuristic() const

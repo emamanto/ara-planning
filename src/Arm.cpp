@@ -303,9 +303,6 @@ action Arm::solve_ik(float x, float y, pose position)
             break;
         }
 
-        std::cout << "err x " << x - fx << " err y "
-                  << y - fy << std::endl;
-
         for (int i = 0; i < num_joints; i++)
         {
             float delta = cur_joints.at(i)*pow(10, -4);
@@ -335,7 +332,6 @@ action Arm::solve_ik(float x, float y, pose position)
         Eigen::Vector2f dp;
         dp << (x - fx), (y - fy);
         joint_change = jacobian_plus*dp;
-        std::cout << "Decided to change joints by " << joint_change << std::endl;
 
         for (int i = 0; i < num_joints; i++)
         {
@@ -345,7 +341,8 @@ action Arm::solve_ik(float x, float y, pose position)
     }
 
     if (sqrt(pow(x - fx, 2) + pow(y - fy, 2)) < 0.01) return a;
-    else return action(-1, -1);
+    std::cout << "Failed IK" << std::endl;
+    return action(0, 0);
 }
 
 std::vector<action> Arm::get_big_primitives()
