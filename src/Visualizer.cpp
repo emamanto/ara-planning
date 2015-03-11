@@ -1,6 +1,6 @@
 #include "Visualizer.h"
 #include <iostream>
-//#define ASTAR
+#define ASTAR
 
 Visualizer::Visualizer(Arm* arm, target* goal, obstacles* obs,
                        Search<arm_state, action>& search,

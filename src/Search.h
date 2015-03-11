@@ -64,6 +64,7 @@ public:
 
         std::vector<P> final_path;
         std::vector<P>* primitives;
+        bool extra_prim = false;
 
         while(true)
         {
@@ -89,14 +90,11 @@ public:
 
             if (s.state.small_steps())
             {
+                primitives = &small_primitives;
                 if (s.state.use_finisher())
                 {
-                    primitives = small_primitives;
-                    primitives.push_back(s.compute_finisher());
-                }
-                else
-                {
-                    primitives = &small_primitives;
+                    primitives->push_back(s.state.compute_finisher());
+                    extra_prim = true;
                 }
             }
             else
@@ -129,6 +127,11 @@ public:
                     // insert s' into OPEN with above f(s')
                     OPEN.push(nnode);
                 }
+            }
+            if (extra_prim)
+            {
+                primitives->pop_back();
+                extra_prim = false;
             }
         }
 
