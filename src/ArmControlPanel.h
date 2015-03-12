@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QWidget>
-#include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QLabel>
 #include <map>
@@ -26,5 +26,5 @@ private slots:
 
 private:
     Arm* arm;
-    std::map<int, QSpinBox*> jointMap;
+    std::map<int, QDoubleSpinBox*> jointMap;
 };

@@ -9,13 +9,14 @@ ArmControlPanel::ArmControlPanel(Arm* arm, QWidget* parent) :
     for(int i= 0; i < arm->get_num_joints(); i++)
     {
         QLabel* label =  new QLabel(tr("joint"), this);
-        QSpinBox* box = new QSpinBox(this);
+        QDoubleSpinBox* box = new QDoubleSpinBox(this);
         box->setRange(arm->get_joint_min(i),
                       arm->get_joint_max(i));
-        box->setSingleStep(10);
+        box->setSingleStep(1.f);
+        box->setDecimals(2);
         layout->addWidget(label, i, 0);
         layout->addWidget(box, i, 1);
-        connect(box, SIGNAL(valueChanged(int)), this,
+        connect(box, SIGNAL(valueChanged(double)), this,
                 SLOT(updateArm()));
         jointMap[i] = box;
     }
