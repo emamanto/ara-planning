@@ -107,6 +107,14 @@ float Arm::get_ee_y_at(pose position)
     return get_joint_y_at(num_joints, position);
 }
 
+float Arm::get_ee_dist_to(float x, float y, pose position)
+{
+    float xdiff = x - get_ee_x_at(position);
+    float ydiff = y - get_ee_y_at(position);
+
+    return sqrt(pow(xdiff, 2) + pow(ydiff, 2));
+}
+
 float Arm::get_joint_x_at(int joint, pose position)
 {
     float x = 0.f;

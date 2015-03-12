@@ -76,13 +76,13 @@ bool arm_state::valid() const
 
 bool arm_state::small_steps() const
 {
-    if (heuristic() < D_SMALL) return true;
+    if (target_distance() < D_SMALL) return true;
     return false;
 }
 
 bool arm_state::use_finisher() const
 {
-    if (heuristic() < D_IK) return true;
+    if (target_distance() < D_IK) return true;
     return false;
 }
 
@@ -95,19 +95,20 @@ action arm_state::compute_finisher() const
 
 bool arm_state::is_goal() const
 {
-    if (heuristic() < 0.01) return true;
+    if (target_distance() < 0.01) return true;
     else return false;
 }
 
 float arm_state::heuristic() const
 {
-    float x = Arm::the_instance()->get_ee_x_at(position);
-    float y = Arm::the_instance()->get_ee_y_at(position);
+    return target_distance();
+}
 
-    float t_x = target::the_instance()->x;
-    float t_y = target::the_instance()->y;
-
-    return sqrt(pow(t_x-x, 2) + pow(t_y-y, 2));
+float arm_state::target_distance() const
+{
+    return Arm::the_instance()->get_ee_dist_to(target::the_instance()->x,
+                                               target::the_instance()->y,
+                                               position);
 }
 
 void arm_state::print() const

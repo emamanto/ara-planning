@@ -57,5 +57,6 @@ public:
     action compute_finisher() const;
     bool is_goal() const;
     float heuristic() const;
+    float target_distance() const;
     void print() const;
 };
