@@ -287,8 +287,8 @@ pose Arm::apply_at(action a, pose start)
 // http://en.wikipedia.org/wiki/Inverse_kinematics#The_Jacobian_inverse_technique
 action Arm::solve_ik(float x, float y, pose position)
 {
+    //std::cout << "SOLVE IK" << std::endl;
     action a;
-    float scaling_factor = 0.1f;
 
     for (int i = 0; i < num_joints; i++)
     {
@@ -306,15 +306,17 @@ action Arm::solve_ik(float x, float y, pose position)
         i++;
         fx = get_ee_x_at(cur_joints);
         fy = get_ee_y_at(cur_joints);
-        if (sqrt(pow(x - fx, 2) + pow(y - fy, 2)) < 0.01 || i > 100)
+        // std::cout << "Iteration " << i << ": ";
+        // std::cout << "EEX " << fx << ", EEY " << fy << std::endl;
+        if (sqrt(pow(x - fx, 2) + pow(y - fy, 2)) < 0.001 || i > 100)
         {
             break;
         }
 
         for (int i = 0; i < num_joints; i++)
         {
-            float delta = cur_joints.at(i)*pow(10, -4);
-            if ( delta < pow(10, -6)) delta = pow(10, -6);
+            float delta = cur_joints.at(i)*pow(10, -2);
+            if ( delta < pow(10, -4)) delta = pow(10, -4);
             pose posd = cur_joints;
             posd.at(i) = cur_joints.at(i) + delta;
             fk_jacobian(0, i) = (get_ee_x_at(posd) - fx) / delta;
@@ -343,8 +345,8 @@ action Arm::solve_ik(float x, float y, pose position)
 
         for (int i = 0; i < num_joints; i++)
         {
-            cur_joints.at(i) += scaling_factor*joint_change(i);
-            a.changes[i] += scaling_factor*joint_change(i);
+            cur_joints.at(i) += joint_change(i);
+            a.changes[i] += joint_change(i);
         }
     }
 
