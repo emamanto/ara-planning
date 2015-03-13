@@ -114,13 +114,8 @@ void Visualizer::drawTarget(QPainter* p)
 {
     // Draw search target
     p->setWorldTransform(original);
-    QPen pen = QPen(Qt::darkGreen);
-    pen.setWidth(2);
-    p->setPen(pen);
-    p->drawRect(goal->x-goal->err_x, goal->y-goal->err_y,
-                2*goal->err_x, 2*goal->err_y);
+    QPen pen = QPen(Qt::green);
     pen.setWidth(5);
-    pen.setColor(Qt::green);
     p->setPen(pen);
     p->drawPoint(goal->x, goal->y);
 }

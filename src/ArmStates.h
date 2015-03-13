@@ -12,11 +12,10 @@ public:
     static target* the_instance();
 
     float x, y;
-    float err_x, err_y;
 
 private:
     static target* instance;
-    target() : x(0), y(0), err_x(0), err_y(0) {};
+    target() : x(0), y(0) {};
     target(target const&) {};
 };
 

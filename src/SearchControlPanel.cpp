@@ -18,37 +18,15 @@ SearchControlPanel::SearchControlPanel(target* goal,
     connect(xbox, SIGNAL(valueChanged(int)), this,
             SLOT(updateTarget()));
 
-    QLabel* xerrlabel =  new QLabel(tr("x+/-"), this);
-    xerrbox = new QSpinBox(this);
-    xerrbox->setRange(0, 50);
-    xerrbox->setSingleStep(5);
-    xerrbox->setValue(0);
-    layout->addWidget(xerrlabel, 1, 0);
-    layout->addWidget(xerrbox, 1, 1);
-
-    connect(xerrbox, SIGNAL(valueChanged(int)), this,
-            SLOT(updateTarget()));
-
     QLabel* ylabel =  new QLabel(tr("target y"), this);
     ybox = new QSpinBox(this);
     ybox->setRange(0, ARM_LENGTH);
     ybox->setSingleStep(10);
     ybox->setValue(goal->y);
-    layout->addWidget(ylabel, 2, 0);
-    layout->addWidget(ybox, 2, 1);
+    layout->addWidget(ylabel, 1, 0);
+    layout->addWidget(ybox, 1, 1);
 
     connect(ybox, SIGNAL(valueChanged(int)), this,
-            SLOT(updateTarget()));
-
-    QLabel* yerrlabel =  new QLabel(tr("y+/-"), this);
-    yerrbox = new QSpinBox(this);
-    yerrbox->setRange(0, 50);
-    yerrbox->setSingleStep(5);
-    yerrbox->setValue(0);
-    layout->addWidget(yerrlabel, 3, 0);
-    layout->addWidget(yerrbox, 3, 1);
-
-    connect(yerrbox, SIGNAL(valueChanged(int)), this,
             SLOT(updateTarget()));
 
     QPushButton* start = new QPushButton(tr("search"), this);
@@ -72,8 +50,6 @@ void SearchControlPanel::updateTarget()
 {
     goal->x = xbox->value();
     goal->y = ybox->value();
-    goal->err_x = xerrbox->value();
-    goal->err_y = yerrbox->value();
     emit(redrawTargetInfo());
 }
 

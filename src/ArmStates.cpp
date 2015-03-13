@@ -95,7 +95,7 @@ action arm_state::compute_finisher() const
 
 bool arm_state::is_goal() const
 {
-    if (target_distance() < 0.01) return true;
+    if (target_distance() < 0.001) return true;
     else return false;
 }
 
