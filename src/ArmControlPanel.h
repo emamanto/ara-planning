@@ -4,6 +4,7 @@
 #include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QLabel>
+#include <QPushButton>
 #include <map>
 #include "Arm.h"
 #include "ArmStates.h"
@@ -23,6 +24,7 @@ public slots:
 
 private slots:
     void updateArm();
+    void resetArm();
 
 private:
     Arm* arm;

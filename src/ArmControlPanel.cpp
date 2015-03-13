@@ -6,7 +6,8 @@ ArmControlPanel::ArmControlPanel(Arm* arm, QWidget* parent) :
 {
     QGridLayout* layout = new QGridLayout(this);
 
-    for(int i= 0; i < arm->get_num_joints(); i++)
+    int i;
+    for(i= 0; i < arm->get_num_joints(); i++)
     {
         QLabel* label =  new QLabel(tr("joint"), this);
         QDoubleSpinBox* box = new QDoubleSpinBox(this);
@@ -20,6 +21,10 @@ ArmControlPanel::ArmControlPanel(Arm* arm, QWidget* parent) :
                 SLOT(updateArm()));
         jointMap[i] = box;
     }
+
+    QPushButton* reset = new QPushButton(tr("reset"), this);
+    layout->addWidget(reset, i, 0);
+    connect(reset, SIGNAL(clicked()), this, SLOT(resetArm()));
 }
 
 void ArmControlPanel::synchronize()
@@ -47,4 +52,12 @@ void ArmControlPanel::updateArm()
     {
         synchronize();
     }
+}
+
+void ArmControlPanel::resetArm()
+{
+    pose angles(arm->get_num_joints(), 0.f);
+    arm->set_joints(angles);
+    synchronize();
+    emit(redrawArm());
 }
