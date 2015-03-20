@@ -17,6 +17,9 @@ SearchWidget::SearchWidget(QWidget* parent) :
     the_obstacles.push_back(obstacle(-200, 60, 10, 40));
     obs->init(the_obstacles);
 
+    arm_state::new_goal(target::the_instance()->x,
+                        target::the_instance()->y);
+
     QGridLayout* layout = new QGridLayout(this);
     layout->addWidget(&vis, 0, 0);
     layout->addWidget(&armControls, 0, 1);

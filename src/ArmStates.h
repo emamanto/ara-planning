@@ -2,6 +2,8 @@
 
 #include "Arm.h"
 #include <map>
+#include <queue>
+#include <set>
 
 #define D_SMALL 30.f
 #define D_IK 15.f
@@ -58,4 +60,14 @@ public:
     float heuristic() const;
     float target_distance() const;
     void print() const;
+
+    static void new_goal(float x, float y);
+    static void bfs(std::pair<int,int> cell);
+    static std::pair<int,int> make_cell(float x, float y);
+
+private:
+    static std::map<std::pair<int,int>, int> bfs_heuristics;
+    static std::queue<std::pair<int,int> > bfs_queue;
+    static std::set<std::pair<int,int> > bfs_expanded;
+    static int grid_size;
 };

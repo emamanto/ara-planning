@@ -178,7 +178,8 @@ void Visualizer::heuristicOn(bool on)
 void Visualizer::newPlan()
 {
     latest_plan_start = arm->get_joints();
-
+    arm_state::new_goal(target::the_instance()->x,
+                        target::the_instance()->y);
 #ifdef ASTAR
     search_result<arm_state, action> final =
         search.astar(arm_state(arm->get_joints()),

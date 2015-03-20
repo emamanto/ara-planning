@@ -18,6 +18,11 @@ obstacles* obstacles::the_instance()
     return instance;
 }
 
+std::map<std::pair<int,int>, int> arm_state::bfs_heuristics = std::map<std::pair<int,int>, int>();
+std::queue<std::pair<int,int> > arm_state::bfs_queue = std::queue<std::pair<int,int> >();
+std::set<std::pair<int,int> > arm_state::bfs_expanded = std::set<std::pair<int,int> >();
+int arm_state::grid_size = 10;
+
 arm_state::arm_state() :
     position(Arm::the_instance()->get_num_joints(), 0)
 {
@@ -101,7 +106,51 @@ bool arm_state::is_goal() const
 
 float arm_state::heuristic() const
 {
-    return target_distance();
+    std::pair<int, int> grid_cell =
+        make_cell(Arm::the_instance()->get_ee_x_at(position),
+                  Arm::the_instance()->get_ee_y_at(position));
+    if (bfs_heuristics.count(grid_cell))
+    {
+        return bfs_heuristics[grid_cell];
+    }
+
+    bfs(grid_cell);
+    return bfs_heuristics[grid_cell];
+}
+
+void arm_state::bfs(std::pair<int,int> cell)
+{
+    while (!bfs_queue.empty())
+    {
+        std::pair<int, int> curr = bfs_queue.front();
+        bfs_queue.pop();
+        bfs_expanded.insert(curr);
+
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+                if (i==0 && j==0) continue;
+                std::pair<int, int> child =
+                    std::make_pair(curr.first + i*grid_size,
+                                   curr.second + j*grid_size);
+                if (bfs_expanded.count(child)) continue;
+                if (i==0 || j==0)
+                {
+                    bfs_heuristics[child] = (bfs_heuristics[curr] +
+                                             grid_size);
+                }
+                else
+                {
+                    bfs_heuristics[child] = (bfs_heuristics[curr] +
+                                             sqrt(2*pow(grid_size,
+                                                        2)));
+                }
+                bfs_queue.push(child);
+                if (child == cell) return;
+            }
+        }
+    }
 }
 
 float arm_state::target_distance() const
@@ -120,4 +169,20 @@ void arm_state::print() const
                   << " degrees ";
     }
     std::cout << std::endl;
+}
+
+std::pair<int,int> arm_state::make_cell(float x, float y)
+{
+    int xf = int(floor(x));
+    int yf = int(floor(y));
+    return std::make_pair((xf - (xf % grid_size))/grid_size,
+                          (yf - (yf % grid_size))/grid_size);
+}
+
+void arm_state::new_goal(float x, float y)
+{
+    arm_state::bfs_heuristics = std::map<std::pair<int,int>, int>();
+    arm_state::bfs_queue = std::queue<std::pair<int,int> >();
+    bfs_queue.push(make_cell(x, y));
+    bfs_heuristics[make_cell(x, y)] = 0;
 }
