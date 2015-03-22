@@ -48,6 +48,8 @@ void Visualizer::paintEvent(QPaintEvent*)
 
     QTransform original = painter.worldTransform();
 
+    drawGrid(&painter);
+
     painter.rotate(-90);
     QTransform arm_base = painter.worldTransform();
 
@@ -164,9 +166,33 @@ void Visualizer::drawObstacles(QPainter* p)
         p->fillRect(i->x, i->y, i->width, -i->height, Qt::darkGray);
 
         QPen pen = QPen(Qt::white);
-        pen.setWidth(2);
+        pen.setWidth(1);
         p->setPen(pen);
         p->drawRect(i->x, i->y, i->width, -i->height);
+    }
+}
+
+void Visualizer::drawGrid(QPainter* p)
+{
+    QColor dark = QColor(30, 30, 30);
+    QPen pen = QPen(dark);
+    p->setTransform(original);
+
+    for (int w = 0; w < maximumWidth()/2; w += grid_size)
+    {
+        if ((w % 50) == 0) pen.setWidth(3);
+        else pen.setWidth(1);
+        p->setPen(pen);
+        p->drawLine(w, 0, w, 0.9*maximumHeight());
+        p->drawLine(-w, 0, -w, 0.9*maximumHeight());
+    }
+
+    for (int h = 0; h < maximumHeight(); h += grid_size)
+    {
+        if ((h % 50) == 0) pen.setWidth(3);
+        else pen.setWidth(1);
+        p->setPen(pen);
+        p->drawLine(-maximumWidth()/2, h, maximumWidth()/2, h);
     }
 }
 

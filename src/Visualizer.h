@@ -32,6 +32,7 @@ private:
     void drawHeuristic(QPainter* p);
     void drawPlan(QPainter* p);
     void drawObstacles(QPainter* p);
+    void drawGrid(QPainter* p);
 
     Arm* arm;
     target* goal;
