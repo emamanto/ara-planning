@@ -19,13 +19,35 @@ obstacles* obstacles::the_instance()
     return instance;
 }
 
+bool obstacles::contains_obstacle(search_cell c)
+{
+    for (std::vector<obstacle>::iterator i = obs.begin();
+         i != obs.end(); i++)
+    {
+        for (int j = 0; j <= 1; j++)
+        {
+            for(int k = 0; k <= 1; k++)
+            {
+                float x_n = i->x + j*i->width;
+                float y_n = i->y - k*i->height;
+
+                if ((x_n > c.first && x_n < c.first + grid_size) ||
+                    (y_n > c.second && y_n < c.second + grid_size))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 std::map<search_cell, int> arm_state::bfs_heuristics =
     std::map<search_cell, int>();
 std::priority_queue<bfs_node> arm_state::bfs_queue =
     std::priority_queue<bfs_node>();
 std::set<search_cell> arm_state::bfs_expanded =
     std::set<search_cell>();
-int arm_state::grid_size = 10;
 
 arm_state::arm_state() :
     position(Arm::the_instance()->get_num_joints(), 0)

@@ -21,6 +21,9 @@ private:
     target(target const&) {};
 };
 
+typedef std::pair<int,int> search_cell;
+static int grid_size = 10;
+
 class obstacles
 {
 public:
@@ -29,6 +32,7 @@ public:
     obstacle obstacle_num(int i) { return obs.at(i); }
     int num_obstacles() { return obs.size(); }
     void init(std::vector<obstacle> i) { obs = i; }
+    bool contains_obstacle(search_cell c);
 
 private:
     static obstacles* instance;
@@ -38,7 +42,6 @@ private:
     std::vector<obstacle> obs;
 };
 
-typedef std::pair<int,int> search_cell;
 struct bfs_node
 {
     search_cell cell;
@@ -81,5 +84,4 @@ private:
     static std::map<search_cell, int> bfs_heuristics;
     static std::priority_queue<bfs_node> bfs_queue;
     static std::set<search_cell> bfs_expanded;
-    static int grid_size;
 };

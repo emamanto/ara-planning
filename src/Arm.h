@@ -86,7 +86,7 @@ public:
     line_segment arm_segment(int seg, pose position);
     bool intersect(int seg1, int seg2, pose position);
     bool collision(obstacle o, pose position);
-    bool intersect(line_segment seg1, line_segment seg2);
+    static bool intersect(line_segment seg1, line_segment seg2);
 
     bool apply(action a);
     bool apply(plan p);
