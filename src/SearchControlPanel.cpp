@@ -50,6 +50,7 @@ void SearchControlPanel::updateTarget()
 {
     goal->x = xbox->value();
     goal->y = ybox->value();
+    arm_state::new_goal(goal->x, goal->y);
     emit(redrawTargetInfo());
 }
 

@@ -18,9 +18,12 @@ obstacles* obstacles::the_instance()
     return instance;
 }
 
-std::map<std::pair<int,int>, int> arm_state::bfs_heuristics = std::map<std::pair<int,int>, int>();
-std::queue<std::pair<int,int> > arm_state::bfs_queue = std::queue<std::pair<int,int> >();
-std::set<std::pair<int,int> > arm_state::bfs_expanded = std::set<std::pair<int,int> >();
+std::map<search_cell, int> arm_state::bfs_heuristics =
+    std::map<search_cell, int>();
+std::priority_queue<bfs_node> arm_state::bfs_queue =
+    std::priority_queue<bfs_node>();
+std::set<search_cell> arm_state::bfs_expanded =
+    std::set<search_cell>();
 int arm_state::grid_size = 10;
 
 arm_state::arm_state() :
@@ -118,36 +121,48 @@ float arm_state::heuristic() const
     return bfs_heuristics[grid_cell];
 }
 
-void arm_state::bfs(std::pair<int,int> cell)
+void arm_state::bfs(search_cell end)
 {
     while (!bfs_queue.empty())
     {
-        std::pair<int, int> curr = bfs_queue.front();
+        bfs_node curr = bfs_queue.top();
         bfs_queue.pop();
-        bfs_expanded.insert(curr);
+        bfs_expanded.insert(curr.cell);
+        if (curr.cell == end) return;
 
         for (int i = -1; i <= 1; i++)
         {
             for (int j = -1; j <= 1; j++)
             {
                 if (i==0 && j==0) continue;
-                std::pair<int, int> child =
-                    std::make_pair(curr.first + i*grid_size,
-                                   curr.second + j*grid_size);
+                if ((curr.cell.second + j*grid_size) < 0) continue;
+                if ( abs(curr.cell.first) > 300 ||
+                     curr.cell.second > 300 ) continue;
+                search_cell child =
+                    std::make_pair(curr.cell.first + i*grid_size,
+                                   curr.cell.second + j*grid_size);
                 if (bfs_expanded.count(child)) continue;
-                if (i==0 || j==0)
+
+                float potential;
+                if (j==0 || i==0)
                 {
-                    bfs_heuristics[child] = (bfs_heuristics[curr] +
-                                             grid_size);
+                    potential = (bfs_heuristics[curr.cell] +
+                                 grid_size);
                 }
                 else
                 {
-                    bfs_heuristics[child] = (bfs_heuristics[curr] +
-                                             sqrt(2*pow(grid_size,
-                                                        2)));
+                    potential = (bfs_heuristics[curr.cell] +
+                                 sqrt(2*pow(grid_size, 2)));
                 }
-                bfs_queue.push(child);
-                if (child == cell) return;
+                if (!bfs_heuristics.count(child) ||
+                    bfs_heuristics[child] > potential)
+                {
+                    bfs_heuristics[child] = potential;
+                    bfs_node c;
+                    c.cell = child;
+                    c.dist = potential;
+                    bfs_queue.push(c);
+                }
             }
         }
     }
@@ -171,18 +186,22 @@ void arm_state::print() const
     std::cout << std::endl;
 }
 
-std::pair<int,int> arm_state::make_cell(float x, float y)
+search_cell arm_state::make_cell(float x, float y)
 {
     int xf = int(floor(x));
     int yf = int(floor(y));
-    return std::make_pair((xf - (xf % grid_size))/grid_size,
-                          (yf - (yf % grid_size))/grid_size);
+    return std::make_pair((xf - (xf % grid_size)),
+                          (yf - (yf % grid_size)));
 }
 
 void arm_state::new_goal(float x, float y)
 {
-    arm_state::bfs_heuristics = std::map<std::pair<int,int>, int>();
-    arm_state::bfs_queue = std::queue<std::pair<int,int> >();
-    bfs_queue.push(make_cell(x, y));
-    bfs_heuristics[make_cell(x, y)] = 0;
+    arm_state::bfs_heuristics = std::map<search_cell, int>();
+    arm_state::bfs_queue = std::priority_queue<bfs_node>();
+    arm_state::bfs_expanded = std::set<search_cell>();
+    bfs_node n;
+    n.cell = make_cell(x, y);
+    n.dist = 0;
+    bfs_heuristics[n.cell] = 0;
+    bfs_queue.push(n);
 }

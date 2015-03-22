@@ -38,6 +38,18 @@ private:
     std::vector<obstacle> obs;
 };
 
+typedef std::pair<int,int> search_cell;
+struct bfs_node
+{
+    search_cell cell;
+    float dist;
+
+    bool operator < (const bfs_node other) const
+    { return dist > other.dist; }
+    bool operator > (const bfs_node other) const
+    { return dist < other.dist; }
+};
+
 class arm_state
 {
 public:
@@ -62,12 +74,12 @@ public:
     void print() const;
 
     static void new_goal(float x, float y);
-    static void bfs(std::pair<int,int> cell);
-    static std::pair<int,int> make_cell(float x, float y);
+    static void bfs(search_cell cell);
+    static search_cell make_cell(float x, float y);
 
 private:
-    static std::map<std::pair<int,int>, int> bfs_heuristics;
-    static std::queue<std::pair<int,int> > bfs_queue;
-    static std::set<std::pair<int,int> > bfs_expanded;
+    static std::map<search_cell, int> bfs_heuristics;
+    static std::priority_queue<bfs_node> bfs_queue;
+    static std::set<search_cell> bfs_expanded;
     static int grid_size;
 };
