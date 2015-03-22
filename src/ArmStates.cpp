@@ -1,6 +1,7 @@
 #include "ArmStates.h"
 #include <iostream>
 #include <cmath>
+//#define EUCLIDEAN
 
 target* target::instance = 0;
 
@@ -109,6 +110,9 @@ bool arm_state::is_goal() const
 
 float arm_state::heuristic() const
 {
+#ifdef EUCLIDEAN
+    return target_distance();
+#else
     std::pair<int, int> grid_cell =
         make_cell(Arm::the_instance()->get_ee_x_at(position),
                   Arm::the_instance()->get_ee_y_at(position));
@@ -119,6 +123,7 @@ float arm_state::heuristic() const
 
     bfs(grid_cell);
     return bfs_heuristics[grid_cell];
+#endif
 }
 
 void arm_state::bfs(search_cell end)

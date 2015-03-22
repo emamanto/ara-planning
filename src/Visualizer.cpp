@@ -133,8 +133,6 @@ void Visualizer::drawHeuristic(QPainter* p)
                      goal->y);
 
     float h = arm_state(arm->get_joints()).heuristic();
-    float d = arm_state(arm->get_joints()).target_distance();
-    std::cout << d << std::endl;
     QString s = QString::number(h);
     p->scale(1.0,-1.0);
     p->drawText(goal->x+5,
