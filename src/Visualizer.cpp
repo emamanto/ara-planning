@@ -74,7 +74,7 @@ void Visualizer::drawArm(Arm* a, QPainter* p, bool main)
     p->setWorldTransform(arm_base);
 
     QPen pen = QPen(Qt::lightGray);
-    if (!main) pen.setColor(Qt::darkGray);
+    if (!main) pen.setColor(QColor(100, 100, 100, 150));
     pen.setWidth(3);
     p->setPen(pen);
 
@@ -93,7 +93,7 @@ void Visualizer::drawArm(Arm* a, QPainter* p, bool main)
     p->drawPoint(0,0);
     pen.setColor(Qt::darkMagenta);
     p->setPen(pen);
-    QColor c(30, 150, 50);
+    QColor c(30, 150, 50, 200);
     int interval = int((150.f - 50.f)/a->get_num_joints());
 
     for (int i = 0; i < a->get_num_joints(); i++)
