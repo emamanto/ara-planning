@@ -32,7 +32,7 @@ public:
     std::vector<obstacle> get_obstacles() { return obs; }
     obstacle obstacle_num(int i) { return obs.at(i); }
     int num_obstacles() { return obs.size(); }
-    void init(std::vector<obstacle> i) { obs = i; }
+    void init(std::vector<obstacle> i);
     bool contains_obstacle(search_cell c);
 
 private:
@@ -41,6 +41,7 @@ private:
     obstacles(obstacles const&) {};
 
     std::vector<obstacle> obs;
+    std::set<search_cell> blocked_cells;
 };
 
 struct bfs_node

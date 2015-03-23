@@ -19,27 +19,29 @@ obstacles* obstacles::the_instance()
     return instance;
 }
 
-bool obstacles::contains_obstacle(search_cell c)
+void obstacles::init(std::vector<obstacle> i)
 {
-    for (std::vector<obstacle>::iterator i = obs.begin();
-         i != obs.end(); i++)
+    obs = i;
+    for (std::vector<obstacle>::iterator o = i.begin();
+         o != i.end(); o++)
     {
-        for (int j = 0; j <= 1; j++)
-        {
-            for(int k = 0; k <= 1; k++)
-            {
-                float x_n = i->x + j*i->width;
-                float y_n = i->y - k*i->height;
+        search_cell tl = arm_state::make_cell(o->x, o->y);
+        blocked_cells.insert(tl);
 
-                if ((x_n > c.first && x_n < c.first + grid_size) ||
-                    (y_n > c.second && y_n < c.second + grid_size))
-                {
-                    return true;
-                }
+        for (int x = tl.first; x <= (o->x + o->width); x+= grid_size)
+        {
+            for (int y = tl.second; y >= (o->y - o->height);
+                 y -= grid_size)
+            {
+                blocked_cells.insert(arm_state::make_cell(x,y));
             }
         }
     }
-    return false;
+}
+
+bool obstacles::contains_obstacle(search_cell c)
+{
+    return blocked_cells.count(c);
 }
 
 std::map<search_cell, int> arm_state::bfs_heuristics =
@@ -186,6 +188,7 @@ void arm_state::bfs(search_cell end)
                 search_cell child =
                     std::make_pair(curr.cell.first + i*grid_size,
                                    curr.cell.second + j*grid_size);
+                if (obstacles::the_instance()->contains_obstacle(child)) continue;
                 if (bfs_expanded.count(child)) continue;
 
                 float potential;
