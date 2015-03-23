@@ -205,6 +205,12 @@ void arm_state::bfs(search_cell end)
                     std::make_pair(curr.cell.first + i*grid_size,
                                    curr.cell.second + j*grid_size);
                 if (obstacles::the_instance()->contains_obstacle(child)) continue;
+                if (sqrt(pow(child.first,2) +
+                         pow(child.second,2)) > ARM_LENGTH )
+                {
+                    continue;
+                }
+
                 if (bfs_expanded.count(child)) continue;
 
                 float potential;
