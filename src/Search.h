@@ -149,6 +149,7 @@ public:
         OPEN = std::priority_queue<search_node<S, P> >();
         CLOSED.clear();
         INCONS.clear();
+        costs.clear();
 
         epsilon = e_start;
 

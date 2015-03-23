@@ -83,7 +83,14 @@ public:
     static void bfs(search_cell cell);
     static search_cell make_cell(float x, float y);
 
+    static void use_euclidean(bool b) { euclidean = b; }
+    static bool using_euclidean() { return euclidean; }
+    static void debug(bool b) { heuristic_debug = b; }
+
 private:
+    static bool euclidean;
+    static bool heuristic_debug;
+
     static std::map<search_cell, int> bfs_heuristics;
     static std::map<search_cell, search_path> bfs_paths;
     static std::priority_queue<bfs_node> bfs_queue;

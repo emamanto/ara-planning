@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QRadioButton>
 #include "ArmStates.h"
 
 class SearchControlPanel : public QWidget
@@ -23,7 +24,8 @@ signals:
 
 private slots:
     void updateTarget();
-    void heuristic(int);
+    void heuristicDebug(int);
+    void heuristicEuclidean(bool);
     void startSearch();
     void clearSearch();
 

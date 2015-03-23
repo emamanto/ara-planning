@@ -39,11 +39,19 @@ SearchControlPanel::SearchControlPanel(target* goal,
     connect(clear, SIGNAL(clicked()), this,
             SLOT(clearSearch()));
 
-    QCheckBox* heur = new QCheckBox(tr("heuristic"), this);
-    layout->addWidget(heur, 5, 0);
+    QRadioButton* eu = new QRadioButton(tr("euclidean"), this);
+    QRadioButton* bfs = new QRadioButton(tr("bfs"), this);
+    eu->setChecked(false);
+    bfs->setChecked(true);
+    layout->addWidget(eu, 5, 0);
+    layout->addWidget(bfs, 5, 1);
+    connect(eu, SIGNAL(toggled(bool)), this,
+            SLOT(heuristicEuclidean(bool)));
 
+    QCheckBox* heur = new QCheckBox(tr("heuristic"), this);
+    layout->addWidget(heur, 6, 0);
     connect(heur, SIGNAL(stateChanged(int)), this,
-            SLOT(heuristic(int)));
+            SLOT(heuristicDebug(int)));
 }
 
 void SearchControlPanel::updateTarget()
@@ -54,9 +62,16 @@ void SearchControlPanel::updateTarget()
     emit(redrawTargetInfo());
 }
 
-void SearchControlPanel::heuristic(int check)
+void SearchControlPanel::heuristicDebug(int check)
 {
+    arm_state::debug(bool(check));
     emit(drawHeuristic(bool(check)));
+    emit(redrawTargetInfo());
+}
+
+void SearchControlPanel::heuristicEuclidean(bool check)
+{
+    arm_state::use_euclidean(check);
     emit(redrawTargetInfo());
 }
 

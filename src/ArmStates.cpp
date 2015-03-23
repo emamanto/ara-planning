@@ -1,7 +1,6 @@
 #include "ArmStates.h"
 #include <iostream>
 #include <cmath>
-//#define EUCLIDEAN
 
 target* target::instance = 0;
 
@@ -52,6 +51,9 @@ std::priority_queue<bfs_node> arm_state::bfs_queue =
     std::priority_queue<bfs_node>();
 std::set<search_cell> arm_state::bfs_expanded =
     std::set<search_cell>();
+
+bool arm_state::euclidean = false;
+bool arm_state::heuristic_debug = false;
 
 arm_state::arm_state() :
     position(Arm::the_instance()->get_num_joints(), 0)
@@ -136,25 +138,39 @@ bool arm_state::is_goal() const
 
 float arm_state::heuristic() const
 {
-#ifdef EUCLIDEAN
-    return target_distance();
-#else
-    std::pair<int, int> grid_cell =
-        make_cell(Arm::the_instance()->get_ee_x_at(position),
-                  Arm::the_instance()->get_ee_y_at(position));
-    if (bfs_heuristics.count(grid_cell))
+    if (euclidean)
     {
+        return target_distance();
+    }
+    else
+    {
+        std::pair<int, int> grid_cell =
+            make_cell(Arm::the_instance()->get_ee_x_at(position),
+                      Arm::the_instance()->get_ee_y_at(position));
+        if (bfs_heuristics.count(grid_cell))
+        {
+            return bfs_heuristics[grid_cell];
+        }
+
+        bfs(grid_cell);
         return bfs_heuristics[grid_cell];
     }
-
-    bfs(grid_cell);
-    return bfs_heuristics[grid_cell];
-
-#endif
 }
 
 search_path arm_state::heuristic_path() const
 {
+    if (!heuristic_debug)
+    {
+        std::cout << "Heuristic debugging off." << std::endl;
+        return search_path();
+    }
+    if (euclidean)
+    {
+        std::cout << "No path because using euclidean heuristic."
+                  << std::endl;
+        return search_path();
+    }
+
     std::pair<int, int> grid_cell =
         make_cell(Arm::the_instance()->get_ee_x_at(position),
                   Arm::the_instance()->get_ee_y_at(position));
@@ -206,8 +222,11 @@ void arm_state::bfs(search_cell end)
                     bfs_heuristics[child] > potential)
                 {
                     bfs_heuristics[child] = potential;
-                    bfs_paths[child] = bfs_paths[curr.cell];
-                    bfs_paths[child].push_back(child);
+                    if (heuristic_debug)
+                    {
+                        bfs_paths[child] = bfs_paths[curr.cell];
+                        bfs_paths[child].push_back(child);
+                    }
                     bfs_node c;
                     c.cell = child;
                     c.dist = potential;
@@ -254,6 +273,6 @@ void arm_state::new_goal(float x, float y)
     n.cell = make_cell(x, y);
     n.dist = 0;
     bfs_heuristics[n.cell] = 0;
-    bfs_paths[n.cell] = search_path();
+    if (heuristic_debug) bfs_paths[n.cell] = search_path();
     bfs_queue.push(n);
 }

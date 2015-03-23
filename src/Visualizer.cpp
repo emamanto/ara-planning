@@ -131,17 +131,28 @@ void Visualizer::drawHeuristic(QPainter* p)
 
     arm_state curr_state(arm->get_joints());
     float h = curr_state.heuristic();
-    search_path path = curr_state.heuristic_path();
 
-    search_cell past = arm_state::make_cell(goal->x, goal->y);
-    for (search_path::iterator i = path.begin();
-         i != path.end(); i++)
+    if (arm_state::using_euclidean())
     {
-        p->drawPoint((i->first),
-                    (i->second));
-        past = *i;
+        pen.setStyle(Qt::DashLine);
+        p->setPen(pen);
+        p->drawLine(arm->get_ee_x(),
+                    arm->get_ee_y(),
+                    goal->x,
+                    goal->y);
     }
-
+    else
+    {
+        search_path path = curr_state.heuristic_path();
+        search_cell past = arm_state::make_cell(goal->x, goal->y);
+        for (search_path::iterator i = path.begin();
+             i != path.end(); i++)
+        {
+            p->drawPoint((i->first),
+                         (i->second));
+            past = *i;
+        }
+    }
 
     QString s = QString::number(h);
     p->scale(1.0,-1.0);
