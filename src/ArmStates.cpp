@@ -44,6 +44,8 @@ bool obstacles::contains_obstacle(search_cell c)
 
 std::map<search_cell, int> arm_state::bfs_heuristics =
     std::map<search_cell, int>();
+std::map<search_cell, search_path> arm_state::bfs_paths =
+    std::map<search_cell, search_path>();
 std::priority_queue<bfs_node> arm_state::bfs_queue =
     std::priority_queue<bfs_node>();
 std::set<search_cell> arm_state::bfs_expanded =
@@ -145,7 +147,23 @@ float arm_state::heuristic() const
 
     bfs(grid_cell);
     return bfs_heuristics[grid_cell];
+
 #endif
+}
+
+search_path arm_state::heuristic_path() const
+{
+    std::pair<int, int> grid_cell =
+        make_cell(Arm::the_instance()->get_ee_x_at(position),
+                  Arm::the_instance()->get_ee_y_at(position));
+
+    if (bfs_paths.count(grid_cell))
+    {
+        return bfs_paths[grid_cell];
+    }
+
+    bfs(grid_cell);
+    return bfs_paths[grid_cell];
 }
 
 void arm_state::bfs(search_cell end)
@@ -185,6 +203,8 @@ void arm_state::bfs(search_cell end)
                     bfs_heuristics[child] > potential)
                 {
                     bfs_heuristics[child] = potential;
+                    bfs_paths[child] = bfs_paths[curr.cell];
+                    bfs_paths[child].push_back(child);
                     bfs_node c;
                     c.cell = child;
                     c.dist = potential;
@@ -224,11 +244,13 @@ search_cell arm_state::make_cell(float x, float y)
 void arm_state::new_goal(float x, float y)
 {
     arm_state::bfs_heuristics = std::map<search_cell, int>();
+    arm_state::bfs_paths = std::map<search_cell, search_path>();
     arm_state::bfs_queue = std::priority_queue<bfs_node>();
     arm_state::bfs_expanded = std::set<search_cell>();
     bfs_node n;
     n.cell = make_cell(x, y);
     n.dist = 0;
     bfs_heuristics[n.cell] = 0;
+    bfs_paths[n.cell] = search_path();
     bfs_queue.push(n);
 }

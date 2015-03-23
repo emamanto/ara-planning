@@ -22,6 +22,7 @@ private:
 };
 
 typedef std::pair<int,int> search_cell;
+typedef std::vector<search_cell> search_path;
 static int grid_size = 10;
 
 class obstacles
@@ -73,6 +74,7 @@ public:
     action compute_finisher() const;
     bool is_goal() const;
     float heuristic() const;
+    search_path heuristic_path() const;
     float target_distance() const;
     void print() const;
 
@@ -82,6 +84,7 @@ public:
 
 private:
     static std::map<search_cell, int> bfs_heuristics;
+    static std::map<search_cell, search_path> bfs_paths;
     static std::priority_queue<bfs_node> bfs_queue;
     static std::set<search_cell> bfs_expanded;
 };
