@@ -5,10 +5,9 @@ SearchWidget::SearchWidget(QWidget* parent) :
     arm(Arm::the_instance()),
     goal(target::the_instance()),
     obs(obstacles::the_instance()),
-    search(),
     armControls(arm, this),
     searchControls(goal, this),
-    vis(arm, goal, obs, search, this)
+    vis(arm, goal, obs, this)
 {
     std::vector<obstacle> the_obstacles;
     the_obstacles.push_back(obstacle(-50, 250, 30, 150));

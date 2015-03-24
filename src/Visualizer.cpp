@@ -3,13 +3,11 @@
 //#define ASTAR
 
 Visualizer::Visualizer(Arm* arm, target* goal, obstacles* obs,
-                       Search<arm_state, action>& search,
                        QWidget* parent) :
     QWidget(parent),
     arm(arm),
     goal(goal),
     obs(obs),
-    search(search),
     latest_plan_start(arm->get_joints()),
     draw_heuristic(false),
     draw_plan(false)
@@ -227,16 +225,16 @@ void Visualizer::newPlan()
                         target::the_instance()->y);
 #ifdef ASTAR
     search_result<arm_state, action> final =
-        search.astar(arm_state(arm->get_joints()),
-                     arm->get_big_primitives(),
-                     arm->get_small_primitives(),
-                     5.f);
+        astar<arm_state, action>(arm_state(arm->get_joints()),
+                                 arm->get_big_primitives(),
+                                 arm->get_small_primitives(),
+                                 5.f);
 #else
     std::vector<search_result<arm_state, action> > res =
-        search.arastar(arm_state(arm->get_joints()),
-                       arm->get_big_primitives(),
-                       arm->get_small_primitives(),
-                       5.f);
+        arastar<arm_state, action>(arm_state(arm->get_joints()),
+                                   arm->get_big_primitives(),
+                                   arm->get_small_primitives(),
+                                   5.f);
 
     search_result<arm_state, action> final = res.at(res.size() - 1);
 #endif
