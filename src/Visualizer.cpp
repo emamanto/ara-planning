@@ -10,7 +10,8 @@ Visualizer::Visualizer(Arm* arm, target* goal, obstacles* obs,
     obs(obs),
     latest_plan_start(arm->get_joints()),
     draw_heuristic(false),
-    draw_plan(false)
+    draw_plan(false),
+    ee_only(true)
 {
     setFixedSize(ARM_LENGTH*2+40,ARM_LENGTH+20);
 
@@ -160,16 +161,37 @@ void Visualizer::drawHeuristic(QPainter* p)
 
 void Visualizer::drawPlan(QPainter* p)
 {
-    pose joints = arm->get_joints();
     arm->set_joints(latest_plan_start);
     drawArm(arm, p, false);
+    float past_x = arm->get_ee_x();
+    float past_y = arm->get_ee_y();
+
+    QColor step_color = QColor(80, 80, 100);
+    int num_steps = latest_plan.size();
+    int color_diff = int((255-100) / num_steps);
+
+    p->setTransform(original);
     for (plan::iterator i = latest_plan.begin();
          i != latest_plan.end(); i++)
     {
         arm->apply(*i);
-        drawArm(arm, p, false);
+        if (!ee_only)
+        {
+            drawArm(arm, p, false);
+        }
+        else
+        {
+            QPen pen = QPen(step_color);
+            pen.setWidth(3);
+            p->setPen(pen);
+            float x = arm->get_ee_x();
+            float y = arm->get_ee_y();
+            p->drawLine(past_x, past_y, x, y);
+            step_color.setBlue(step_color.blue() + color_diff);
+            past_x = x;
+            past_y = y;
+        }
     }
-    arm->set_joints(joints);
 }
 
 void Visualizer::drawObstacles(QPainter* p)

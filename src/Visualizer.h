@@ -40,5 +40,6 @@ private:
     plan latest_plan;
     bool draw_heuristic;
     bool draw_plan;
+    bool ee_only;
     QTransform original, arm_base;
 };
