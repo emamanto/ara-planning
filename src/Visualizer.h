@@ -20,6 +20,7 @@ signals:
 
 public slots:
     void heuristicOn(bool on);
+    void eePath(bool on);
     void newPlan();
     void clearPlan();
 

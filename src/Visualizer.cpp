@@ -240,6 +240,11 @@ void Visualizer::heuristicOn(bool on)
     draw_heuristic = on;
 }
 
+void Visualizer::eePath(bool on)
+{
+    ee_only = on;
+}
+
 void Visualizer::newPlan()
 {
     latest_plan_start = arm->get_joints();

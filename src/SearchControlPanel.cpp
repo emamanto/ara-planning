@@ -52,6 +52,10 @@ SearchControlPanel::SearchControlPanel(target* goal,
     layout->addWidget(heur, 6, 0);
     connect(heur, SIGNAL(stateChanged(int)), this,
             SLOT(heuristicDebug(int)));
+    QCheckBox* ee = new QCheckBox(tr("ee path"), this);
+    layout->addWidget(ee, 6, 1);
+    connect(ee, SIGNAL(stateChanged(int)), this,
+            SLOT(eePathOnly(int)));
 }
 
 void SearchControlPanel::updateTarget()
@@ -66,6 +70,12 @@ void SearchControlPanel::heuristicDebug(int check)
 {
     arm_state::debug(bool(check));
     emit(drawHeuristic(bool(check)));
+    emit(redrawTargetInfo());
+}
+
+void SearchControlPanel::eePathOnly(int check)
+{
+    emit(drawOnlyEEPath(bool(check)));
     emit(redrawTargetInfo());
 }
 

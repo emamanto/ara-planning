@@ -30,6 +30,8 @@ SearchWidget::SearchWidget(QWidget* parent) :
             &vis, SLOT(repaint()));
     connect(&searchControls, SIGNAL(drawHeuristic(bool)),
             &vis, SLOT(heuristicOn(bool)));
+    connect(&searchControls, SIGNAL(drawOnlyEEPath(bool)),
+            &vis, SLOT(eePath(bool)));
     connect(&searchControls, SIGNAL(initiateSearch()),
             &vis, SLOT(newPlan()));
     connect(&searchControls, SIGNAL(clearSearchVis()),

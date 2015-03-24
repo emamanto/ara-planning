@@ -19,12 +19,14 @@ public:
 signals:
     void redrawTargetInfo();
     void drawHeuristic(bool);
+    void drawOnlyEEPath(bool);
     void initiateSearch();
     void clearSearchVis();
 
 private slots:
     void updateTarget();
     void heuristicDebug(int);
+    void eePathOnly(int);
     void heuristicEuclidean(bool);
     void startSearch();
     void clearSearch();
