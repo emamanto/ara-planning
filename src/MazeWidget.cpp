@@ -11,7 +11,6 @@ using namespace std;
 MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
 {
     setWindowTitle("aMaze");
-    Search<box, primitive> s;
 
     std::vector<primitive> ps;
     for (int i = -1; i <= 1; i++)
@@ -31,12 +30,12 @@ MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
     for (std::vector<float>::iterator e = desired_epsilons.begin();
          e != desired_epsilons.end(); e++)
     {
-        solutions.push_back(s.astar(box(0, 0), ps, ps, *e));
+        solutions.push_back(astar(box(0, 0), ps, ps, *e));
     }
 #else
     float epsilon = 3.5;
     std::vector<search_result<box, primitive> > all_solutions =
-        s.arastar(box(0, 0), ps, ps, epsilon);
+        arastar(box(0, 0), ps, ps, epsilon);
 
     epsilon += 0.5;
     for (std::vector<search_result<box, primitive> >::iterator s =
