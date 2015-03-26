@@ -24,6 +24,9 @@ signals:
     void clearSearchVis();
     void killSearch();
 
+public slots:
+    void searchOver();
+
 private slots:
     void updateTarget();
     void heuristicDebug(int);
@@ -37,4 +40,11 @@ private:
     target* goal;
     QSpinBox* xbox;
     QSpinBox* ybox;
+    QPushButton* start;
+    QPushButton* stop;
+    QPushButton* clear;
+    QRadioButton* eu;
+    QRadioButton* bfs;
+    QCheckBox* heur;
+    QCheckBox* ee;
 };

@@ -29,23 +29,23 @@ SearchControlPanel::SearchControlPanel(target* goal,
     connect(ybox, SIGNAL(valueChanged(int)), this,
             SLOT(updateTarget()));
 
-    QPushButton* start = new QPushButton(tr("search"), this);
+    start = new QPushButton(tr("search"), this);
     layout->addWidget(start, 4, 0);
     connect(start, SIGNAL(clicked()), this,
             SLOT(startSearch()));
 
-    QPushButton* stop = new QPushButton(tr("stop"), this);
+    stop = new QPushButton(tr("stop"), this);
     layout->addWidget(stop, 4, 1);
     connect(stop, SIGNAL(clicked()), this,
             SLOT(stopSearch()));
 
-    QPushButton* clear = new QPushButton(tr("clear"), this);
+    clear = new QPushButton(tr("clear"), this);
     layout->addWidget(clear, 4, 2);
     connect(clear, SIGNAL(clicked()), this,
             SLOT(clearSearch()));
 
-    QRadioButton* eu = new QRadioButton(tr("euclidean"), this);
-    QRadioButton* bfs = new QRadioButton(tr("bfs"), this);
+    eu = new QRadioButton(tr("euclidean"), this);
+    bfs = new QRadioButton(tr("bfs"), this);
     eu->setChecked(false);
     bfs->setChecked(true);
     layout->addWidget(eu, 5, 0);
@@ -53,11 +53,11 @@ SearchControlPanel::SearchControlPanel(target* goal,
     connect(eu, SIGNAL(toggled(bool)), this,
             SLOT(heuristicEuclidean(bool)));
 
-    QCheckBox* heur = new QCheckBox(tr("heuristic"), this);
+    heur = new QCheckBox(tr("heuristic"), this);
     layout->addWidget(heur, 6, 0);
     connect(heur, SIGNAL(stateChanged(int)), this,
             SLOT(heuristicDebug(int)));
-    QCheckBox* ee = new QCheckBox(tr("ee path"), this);
+    ee = new QCheckBox(tr("ee path"), this);
     layout->addWidget(ee, 6, 1);
     connect(ee, SIGNAL(stateChanged(int)), this,
             SLOT(eePathOnly(int)));
@@ -92,15 +92,58 @@ void SearchControlPanel::heuristicEuclidean(bool check)
 
 void SearchControlPanel::startSearch()
 {
+    xbox->setEnabled(false);
+    ybox->setEnabled(false);
+    start->setEnabled(false);
+    stop->setEnabled(true);
+    clear->setEnabled(false);
+    eu->setEnabled(false);
+    bfs->setEnabled(false);
+    heur->setEnabled(false);
+    ee->setEnabled(false);
+
     emit(initiateSearch());
 }
 
 void SearchControlPanel::clearSearch()
 {
+    xbox->setEnabled(true);
+    ybox->setEnabled(true);
+    start->setEnabled(true);
+    stop->setEnabled(false);
+    clear->setEnabled(false);
+    eu->setEnabled(true);
+    bfs->setEnabled(true);
+    heur->setEnabled(true);
+    ee->setEnabled(true);
+
     emit(clearSearchVis());
 }
 
 void SearchControlPanel::stopSearch()
 {
+    xbox->setEnabled(false);
+    ybox->setEnabled(false);
+    start->setEnabled(false);
+    stop->setEnabled(false);
+    clear->setEnabled(true);
+    eu->setEnabled(false);
+    bfs->setEnabled(false);
+    heur->setEnabled(true);
+    ee->setEnabled(true);
+
     emit(killSearch());
+}
+
+void SearchControlPanel::searchOver()
+{
+    xbox->setEnabled(false);
+    ybox->setEnabled(false);
+    start->setEnabled(false);
+    stop->setEnabled(false);
+    clear->setEnabled(true);
+    eu->setEnabled(false);
+    bfs->setEnabled(false);
+    heur->setEnabled(true);
+    ee->setEnabled(true);
 }

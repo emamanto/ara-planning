@@ -284,7 +284,7 @@ void Visualizer::planCompleted()
     latest_plan = latest_search.at(latest_search.size()-1).path;
     arm->set_joints(latest_plan_start);
     arm->apply(latest_plan);
-    emit(synchronizeArmControls());
+    emit(searchFinished());
     draw_plan = true;
 }
 

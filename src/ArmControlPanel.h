@@ -21,6 +21,8 @@ signals:
 
 public slots:
     void synchronize();
+    void disable();
+    void enable();
 
 private slots:
     void updateArm();

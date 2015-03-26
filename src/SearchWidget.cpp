@@ -26,6 +26,7 @@ SearchWidget::SearchWidget(QWidget* parent) :
     setLayout(layout);
     connect(&armControls, SIGNAL(redrawArm()),
             &vis, SLOT(repaint()));
+
     connect(&searchControls, SIGNAL(redrawTargetInfo()),
             &vis, SLOT(repaint()));
     connect(&searchControls, SIGNAL(drawHeuristic(bool)),
@@ -34,11 +35,18 @@ SearchWidget::SearchWidget(QWidget* parent) :
             &vis, SLOT(eePath(bool)));
     connect(&searchControls, SIGNAL(initiateSearch()),
             &vis, SLOT(newPlan()));
+    connect(&searchControls, SIGNAL(initiateSearch()),
+            &armControls, SLOT(disable()));
     connect(&searchControls, SIGNAL(clearSearchVis()),
             &vis, SLOT(clearPlan()));
+    connect(&searchControls, SIGNAL(clearSearchVis()),
+            &armControls, SLOT(enable()));
     connect(&searchControls, SIGNAL(killSearch()),
             &vis, SLOT(stopSearch()));
-    connect(&vis, SIGNAL(synchronizeArmControls()),
+
+    connect(&vis, SIGNAL(searchFinished()),
             &armControls, SLOT(synchronize()));
+    connect(&vis, SIGNAL(searchFinished()),
+            &searchControls, SLOT(searchOver()));
 }
 

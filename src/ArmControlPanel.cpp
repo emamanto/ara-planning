@@ -36,6 +36,22 @@ void ArmControlPanel::synchronize()
     }
 }
 
+void ArmControlPanel::disable()
+{
+    for (int i = 0; i < arm->get_num_joints(); i++)
+    {
+        jointMap[i]->setEnabled(false);
+    }
+}
+
+void ArmControlPanel::enable()
+{
+    for (int i = 0; i < arm->get_num_joints(); i++)
+    {
+        jointMap[i]->setEnabled(true);
+    }
+}
+
 void ArmControlPanel::updateArm()
 {
     pose angles;

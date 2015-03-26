@@ -19,7 +19,7 @@ public:
                QWidget* parent = 0);
 
 signals:
-    void synchronizeArmControls();
+    void searchFinished();
 
 public slots:
     void heuristicOn(bool on);
