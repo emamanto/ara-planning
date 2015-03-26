@@ -137,7 +137,8 @@ search_result<S, P> astar(S begin,
 
 template <class S, typename P>
 bool improve_path(S& goal,
-                  bool* kill,
+                  bool goal_found,
+                  bool* dead,
                   std::vector<P>& big_primitives,
                   std::vector<P>& small_primitives,
                   std::vector<search_result<S, P> >* solutions,
@@ -145,7 +146,8 @@ bool improve_path(S& goal,
                   std::set<search_node<S, P> >& INCONS,
                   std::priority_queue<search_node<S, P> >& OPEN,
                   std::map<S, float>& costs,
-                  float epsilon)
+                  float epsilon,
+                  bool* kill)
 {
     std::set<S> CLOSED = std::set<S>();
 
@@ -153,10 +155,8 @@ bool improve_path(S& goal,
     result.path = best_path;
     std::vector<P>* primitives;
     bool extra_prim = false;
-    bool goal_found = false;
 
-    bool can_kill = true;
-    if (solutions->empty()) can_kill = false;
+    bool can_kill = !solutions->empty();
 
     while(!goal_found ||
           (costs[goal] + epsilon*heuristic(goal)) >
@@ -165,7 +165,8 @@ bool improve_path(S& goal,
     {
         if (can_kill && *kill)
         {
-            return true;
+            *dead = true;
+            return false;
         }
 
         if (OPEN.empty())
@@ -174,7 +175,7 @@ bool improve_path(S& goal,
             solutions->push_back(result);
             std::cout << "No solution found by improve_path"
                       << std::endl;
-            return true;
+            return false;
         }
         // remove s with smallest fvalue from OPEN
         search_node<S, P> s(OPEN.top());
@@ -263,7 +264,7 @@ bool improve_path(S& goal,
         cop.pop();
     }
     solutions->push_back(result);
-    return false;
+    return goal_found;
 }
 
 template <class S, typename P>
@@ -297,7 +298,7 @@ float min_gh(std::map<S, float>& costs,
 }
 
 template <typename S, typename P>
-void arastar(std::vector<search_result<S, P> >* solution,
+void arastar(std::vector<search_result<S, P> >* solutions,
              bool* kill,
              S begin,
              std::vector<P> big_prs,
@@ -307,12 +308,13 @@ void arastar(std::vector<search_result<S, P> >* solution,
     bool goal_found = false;
     std::priority_queue<search_node<S, P> > OPEN =
         std::priority_queue<search_node<S, P> >();
+    solutions->clear();
     std::vector<P> best_path = std::vector<P>();
     std::set<search_node<S, P> > INCONS =
         std::set<search_node<S, P> >();
     std::map<S, float> costs = std::map<S, float>();
     float epsilon = e_start;
-    S goal = S();
+    S goal;
 
     // g(goal) = inf; g(start) = 0;
     costs[begin] = 0;
@@ -322,12 +324,14 @@ void arastar(std::vector<search_result<S, P> >* solution,
     snode.f_value = (costs[begin] + epsilon*heuristic(begin));
     OPEN.push(snode);
 
-    bool dead = improve_path<S, P>(goal, kill, big_prs, s_prs,
-                                   solution, best_path, INCONS, OPEN,
-                                   costs, epsilon);
-    if (dead) return;
-
-    best_path = solution->at(0).path;
+    bool killed = false;
+    goal_found = improve_path<S, P>(goal, goal_found, &killed,
+                                    big_prs, s_prs,
+                                    solutions, best_path,
+                                    INCONS, OPEN,
+                                    costs, epsilon, kill);
+    if (killed) return;
+    best_path = solutions->at(0).path;
 
     // g(goal)/min{s E OPEN U INCONS} (g+h)
     float alt = costs[goal] / min_gh<S, P>(costs, OPEN, INCONS);
@@ -365,10 +369,12 @@ void arastar(std::vector<search_result<S, P> >* solution,
             OPEN.push(*o);
         }
 
-        bool dead = improve_path<S,P>(goal, kill, big_prs, s_prs,
-                                      solution, best_path, INCONS,
-                                      OPEN, costs, epsilon);
-        if (dead) return;
+        goal_found = improve_path<S,P>(goal, goal_found, &killed,
+                                       big_prs, s_prs,
+                                       solutions, best_path,
+                                       INCONS, OPEN,
+                                       costs, epsilon, kill);
+        if (killed) return;
 
         // g(goal)/min{s E OPEN U INCONS} (g+h)
         float alt = costs[goal] / min_gh<S,P>(costs, OPEN, INCONS);
