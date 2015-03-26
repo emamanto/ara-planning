@@ -133,6 +133,7 @@ void SearchControlPanel::stopSearch()
     ee->setEnabled(true);
 
     emit(killSearch());
+    emit(redrawTargetInfo());
 }
 
 void SearchControlPanel::searchOver()

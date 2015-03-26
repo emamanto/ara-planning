@@ -31,6 +31,7 @@ private slots:
 
 private:
     Arm* arm;
+    pose old;
     std::map<int, QDoubleSpinBox*> jointMap;
     QPushButton* home;
     QPushButton* resetSearch;

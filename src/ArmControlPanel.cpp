@@ -2,7 +2,8 @@
 
 ArmControlPanel::ArmControlPanel(Arm* arm, QWidget* parent) :
     QWidget(parent),
-    arm(arm)
+    arm(arm),
+    old(arm->get_num_joints(), 0.f)
 {
     QGridLayout* layout = new QGridLayout(this);
 
@@ -41,11 +42,13 @@ void ArmControlPanel::synchronize()
 
 void ArmControlPanel::disable()
 {
+    old = arm->get_joints();
     for (int i = 0; i < arm->get_num_joints(); i++)
     {
         jointMap[i]->setEnabled(false);
     }
     home->setEnabled(false);
+    resetSearch->setEnabled(false);
 }
 
 void ArmControlPanel::enable()
@@ -55,6 +58,7 @@ void ArmControlPanel::enable()
         jointMap[i]->setEnabled(true);
     }
     home->setEnabled(true);
+    resetSearch->setEnabled(true);
 }
 
 void ArmControlPanel::updateArm()
@@ -86,4 +90,10 @@ void ArmControlPanel::homeArm()
 
 void ArmControlPanel::resetArm()
 {
+    arm->set_joints(old);
+    for (int i = 0; i < arm->get_num_joints(); i++)
+    {
+        jointMap[i]->setValue(old.at(i));
+    }
+    emit(redrawArm());
 }
