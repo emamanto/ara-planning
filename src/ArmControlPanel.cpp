@@ -22,9 +22,12 @@ ArmControlPanel::ArmControlPanel(Arm* arm, QWidget* parent) :
         jointMap[i] = box;
     }
 
-    QPushButton* reset = new QPushButton(tr("reset"), this);
-    layout->addWidget(reset, i, 0);
-    connect(reset, SIGNAL(clicked()), this, SLOT(resetArm()));
+    home = new QPushButton(tr("home"), this);
+    layout->addWidget(home, i, 0);
+    connect(home, SIGNAL(clicked()), this, SLOT(homeArm()));
+    resetSearch = new QPushButton(tr("reset"), this);
+    layout->addWidget(resetSearch, i, 1);
+    connect(resetSearch, SIGNAL(clicked()), this, SLOT(resetArm()));
 }
 
 void ArmControlPanel::synchronize()
@@ -42,6 +45,7 @@ void ArmControlPanel::disable()
     {
         jointMap[i]->setEnabled(false);
     }
+    home->setEnabled(false);
 }
 
 void ArmControlPanel::enable()
@@ -50,6 +54,7 @@ void ArmControlPanel::enable()
     {
         jointMap[i]->setEnabled(true);
     }
+    home->setEnabled(true);
 }
 
 void ArmControlPanel::updateArm()
@@ -70,10 +75,15 @@ void ArmControlPanel::updateArm()
     }
 }
 
+void ArmControlPanel::homeArm()
+{
+    arm->set_joints(pose(arm->get_num_joints(), 0.f));
+    for (int i = 0; i < arm->get_num_joints(); i++)
+    {
+        jointMap[i]->setValue(0.f);
+    }
+}
+
 void ArmControlPanel::resetArm()
 {
-    pose angles(arm->get_num_joints(), 0.f);
-    arm->set_joints(angles);
-    synchronize();
-    emit(redrawArm());
 }

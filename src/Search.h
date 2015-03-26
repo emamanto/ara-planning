@@ -312,7 +312,7 @@ void arastar(std::vector<search_result<S, P> >* solution,
         std::set<search_node<S, P> >();
     std::map<S, float> costs = std::map<S, float>();
     float epsilon = e_start;
-    S goal;
+    S goal = S();
 
     // g(goal) = inf; g(start) = 0;
     costs[begin] = 0;

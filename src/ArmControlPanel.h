@@ -26,9 +26,12 @@ public slots:
 
 private slots:
     void updateArm();
+    void homeArm();
     void resetArm();
 
 private:
     Arm* arm;
     std::map<int, QDoubleSpinBox*> jointMap;
+    QPushButton* home;
+    QPushButton* resetSearch;
 };

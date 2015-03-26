@@ -35,7 +35,9 @@ MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
 #else
     float epsilon = 3.5;
     std::vector<search_result<box, primitive> > all_solutions =
-        arastar(box(0, 0), ps, ps, epsilon);
+        std::vector<search_result<box, primitive> >();
+    bool kill = false;
+    arastar(&all_solutions, &kill, box(0,0), ps, ps, epsilon);
 
     epsilon += 0.5;
     for (std::vector<search_result<box, primitive> >::iterator s =

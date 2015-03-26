@@ -270,9 +270,37 @@ void* Visualizer::searchThread(void* arg)
 {
     Visualizer* v = static_cast<Visualizer*>(arg);
     Arm* a = Arm::the_instance();
+    // arastar<arm_state, action>(&v->latest_search,
+    //                            &v->kill_search,
+    //                            arm_state(a->get_joints()),
+    //                            a->get_big_primitives(),
+    //                            a->get_small_primitives(),
+    //                            5.f);
+    std::cout << "*******" << std::endl;
     arastar<arm_state, action>(&v->latest_search,
                                &v->kill_search,
-                               arm_state(a->get_joints()),
+                               pose(a->get_num_joints(), 0.f),
+                               a->get_big_primitives(),
+                               a->get_small_primitives(),
+                               5.f);
+    std::cout << "*******" << std::endl;
+    arastar<arm_state, action>(&v->latest_search,
+                               &v->kill_search,
+                               pose(a->get_num_joints(), 0.f),
+                               a->get_big_primitives(),
+                               a->get_small_primitives(),
+                               5.f);
+    std::cout << "*******" << std::endl;
+    arastar<arm_state, action>(&v->latest_search,
+                               &v->kill_search,
+                               pose(a->get_num_joints(), 0.f),
+                               a->get_big_primitives(),
+                               a->get_small_primitives(),
+                               5.f);
+    std::cout << "*******" << std::endl;
+    arastar<arm_state, action>(&v->latest_search,
+                               &v->kill_search,
+                               pose(a->get_num_joints(), 0.f),
                                a->get_big_primitives(),
                                a->get_small_primitives(),
                                5.f);
