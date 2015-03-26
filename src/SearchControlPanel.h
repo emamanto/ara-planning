@@ -22,6 +22,7 @@ signals:
     void drawOnlyEEPath(bool);
     void initiateSearch();
     void clearSearchVis();
+    void killSearch();
 
 private slots:
     void updateTarget();
@@ -30,6 +31,7 @@ private slots:
     void heuristicEuclidean(bool);
     void startSearch();
     void clearSearch();
+    void stopSearch();
 
 private:
     target* goal;

@@ -2,6 +2,8 @@
 #include <iostream>
 //#define ASTAR
 
+pthread_t Visualizer::search_thread = pthread_t();
+
 Visualizer::Visualizer(Arm* arm, target* goal, obstacles* obs,
                        QWidget* parent) :
     QWidget(parent),
@@ -11,7 +13,8 @@ Visualizer::Visualizer(Arm* arm, target* goal, obstacles* obs,
     latest_plan_start(arm->get_joints()),
     draw_heuristic(false),
     draw_plan(false),
-    ee_only(true)
+    ee_only(false),
+    kill_search(false)
 {
     setFixedSize(ARM_LENGTH*2+40,ARM_LENGTH+20);
 
@@ -247,6 +250,7 @@ void Visualizer::eePath(bool on)
 
 void Visualizer::newPlan()
 {
+    kill_search = false;
     latest_plan_start = arm->get_joints();
     arm_state::new_goal(target::the_instance()->x,
                         target::the_instance()->y);
@@ -257,21 +261,31 @@ void Visualizer::newPlan()
                                  arm->get_small_primitives(),
                                  5.f);
 #else
-    std::vector<search_result<arm_state, action> > res =
-        arastar<arm_state, action>(arm_state(arm->get_joints()),
-                                   arm->get_big_primitives(),
-                                   arm->get_small_primitives(),
-                                   5.f);
-
-    search_result<arm_state, action> final = res.at(res.size() - 1);
+    latest_search.clear();
+    pthread_create(&search_thread, NULL, &searchThread, this);
 #endif
+}
 
-    latest_plan = final.path;
+void* Visualizer::searchThread(void* arg)
+{
+    Visualizer* v = static_cast<Visualizer*>(arg);
+    Arm* a = Arm::the_instance();
+    arastar<arm_state, action>(&v->latest_search,
+                               &v->kill_search,
+                               arm_state(a->get_joints()),
+                               a->get_big_primitives(),
+                               a->get_small_primitives(),
+                               5.f);
+    v->planCompleted();
+}
+
+void Visualizer::planCompleted()
+{
+    latest_plan = latest_search.at(latest_search.size()-1).path;
     arm->set_joints(latest_plan_start);
     arm->apply(latest_plan);
     emit(synchronizeArmControls());
     draw_plan = true;
-    repaint();
 }
 
 void Visualizer::clearPlan()
@@ -279,4 +293,9 @@ void Visualizer::clearPlan()
     latest_plan.clear();
     draw_plan = false;
     repaint();
+}
+
+void Visualizer::stopSearch()
+{
+    kill_search = true;
 }

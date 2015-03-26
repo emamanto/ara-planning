@@ -34,8 +34,13 @@ SearchControlPanel::SearchControlPanel(target* goal,
     connect(start, SIGNAL(clicked()), this,
             SLOT(startSearch()));
 
+    QPushButton* stop = new QPushButton(tr("stop"), this);
+    layout->addWidget(stop, 4, 1);
+    connect(stop, SIGNAL(clicked()), this,
+            SLOT(stopSearch()));
+
     QPushButton* clear = new QPushButton(tr("clear"), this);
-    layout->addWidget(clear, 4, 1);
+    layout->addWidget(clear, 4, 2);
     connect(clear, SIGNAL(clicked()), this,
             SLOT(clearSearch()));
 
@@ -93,4 +98,9 @@ void SearchControlPanel::startSearch()
 void SearchControlPanel::clearSearch()
 {
     emit(clearSearchVis());
+}
+
+void SearchControlPanel::stopSearch()
+{
+    emit(killSearch());
 }

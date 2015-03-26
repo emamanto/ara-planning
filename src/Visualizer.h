@@ -5,6 +5,9 @@
 #include "Arm.h"
 #include "ArmStates.h"
 #include "Search.h"
+#include <pthread.h>
+
+typedef std::vector<search_result<arm_state, action> > arastar_solution;
 
 class Visualizer : public QWidget
 {
@@ -23,6 +26,7 @@ public slots:
     void eePath(bool on);
     void newPlan();
     void clearPlan();
+    void stopSearch();
 
 private:
     void paintEvent(QPaintEvent*);
@@ -34,13 +38,20 @@ private:
     void drawObstacles(QPainter* p);
     void drawGrid(QPainter* p);
 
+    static void* searchThread(void*);
+    void planCompleted();
+
     Arm* arm;
     target* goal;
     obstacles* obs;
     pose latest_plan_start;
+    arastar_solution latest_search;
     plan latest_plan;
     bool draw_heuristic;
     bool draw_plan;
     bool ee_only;
+    bool kill_search;
     QTransform original, arm_base;
+
+    static pthread_t search_thread;
 };

@@ -36,6 +36,8 @@ SearchWidget::SearchWidget(QWidget* parent) :
             &vis, SLOT(newPlan()));
     connect(&searchControls, SIGNAL(clearSearchVis()),
             &vis, SLOT(clearPlan()));
+    connect(&searchControls, SIGNAL(killSearch()),
+            &vis, SLOT(stopSearch()));
     connect(&vis, SIGNAL(synchronizeArmControls()),
             &armControls, SLOT(synchronize()));
 }
