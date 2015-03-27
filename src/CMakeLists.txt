@@ -22,6 +22,9 @@ set( maze_srcs maze_main.cpp
   MazeStates.cpp
   MazeWidget.cpp )
 
+set( robot_srcs robot_main.cpp
+  ProbCogArm.cpp )
+
 set( headers ArmSim.h
   Visualizer.h
   ArmControlPanel.h
@@ -51,3 +54,7 @@ target_link_libraries(
   maze_ara
   ${QT_LIBRARIES}
 )
+
+add_executable(robot_ara
+  ${robot_srcs}
+  )
