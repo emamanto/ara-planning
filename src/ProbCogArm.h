@@ -47,7 +47,7 @@ public:
     static float get_default_torque(int joint_number)
     { return configuration.at(joint_number).default_torque; }
 
-    // static pose apply(pose from, action act);
+    static pose apply(pose from, action act);
 
     static std::vector<action>& big_primitives()
     { return big_prims; }
@@ -55,7 +55,6 @@ public:
     { return small_prims; }
 
     static bool is_valid(pose p);
-
 
 private:
     probcog_arm() {};

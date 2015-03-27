@@ -61,6 +61,7 @@ void probcog_arm::INIT()
 
     for (int i = 0; i < num_joints; i++)
     {
+        // change here if desired
         float big = 10;
         float small = 5;
 
@@ -80,4 +81,24 @@ void probcog_arm::INIT()
         sn.at(i) = -small;
         small_prims.push_back(sn);
     }
+}
+
+pose probcog_arm::apply(pose from, action act)
+{
+    pose end = from;
+    for (int i = 0; i < num_joints; i++)
+    {
+        end.at(i) += act.at(i);
+    }
+    return end;
+}
+
+bool probcog_arm::is_valid(pose p)
+{
+   for (int i = 0; i < num_joints; i++)
+   {
+       if (p.at(i) < configuration.at(i).min ||
+           p.at(i) > configuration.at(i).max) return false;
+   }
+   return true;
 }
