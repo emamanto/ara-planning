@@ -8,6 +8,7 @@ set(CMAKE_CXX_FLAGS "-pthread -I /usr/include/eigen3/")
 
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
+include_directories(../lcmtypes)
 
 set( srcs main.cpp
   Arm.cpp
