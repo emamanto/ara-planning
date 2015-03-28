@@ -53,7 +53,8 @@ void probcog_arm::INIT()
     wrist_yaw.around = Y_AXIS;
     wrist_yaw.min = -150.f;
     wrist_yaw.max = 150.f;
-    wrist_yaw.length = 0.08;
+    // ?? 0.111
+    wrist_yaw.length = 0.0;
     wrist_yaw.width = 0.03;
     wrist_yaw.default_speed = 0.25;
     wrist_yaw.default_torque = 0.6;
@@ -83,6 +84,37 @@ void probcog_arm::INIT()
     }
 }
 
+point_3d probcog_arm::joint_xyz(int joint_number, pose p)
+{
+    Eigen::Matrix4f xform = translation_matrix(0, 0, base_height);
+    for (int i = 0; i < joint_number; i++)
+    {
+        xform *= rotation_matrix(p.at(i),
+                                 configuration.at(i).around);
+        xform *= translation_matrix(0, 0,
+                                    configuration.at(i).length);
+    }
+    point_3d xyz;
+    xyz.push_back(xform(0,3));
+    xyz.push_back(xform(1,3));
+    xyz.push_back(xform(2,3));
+    return xyz;
+}
+
+point_3d probcog_arm::ee_xyz(pose p)
+{
+    return joint_xyz(num_joints-1, p);
+}
+
+float probcog_arm::ee_dist_to(pose from, point_3d to)
+{
+    point_3d ee = ee_xyz(from);
+    float xdiff = ee.at(0) - to.at(0);
+    float ydiff = ee.at(1) - to.at(1);
+    float zdiff = ee.at(2) - to.at(2);
+    return sqrt(pow(xdiff, 2) + pow(ydiff, 2) + pow(zdiff, 2));
+}
+
 pose probcog_arm::apply(pose from, action act)
 {
     pose end = from;
@@ -101,4 +133,44 @@ bool probcog_arm::is_valid(pose p)
            p.at(i) > configuration.at(i).max) return false;
    }
    return true;
+}
+
+Eigen::Matrix4f probcog_arm::rotation_matrix(float angle,
+                                             axis around)
+{
+    Eigen::Matrix4f rot;
+    if ( around == X_AXIS )
+    {
+        rot << 1, 0, 0, 0,
+            0, cos(angle), -sin(angle), 0,
+            0, sin(angle), cos(angle), 0,
+            0, 0, 0, 1;
+    }
+    else if ( around == Y_AXIS )
+    {
+        rot << cos(angle), 0, sin(angle), 0,
+            0, 1, 0, 0,
+            -sin(angle), 0, cos(angle), 0,
+            0, 0, 0, 1;
+    }
+    else //Z
+    {
+        rot << cos(angle), -sin(angle), 0, 0,
+            sin(angle), cos(angle), 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1;
+    }
+    return rot;
+}
+
+Eigen::Matrix4f probcog_arm::translation_matrix(float x,
+                                                float y,
+                                                float z)
+{
+    Eigen::Matrix4f trans;
+    trans << 1, 0, 0, x,
+        0, 1, 0, y,
+        0, 0, 1, z,
+        0, 0, 0, 1;
+    return trans;
 }

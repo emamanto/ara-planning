@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <Eigen/Dense>
 
 enum axis { X_AXIS, Y_AXIS, Z_AXIS };
 
@@ -26,9 +27,9 @@ public:
 
     static int get_num_joints() { return num_joints; }
 
-    // static point_3d joint_xyzrpy(int joint_number, pose p);
-    // static point_3d ee_xyzrpy(pose p);
-    // static float ee_dist_to(pose from, point_3d to);
+    static point_3d joint_xyz(int joint_number, pose p);
+    static point_3d ee_xyz(pose p);
+    static float ee_dist_to(pose from, point_3d to);
 
     // static action solve_ik(pose from, point_3d to);
 
@@ -60,6 +61,11 @@ private:
     probcog_arm() {};
     probcog_arm(probcog_arm const&) {};
     probcog_arm& operator=(probcog_arm const&) {};
+
+    static Eigen::Matrix4f rotation_matrix(float angle, axis around);
+    static Eigen::Matrix4f translation_matrix(float x,
+                                              float y,
+                                              float z);
 
     static int num_joints;
     static float base_height;

@@ -58,3 +58,8 @@ target_link_libraries(
 add_executable(robot_ara
   ${robot_srcs}
   )
+
+target_link_libraries(
+  robot_ara
+  lcm
+)
