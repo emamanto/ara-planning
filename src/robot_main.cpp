@@ -6,6 +6,7 @@
 #include "ProbCogArm.h"
 #include "dynamixel_status_list_t.hpp"
 #include "dynamixel_command_list_t.hpp"
+#include "search_target_t.hpp"
 
 class lcm_handler
 {
@@ -33,6 +34,8 @@ int main(int argc, char* argv[])
 
     lcm_handler handler;
     lcm.subscribe("ARM_STATUS", &lcm_handler::handle_message,
+                  &handler);
+    lcm.subscribe("SEARCH_TARGET", &lcm_handler::handle_message,
                   &handler);
 
     while(0 == lcm.handle())
