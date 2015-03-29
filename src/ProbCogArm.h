@@ -62,6 +62,7 @@ private:
     probcog_arm(probcog_arm const&) {};
     probcog_arm& operator=(probcog_arm const&) {};
 
+    static Eigen::Matrix4f joint_transform(int joint_number, pose p);
     static Eigen::Matrix4f rotation_matrix(float angle, axis around);
     static Eigen::Matrix4f translation_matrix(float x,
                                               float y,
@@ -69,6 +70,7 @@ private:
 
     static int num_joints;
     static float base_height;
+    static float hand_length;
     static std::vector<joint> configuration;
     static std::vector<action> big_prims;
     static std::vector<action> small_prims;

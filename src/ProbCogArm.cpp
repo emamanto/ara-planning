@@ -2,6 +2,7 @@
 
 int probcog_arm::num_joints = 5;
 float probcog_arm::base_height = 0.075f;
+float probcog_arm::hand_length = 0.111f;
 std::vector<joint> probcog_arm::configuration = std::vector<joint>();
 std::vector<action> probcog_arm::big_prims = std::vector<action>();
 std::vector<action> probcog_arm::small_prims = std::vector<action>();
@@ -53,12 +54,13 @@ void probcog_arm::INIT()
     wrist_yaw.around = Y_AXIS;
     wrist_yaw.min = -150.f;
     wrist_yaw.max = 150.f;
-    // ?? 0.111
     wrist_yaw.length = 0.0;
     wrist_yaw.width = 0.03;
     wrist_yaw.default_speed = 0.25;
     wrist_yaw.default_torque = 0.6;
     configuration.push_back(wrist_yaw);
+
+    // Discounting hand joint for now, treating as stick on end
 
     for (int i = 0; i < num_joints; i++)
     {
@@ -84,7 +86,8 @@ void probcog_arm::INIT()
     }
 }
 
-point_3d probcog_arm::joint_xyz(int joint_number, pose p)
+Eigen::Matrix4f probcog_arm::joint_transform(int joint_number,
+                                             pose p)
 {
     Eigen::Matrix4f xform = translation_matrix(0, 0, base_height);
     for (int i = 0; i < joint_number; i++)
@@ -94,6 +97,11 @@ point_3d probcog_arm::joint_xyz(int joint_number, pose p)
         xform *= translation_matrix(0, 0,
                                     configuration.at(i).length);
     }
+    return xform;
+}
+point_3d probcog_arm::joint_xyz(int joint_number, pose p)
+{
+    Eigen::Matrix4f xform = joint_transform(joint_number, p);
     point_3d xyz;
     xyz.push_back(xform(0,3));
     xyz.push_back(xform(1,3));
@@ -103,7 +111,13 @@ point_3d probcog_arm::joint_xyz(int joint_number, pose p)
 
 point_3d probcog_arm::ee_xyz(pose p)
 {
-    return joint_xyz(num_joints-1, p);
+    Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
+                             translation_matrix(0, 0, hand_length));
+    point_3d xyz;
+    xyz.push_back(xform(0,3));
+    xyz.push_back(xform(1,3));
+    xyz.push_back(xform(2,3));
+    return xyz;
 }
 
 float probcog_arm::ee_dist_to(pose from, point_3d to)
