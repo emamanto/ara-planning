@@ -3,7 +3,8 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "ProbCogArm.h"
+#include "ProbCogSearchStates.h"
+#include "Search.h"
 #include "dynamixel_status_list_t.hpp"
 #include "dynamixel_command_list_t.hpp"
 #include "search_target_t.hpp"
@@ -35,15 +36,15 @@ public:
         {
             goal.push_back(targ->target[i]);
         }
-        action a = probcog_arm::solve_ik(latest, goal);
-        pose p;
+        arm_state as = arm_state(latest);
+        action a(probcog_arm::get_num_joints(), 0.f);
+        a[1] = 0.1;
         dynamixel_command_list_t command;
         command.len = probcog_arm::get_num_joints() + 1;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
         {
             dynamixel_command_t c;
-            c.position_radians = a.at(i) + latest.at(i);
-            p.push_back(a.at(i) + latest.at(i));
+            c.position_radians = as.apply(a).position.at(i);
             c.speed = probcog_arm::get_default_speed(i);
             c.max_torque = probcog_arm::get_default_torque(i);
             command.commands.push_back(c);
@@ -62,16 +63,6 @@ public:
         t++;
         sleep(1);
         }
-
-    point_3d fxyz = probcog_arm::ee_xyz(p);
-    std::cout << "**EE should be at " << fxyz[0] << ", "
-    << fxyz[1] << ", " << fxyz[2] << std::endl;
-    std::cout << "\t Because commanded pose is ";
-    for (int i = 0; i < 5-1; i++)
-    {
-        std::cout << p.at(i) << ", ";
-    }
-    std::cout << p.at(5-1) << std::endl << std::endl;
     }
 
     pose latest;
@@ -112,6 +103,19 @@ int main(int argc, char* argv[])
         command.commands.push_back(hand);
 
         lcm.publish("ARM_COMMAND", &command);
+
+        arm_state::target[0] = 0.1;
+        arm_state::target[1] = 0.3;
+        arm_state::target[2] = 0.4;
+
+        // std::vector<search_result<arm_state, action> >latest_search;
+        // bool kill_search = false;
+        // arastar<arm_state, action>(&latest_search,
+        //                            &kill_search,
+        //                            arm_state(pose(5, M_PI/6)),
+        //                            probcog_arm::big_primitives(),
+        //                            probcog_arm::small_primitives(),
+        //                            10.f);
 
     while(0 == lcm.handle())
     {

@@ -24,7 +24,8 @@ set( maze_srcs maze_main.cpp
   MazeWidget.cpp )
 
 set( robot_srcs robot_main.cpp
-  ProbCogArm.cpp )
+  ProbCogArm.cpp
+  ProbCogSearchStates.cpp )
 
 set( headers ArmSim.h
   Visualizer.h

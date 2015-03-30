@@ -66,8 +66,8 @@ void probcog_arm::INIT()
     for (int i = 0; i < num_joints; i++)
     {
         // change here if desired
-        float big = 10;
-        float small = 5;
+        float big = 10.f*M_PI/180.f;
+        float small = big/2.f;
 
         action bp = action(num_joints, 0);
         bp.at(i) = big;
@@ -194,15 +194,6 @@ action probcog_arm::solve_ik(pose from, point_3d to)
             a.at(k) += joint_change(k);
         }
     }
-
-    std::cout << "**Planned to " << fxyz[0] << ", "
-              << fxyz[1] << ", " << fxyz[2] << std::endl;
-    std::cout << "\t Because final pose is ";
-    for (int i = 0; i < 5-1; i++)
-    {
-        std::cout << cur_joints.at(i) << ", ";
-    }
-    std::cout << cur_joints.at(5-1) << std::endl;
 
     if (sqrt(pow(to.at(0) - fxyz.at(0), 2) +
              pow(to.at(1) - fxyz.at(1), 2) +
