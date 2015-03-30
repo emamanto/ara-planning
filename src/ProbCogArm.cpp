@@ -1,4 +1,5 @@
 #include "ProbCogArm.h"
+#include <iostream>
 
 int probcog_arm::num_joints = 5;
 float probcog_arm::base_height = 0.075f;
@@ -127,6 +128,87 @@ float probcog_arm::ee_dist_to(pose from, point_3d to)
     float ydiff = ee.at(1) - to.at(1);
     float zdiff = ee.at(2) - to.at(2);
     return sqrt(pow(xdiff, 2) + pow(ydiff, 2) + pow(zdiff, 2));
+}
+
+action probcog_arm::solve_ik(pose from, point_3d to)
+{
+    action a(num_joints, 0.f);
+
+    Eigen::MatrixXf fk_jacobian(3, num_joints);
+    pose cur_joints = from;
+    Eigen::VectorXf joint_change;
+    int i = 0;
+    point_3d fxyz;
+
+    while (true)
+    {
+        i++;
+        fxyz = ee_xyz(cur_joints);
+        if (sqrt(pow(to.at(0) - fxyz.at(0), 2) +
+                 pow(to.at(1) - fxyz.at(1), 2) +
+                 pow(to.at(2) - fxyz.at(2), 2)) < 0.001 || i > 100)
+        {
+            break;
+        }
+
+        for (int k = 0; k < num_joints; k++)
+        {
+            float delta = cur_joints.at(k)*pow(10, -2);
+            if ( delta < pow(10, -4)) delta = pow(10, -4);
+            pose posd = cur_joints;
+            posd.at(k) = cur_joints.at(k) + delta;
+            point_3d xyz_d = ee_xyz(posd);
+            fk_jacobian(0, k) = (xyz_d.at(0) - fxyz.at(0)) / delta;
+            fk_jacobian(1, k) = (xyz_d.at(1) - fxyz.at(1)) / delta;
+            fk_jacobian(2, k) = (xyz_d.at(2) - fxyz.at(2)) / delta;
+        }
+
+        Eigen::JacobiSVD<Eigen::MatrixXf> svd(fk_jacobian,
+                                              (Eigen::ComputeFullU |
+                                               Eigen::ComputeFullV));
+
+        Eigen::MatrixXf sigma_pseudoinv =
+            Eigen::MatrixXf::Zero(3, num_joints);
+        sigma_pseudoinv.diagonal() = svd.singularValues();
+
+        if (sigma_pseudoinv(0, 0) < 0.000001 ||
+            sigma_pseudoinv(1, 1) < 0.000001 ||
+            sigma_pseudoinv(2, 2) < 0.000001) break;
+
+        sigma_pseudoinv(0, 0) = 1.f/sigma_pseudoinv(0, 0);
+        sigma_pseudoinv(1, 1) = 1.f/sigma_pseudoinv(1, 1);
+        sigma_pseudoinv(2, 2) = 1.f/sigma_pseudoinv(2, 2);
+        sigma_pseudoinv.transposeInPlace();
+
+        Eigen::MatrixXf jacobian_plus =
+            svd.matrixV()*sigma_pseudoinv*(svd.matrixU().transpose());
+
+        Eigen::Vector3f dp;
+        dp << (to.at(0) - fxyz.at(0)), (to.at(1) - fxyz.at(1)),
+            (to.at(2) - fxyz.at(2));
+        joint_change = jacobian_plus*dp;
+
+        for (int k = 0; k < num_joints; k++)
+        {
+            cur_joints.at(k) += joint_change(k);
+            a.at(k) += joint_change(k);
+        }
+    }
+
+    std::cout << "**Planned to " << fxyz[0] << ", "
+              << fxyz[1] << ", " << fxyz[2] << std::endl;
+    std::cout << "\t Because final pose is ";
+    for (int i = 0; i < 5-1; i++)
+    {
+        std::cout << cur_joints.at(i) << ", ";
+    }
+    std::cout << cur_joints.at(5-1) << std::endl;
+
+    if (sqrt(pow(to.at(0) - fxyz.at(0), 2) +
+             pow(to.at(1) - fxyz.at(1), 2) +
+             pow(to.at(2) - fxyz.at(2), 2)) < 0.01) return a;
+    std::cout << "Failed IK" << std::endl;
+    return action(num_joints, 0);
 }
 
 pose probcog_arm::apply(pose from, action act)

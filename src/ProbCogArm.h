@@ -31,7 +31,7 @@ public:
     static point_3d ee_xyz(pose p);
     static float ee_dist_to(pose from, point_3d to);
 
-    // static action solve_ik(pose from, point_3d to);
+    static action solve_ik(pose from, point_3d to);
 
     static float get_joint_max(int joint_number)
     { return configuration.at(joint_number).max; }
