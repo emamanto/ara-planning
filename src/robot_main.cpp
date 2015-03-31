@@ -12,7 +12,9 @@
 class lcm_handler
 {
 public:
-    lcm_handler() : current_command(probcog_arm::get_num_joints(), 0) {};
+    lcm_handler() :
+        current_command(probcog_arm::get_num_joints(), 0),
+        searching(false) {};
     ~lcm_handler() {};
 
     void handle_status_message(const lcm::ReceiveBuffer* rbuf,
@@ -36,10 +38,15 @@ public:
                 break;
             }
         }
-        if (done && current_plan.size() > 0)
+        if (done && current_plan.size() > 0 &&
+            current_command_index < current_plan.size()-1)
         {
             current_command_index++;
-            current_command = current_plan[current_command_index];
+            for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            {
+                current_command.at(i) +=
+                    current_plan.at(current_command_index).at(i);
+            }
         }
 
         dynamixel_command_list_t command;
@@ -84,7 +91,11 @@ public:
                                    probcog_arm::small_primitives(),
                                    100.f);
         current_plan = latest_search.at(latest_search.size()-1).path;
-        current_command = current_plan.at(0);
+        current_command = status;
+        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        {
+            current_command.at(i) += current_plan.at(0).at(i);
+        }
         current_command_index = 0;
         searching = false;
     }
