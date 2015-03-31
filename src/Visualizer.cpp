@@ -275,12 +275,17 @@ void* Visualizer::searchThread(void* arg)
                                arm_state(a->get_joints()),
                                a->get_big_primitives(),
                                a->get_small_primitives(),
-                               5.f);
+                               10.f);
     v->planCompleted();
 }
 
 void Visualizer::planCompleted()
 {
+    if (latest_search.size() == 1 && latest_search.at(0).path.empty())
+    {
+        std::cout << "Planning failed." << std::endl;
+        return;
+    }
     latest_plan = latest_search.at(latest_search.size()-1).path;
     arm->set_joints(latest_plan_start);
     arm->apply(latest_plan);

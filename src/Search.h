@@ -6,6 +6,7 @@
 #include <queue>
 #include <set>
 #include <iostream>
+#include <unistd.h>
 
 template <typename S, typename P>
 class search_node
@@ -331,6 +332,7 @@ void arastar(std::vector<search_result<S, P> >* solutions,
                                     INCONS, OPEN,
                                     costs, epsilon, kill);
     if (killed) return;
+    if (OPEN.empty()) return;
     best_path = solutions->at(0).path;
 
     // g(goal)/min{s E OPEN U INCONS} (g+h)
@@ -343,8 +345,10 @@ void arastar(std::vector<search_result<S, P> >* solutions,
 
     while (e_prime > 1.f)
     {
+        sleep(0.001);
+
         // decrease epsilon
-        epsilon = epsilon - 0.5;
+        epsilon = epsilon - 1.f;
 
         // Move states from INCONS to OPEN
         for (typename std::set<search_node<S, P> >::iterator i = INCONS.begin();
@@ -375,14 +379,15 @@ void arastar(std::vector<search_result<S, P> >* solutions,
                                        INCONS, OPEN,
                                        costs, epsilon, kill);
         if (killed) return;
+        if (OPEN.empty()) return;
 
         // g(goal)/min{s E OPEN U INCONS} (g+h)
         float alt = costs[goal] / min_gh<S,P>(costs, OPEN, INCONS);
 
         e_prime = epsilon;
         if (alt < e_prime) e_prime = alt;
-        std::cout << "Next solution is suboptimal by: " <<
-            e_prime << std::endl;
+        std::cout << "Epsilon is: " << epsilon <<
+            ", Solution is suboptimal by: " << e_prime << std::endl;
     }
 }
 

@@ -3,6 +3,7 @@
 #include <iostream>
 
 #define DEG_TO_RAD M_PI/180.f
+//#define NONUNIFORM_DIM
 
 std::vector<line_segment> obstacle::get_segments()
 {
@@ -22,7 +23,7 @@ Arm* Arm::the_instance()
     return instance;
 }
 
-Arm::Arm() : num_joints(3),
+Arm::Arm() : num_joints(5),
              component_lengths(num_joints,
                                ARM_LENGTH/num_joints),
              current_angles(num_joints, 0.f),
@@ -371,8 +372,13 @@ void Arm::set_primitive_change(float c)
     small_primitives.clear();
     for (int i = 0; i < num_joints; i++)
     {
-        big_primitives.push_back(action(i, c));
-        big_primitives.push_back(action(i, -c));
+#ifdef NONUNIFORM_DIM
+        if (i < (num_joints - num_joints%2)/2)
+#endif
+        {
+            big_primitives.push_back(action(i, c));
+            big_primitives.push_back(action(i, -c));
+        }
         small_primitives.push_back(action(i, c/2.f));
         small_primitives.push_back(action(i, -c/2.f));
     }
