@@ -114,6 +114,7 @@ point_3d probcog_arm::ee_xyz(pose p)
 {
     Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
                              translation_matrix(0, 0, hand_length));
+
     point_3d xyz;
     xyz.push_back(xform(0,3));
     xyz.push_back(xform(1,3));
@@ -222,7 +223,7 @@ bool probcog_arm::is_valid(pose p)
     }
     // EE above table check
     point_3d xyz = ee_xyz(p);
-    if (xyz.at(1) < 0.01) return false;
+    if (xyz.at(2) < 0.01) return false;
     return true;
 }
 

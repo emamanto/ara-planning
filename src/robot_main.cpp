@@ -68,20 +68,45 @@ public:
 
 int main(int argc, char* argv[])
 {
-    lcm::LCM lcm;
-    if (!lcm.good())
-    {
-        std::cout << "Failed to initialize LCM." << std::endl;
-        return 1;
-    }
+    // lcm::LCM lcm;
+    // if (!lcm.good())
+    // {
+    //     std::cout << "Failed to initialize LCM." << std::endl;
+    //     return 1;
+    // }
 
     probcog_arm::INIT();
-    lcm_handler handler;
-    lcm.subscribe("ARM_STATUS", &lcm_handler::handle_status_message,
-                  &handler);
-    lcm.subscribe("SEARCH_TARGET", &lcm_handler::handle_target_message,
-                  &handler);
+    // lcm_handler handler;
+    // lcm.subscribe("ARM_STATUS", &lcm_handler::handle_status_message,
+    //               &handler);
+    // lcm.subscribe("SEARCH_TARGET", &lcm_handler::handle_target_message,
+    //               &handler);
 
-    while(0 == lcm.handle());
+    // while(0 == lcm.handle());
+
+    pose p = pose(5, 0);
+    point_3d target = probcog_arm::ee_xyz(p);
+    std::cout << "Starting at: " << target[0] << ", " << target[1]
+              << ", "  << target[2] << std::endl;
+    target[1] += 0.05;
+    target[2] -= 0.1;
+    arm_state::target = target;
+
+    std::cout << "Going to: " << target[0] << ", " << target[1]
+              << ", "  << target[2] << std::endl;
+
+    std::cout << "Using " << probcog_arm::big_primitives().size()
+              << " big and " << probcog_arm::small_primitives().size()
+              << " small" << std::endl;
+
+    std::vector<search_result<arm_state, action> > res;
+    bool kill_search = false;
+    arastar<arm_state, action>(&res,
+                               &kill_search,
+                               arm_state(p),
+                               probcog_arm::big_primitives(),
+                               probcog_arm::small_primitives(),
+                               100.f);
+
     return 0;
 }
