@@ -8,8 +8,9 @@ MAKE_FLAGS=--no-print-directory
 EXECUTABLE=arm_ara
 MAZE_EXECUTABLE=maze_ara
 ROBOT_EXECUTABLE=robot_ara
+TEST_EXECUTABLE=tests
 
-.phony: build build_maze build_robot clean cfg run maze robot
+.phony: build build_maze build_robot clean cfg run maze robot test build_test
 
 build_robot: $(GEN_MAKEFILE)
 	     make $(MAKE_FLAGS) -C $(BIN_DIR) $(ROBOT_EXECUTABLE)
@@ -19,6 +20,9 @@ build: $(GEN_MAKEFILE)
 
 build_maze: $(GEN_MAKEFILE)
 	     make $(MAKE_FLAGS) -C $(BIN_DIR) $(MAZE_EXECUTABLE)
+
+build_test: $(GEN_MAKEFILE)
+	     make $(MAKE_FLAGS) -C $(BIN_DIR) $(TEST_EXECUTABLE)
 
 $(GEN_MAKEFILE):
 	mkdir -p $(BIN_DIR); \
@@ -37,6 +41,8 @@ $(MAZE_EXECUTABLE): build_maze
 
 $(ROBOT_EXECUTABLE): build_robot
 
+$(TEST_EXECUTABLE): build_test
+
 run: $(EXECUTABLE)
 	$(BIN_DIR)/$(EXECUTABLE)
 
@@ -45,3 +51,6 @@ maze: $(MAZE_EXECUTABLE)
 
 robot: $(ROBOT_EXECUTABLE)
 	$(BIN_DIR)/$(ROBOT_EXECUTABLE)
+
+test: $(TEST_EXECUTABLE)
+	$(BIN_DIR)/$(TEST_EXECUTABLE)

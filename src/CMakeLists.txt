@@ -19,6 +19,10 @@ set( srcs main.cpp
   SearchWidget.cpp
   SearchControlPanel.cpp )
 
+set( test_srcs tests.cpp
+  Arm.cpp
+  ArmStates.cpp )
+
 set( maze_srcs maze_main.cpp
   MazeStates.cpp
   MazeWidget.cpp )
@@ -45,6 +49,10 @@ add_executable(arm_ara
 target_link_libraries(
   arm_ara
   ${QT_LIBRARIES}
+)
+
+add_executable(tests
+  ${test_srcs}
 )
 
 add_executable(maze_ara
