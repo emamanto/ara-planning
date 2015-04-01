@@ -275,7 +275,7 @@ void* Visualizer::searchThread(void* arg)
                                arm_state(a->get_joints()),
                                a->get_big_primitives(),
                                a->get_small_primitives(),
-                               10.f);
+                               100.f);
     v->planCompleted();
 }
 

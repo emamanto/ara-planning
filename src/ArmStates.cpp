@@ -147,12 +147,16 @@ float arm_state::heuristic() const
         std::pair<int, int> grid_cell =
             make_cell(Arm::the_instance()->get_ee_x_at(position),
                       Arm::the_instance()->get_ee_y_at(position));
-        if (bfs_heuristics.count(grid_cell))
+        if (!bfs_heuristics.count(grid_cell))
         {
-            return bfs_heuristics[grid_cell];
+            bfs(grid_cell);
         }
 
-        bfs(grid_cell);
+        if (bfs_heuristics[grid_cell] < 2*grid_size)
+        {
+            return target_distance();
+        }
+
         return bfs_heuristics[grid_cell];
     }
 }
@@ -200,7 +204,8 @@ void arm_state::bfs(search_cell end)
                 if (i==0 && j==0) continue;
                 if ((curr.cell.second + j*grid_size) < 0) continue;
                 if ( abs(curr.cell.first) > 300 ||
-                     curr.cell.second > 300 ) continue;
+                     curr.cell.second > 300 ||
+                     curr.cell.second < 0) continue;
                 search_cell child =
                     std::make_pair(curr.cell.first + i*grid_size,
                                    curr.cell.second + j*grid_size);

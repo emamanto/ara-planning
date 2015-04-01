@@ -161,8 +161,7 @@ bool improve_path(S& goal,
 
     while(!goal_found ||
           (costs[goal] + epsilon*heuristic(goal)) >
-          (costs[OPEN.top().state] +
-           epsilon*heuristic(OPEN.top().state)))
+          OPEN.top().f_value)
     {
         if (can_kill && *kill)
         {
@@ -341,7 +340,10 @@ void arastar(std::vector<search_result<S, P> >* solutions,
     float e_prime = epsilon;
     if (alt < e_prime) e_prime = alt;
     std::cout << "The first solution is suboptimal by: " <<
-        e_prime << std::endl;
+        e_prime << ", ";
+    std::cout << solutions->at(0).expanded.size()
+              << " expansions" << std::endl;
+    return;
 
     while (e_prime > 1.f)
     {
@@ -387,7 +389,10 @@ void arastar(std::vector<search_result<S, P> >* solutions,
         e_prime = epsilon;
         if (alt < e_prime) e_prime = alt;
         std::cout << "Epsilon is: " << epsilon <<
-            ", Solution is suboptimal by: " << e_prime << std::endl;
+            ", Solution is suboptimal by: " << e_prime << ", ";
+        std::cout << solutions->at(solutions->size()-1).expanded.size()
+                  << " expansions" << std::endl;
+
     }
 }
 

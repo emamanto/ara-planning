@@ -373,7 +373,7 @@ void Arm::set_primitive_change(float c)
     for (int i = 0; i < num_joints; i++)
     {
 #ifdef NONUNIFORM_DIM
-        if (i < (num_joints - num_joints%2)/2)
+        if (i < (num_joints + num_joints%2)/2)
 #endif
         {
             big_primitives.push_back(action(i, c));
