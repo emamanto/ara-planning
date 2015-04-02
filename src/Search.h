@@ -7,6 +7,7 @@
 #include <set>
 #include <iostream>
 #include <unistd.h>
+#include <ctime>
 
 template <typename S, typename P>
 class search_node
@@ -305,6 +306,8 @@ void arastar(std::vector<search_result<S, P> >* solutions,
              std::vector<P> s_prs,
              float e_start = 5.f)
 {
+    std::clock_t t;
+    t = std::clock();
     bool goal_found = false;
     std::priority_queue<search_node<S, P> > OPEN =
         std::priority_queue<search_node<S, P> >();
@@ -337,12 +340,15 @@ void arastar(std::vector<search_result<S, P> >* solutions,
     // g(goal)/min{s E OPEN U INCONS} (g+h)
     float alt = costs[goal] / min_gh<S, P>(costs, OPEN, INCONS);
 
+    t = std::clock() - t;
+
     float e_prime = epsilon;
     if (alt < e_prime) e_prime = alt;
     std::cout << "The first solution is suboptimal by: " <<
         e_prime << ", ";
     std::cout << solutions->at(0).expanded.size()
-              << " expansions" << std::endl;
+              << " expansions, ";
+    std::cout << ((float)t) / CLOCKS_PER_SEC << " s"  << std::endl;
     return;
 
     while (e_prime > 1.f)
