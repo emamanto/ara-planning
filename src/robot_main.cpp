@@ -10,7 +10,7 @@
 #include "dynamixel_command_list_t.hpp"
 #include "search_target_t.hpp"
 
-#define RRT
+//#define RRT
 
 class lcm_handler
 {
