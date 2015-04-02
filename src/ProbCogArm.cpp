@@ -112,14 +112,31 @@ point_3d probcog_arm::joint_xyz(int joint_number, pose p)
 
 point_3d probcog_arm::ee_xyz(pose p)
 {
+    // Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
+    //                          translation_matrix(0, 0, hand_length));
+
+    // point_3d xyz;
+    // xyz.push_back(xform(0,3));
+    // xyz.push_back(xform(1,3));
+    // xyz.push_back(xform(2,3));
+    // return xyz;
+    return joint_xyz(num_joints-1, p);
+}
+
+orientation probcog_arm::ee_rpy(pose p)
+{
     Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
                              translation_matrix(0, 0, hand_length));
 
-    point_3d xyz;
-    xyz.push_back(xform(0,3));
-    xyz.push_back(xform(1,3));
-    xyz.push_back(xform(2,3));
-    return xyz;
+    orientation rpy;
+    float r = atan2(xform(2,1), xform(2,2));
+    float pi = atan2(-xform(2,0), sqrt(xform(0,0)*xform(0,0) +
+                                       xform(1,0)*xform(1,0)));
+    float y = atan2(xform(1,0), xform(0,0));
+    rpy.push_back(r);
+    rpy.push_back(pi);
+    rpy.push_back(y);
+    return rpy;
 }
 
 float probcog_arm::ee_dist_to(pose from, point_3d to)

@@ -18,6 +18,7 @@ struct joint
 
 typedef std::vector<float> pose;
 typedef std::vector<float> point_3d;
+typedef std::vector<float> orientation;
 typedef std::vector<float> action;
 
 class probcog_arm
@@ -29,6 +30,7 @@ public:
 
     static point_3d joint_xyz(int joint_number, pose p);
     static point_3d ee_xyz(pose p);
+    static orientation ee_rpy(pose p);
     static float ee_dist_to(pose from, point_3d to);
 
     static action solve_ik(pose from, point_3d to);
