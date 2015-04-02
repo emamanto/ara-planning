@@ -9,6 +9,12 @@
 #include <unistd.h>
 #include <ctime>
 
+#define FIRST_SOL
+//#define MAZE_FIGURE
+#ifdef MAZE_FIGURE
+#undef FIRST_SOL
+#endif
+
 template <typename S, typename P>
 class search_node
 {
@@ -349,14 +355,20 @@ void arastar(std::vector<search_result<S, P> >* solutions,
     std::cout << solutions->at(0).expanded.size()
               << " expansions, ";
     std::cout << ((float)t) / CLOCKS_PER_SEC << " s"  << std::endl;
+#ifdef FIRST_SOL
     return;
+#endif
 
     while (e_prime > 1.f)
     {
         sleep(0.001);
 
         // decrease epsilon
+#ifdef MAZE_FIGURE
+        epsilon = epsilon - 0.5f;
+#else
         epsilon = epsilon - 1.f;
+#endif
 
         // Move states from INCONS to OPEN
         for (typename std::set<search_node<S, P> >::iterator i = INCONS.begin();
