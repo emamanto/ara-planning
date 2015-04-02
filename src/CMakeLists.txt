@@ -23,13 +23,17 @@ set( test_srcs tests.cpp
   Arm.cpp
   ArmStates.cpp )
 
+set( rrt_srcs RRTStarPlanner.cpp
+  ProbCogArm.cpp )
+
 set( maze_srcs maze_main.cpp
   MazeStates.cpp
   MazeWidget.cpp )
 
 set( robot_srcs robot_main.cpp
   ProbCogArm.cpp
-  ProbCogSearchStates.cpp )
+  ProbCogSearchStates.cpp
+  RRTStarPlanner.cpp )
 
 set( headers ArmSim.h
   Visualizer.h
@@ -55,6 +59,15 @@ add_executable(tests
   ${test_srcs}
 )
 
+add_executable(rrtstar
+  ${rrt_srcs}
+)
+
+target_link_libraries(
+  rrtstar
+  ompl
+)
+
 add_executable(maze_ara
   ${maze_srcs}
   ${maze_headers_moc}
@@ -72,4 +85,5 @@ add_executable(robot_ara
 target_link_libraries(
   robot_ara
   lcm
+  ompl
 )

@@ -5,9 +5,12 @@
 
 #include "ProbCogSearchStates.h"
 #include "Search.h"
+#include "RRTStarPlanner.h"
 #include "dynamixel_status_list_t.hpp"
 #include "dynamixel_command_list_t.hpp"
 #include "search_target_t.hpp"
+
+#define RRT
 
 class lcm_handler
 {
@@ -42,11 +45,15 @@ public:
             current_command_index < current_plan.size()-1)
         {
             current_command_index++;
+#ifdef RRT
+           current_command = current_plan.at(current_command_index);
+#else
             for (int i = 0; i < probcog_arm::get_num_joints(); i++)
             {
                 current_command.at(i) +=
                     current_plan.at(current_command_index).at(i);
             }
+#endif
         }
 
         dynamixel_command_list_t command;
@@ -81,6 +88,7 @@ public:
         {
             goal.push_back(targ->target[i]);
         }
+
         arm_state::target = goal;
         std::vector<search_result<arm_state, action> > latest_search;
         bool kill_search = false;
@@ -90,12 +98,23 @@ public:
                                    probcog_arm::big_primitives(),
                                    probcog_arm::small_primitives(),
                                    100.f);
+#ifdef RRT
+        std::vector<pose> ara_plan = latest_search.at(latest_search.size()-1).path;
+        pose e = status;
+        for (int i = 0; i < ara_plan.size(); i++)
+        {
+            e = probcog_arm::apply(e, ara_plan[i]);
+        }
+        current_plan = rrtstar::plan(status, e);
+        current_command = current_plan.at(0);
+#else
         current_plan = latest_search.at(latest_search.size()-1).path;
         current_command = status;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
         {
             current_command.at(i) += current_plan.at(0).at(i);
         }
+#endif
         current_command_index = 0;
         searching = false;
     }
