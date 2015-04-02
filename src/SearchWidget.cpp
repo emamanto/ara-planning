@@ -20,6 +20,9 @@ SearchWidget::SearchWidget(QWidget* parent) :
     the_obstacles.push_back(obstacle(160, 190, 90, 10));
     the_obstacles.push_back(obstacle(-200, 60, 10, 40));
 #endif
+
+// Nonuniform dimensionality demo
+// the_obstacles.push_back(obstacle(150, 150, 30, 30));
     obs->init(the_obstacles);
 
     arm_state::new_goal(target::the_instance()->x,
