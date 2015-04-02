@@ -1,5 +1,7 @@
 #include "SearchWidget.h"
 
+//#define TABLETOP
+
 SearchWidget::SearchWidget(QWidget* parent) :
     QWidget(parent),
     arm(Arm::the_instance()),
@@ -10,10 +12,14 @@ SearchWidget::SearchWidget(QWidget* parent) :
     vis(arm, goal, obs, this)
 {
     std::vector<obstacle> the_obstacles;
+#ifdef TABLETOP
+    the_obstacles.push_back(obstacle(-10, 280, 20, 180));
+#else
     the_obstacles.push_back(obstacle(-50, 250, 30, 150));
     the_obstacles.push_back(obstacle(100, 100, 50, 20));
     the_obstacles.push_back(obstacle(160, 190, 90, 10));
     the_obstacles.push_back(obstacle(-200, 60, 10, 40));
+#endif
     obs->init(the_obstacles);
 
     arm_state::new_goal(target::the_instance()->x,
