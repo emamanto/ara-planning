@@ -1,8 +1,6 @@
 #include "ProbCogArm.h"
 #include <iostream>
 
-#define DEG_TO_RAD M_PI/180.f;
-
 int probcog_arm::num_joints = 5;
 float probcog_arm::base_height = 0.075f;
 float probcog_arm::hand_length = 0.111f;
@@ -71,6 +69,8 @@ void probcog_arm::INIT()
         float big = 10.f*M_PI/180.f;
         float small = big/2.f;
 
+        if (i < 3)
+        {
         action bp = action(num_joints, 0);
         bp.at(i) = big;
         big_prims.push_back(bp);
@@ -78,6 +78,7 @@ void probcog_arm::INIT()
         action bn = action(num_joints, 0);
         bn.at(i) = -big;
         big_prims.push_back(bn);
+        }
 
         action sp = action(num_joints, 0);
         sp.at(i) = small;

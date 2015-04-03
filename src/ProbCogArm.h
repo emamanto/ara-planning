@@ -3,6 +3,8 @@
 #include <vector>
 #include <Eigen/Dense>
 
+#define DEG_TO_RAD M_PI/180.f;
+
 enum axis { X_AXIS, Y_AXIS, Z_AXIS };
 
 struct joint

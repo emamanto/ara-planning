@@ -19,6 +19,7 @@ class arm_state
 {
 public:
     pose position;
+    static object_world world;
     static point_3d target;
 
     arm_state();

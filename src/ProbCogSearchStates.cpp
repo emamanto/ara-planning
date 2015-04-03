@@ -1,6 +1,6 @@
 #include "ProbCogSearchStates.h"
 #include <iostream>
-#define D_SMALL 0.15
+#define D_SMALL 0.1
 #define D_IK 0.05
 
 bool object_world::collision(pose p)
@@ -57,11 +57,13 @@ point_3d object_world::grasp_point()
     else y = object_xyz[1] + 0.02;
     target.push_back(y);
 
-    target.push_back(object_xyz[3]/2.f);
+    // Want to aim a little under 1/2 way up
+    target.push_back((obj_dim[2]/2.f) - 0.02);
     return target;
 }
 
 point_3d arm_state::target = point_3d(3, 0);
+object_world arm_state::world = object_world();
 
 arm_state::arm_state() :
     position(probcog_arm::get_num_joints(), 0)
@@ -101,7 +103,8 @@ float arm_state::cost(action a)
 
 bool arm_state::valid() const
 {
-    return probcog_arm::is_valid(position);
+    if(!probcog_arm::is_valid(position)) return false;
+    return !world.collision(position);
 }
 
 bool arm_state::small_steps() const
