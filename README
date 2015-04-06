@@ -1,4 +1,42 @@
-Implementation of ARA* search in motion primitive space.
+Implementation of the motion planning agorithm described in:
+
+B. Cohen, S. Chitta, and M. Likhachev, “Single- and dual-arm motion
+planning with heuristic search,” The International Journal of Robotics
+Research, vol. 33, no. 2, pp. 305–320, 2014.
+
+This is a replication study and was created without referring to code
+published by the authors.
+
+This repository contains an implementation of Anytime Repairing A*
+search, which can be run over a selection of search graphs. Options
+for running the code are below.
+
+2D Any-DOF Arm Simulator
+Dependencies: Qt 4, Eigen 3
+How to: In top directory, run "make run".
+What: Provides an interactive GUI for setting search targets, stopping
+and starting searches, switching between search heuristics, and moving
+a simulated arm around. Further toggles (ie for changing the DOF of the
+arm) are available in the code.
+
+Maze World ARA* Example
+Dependencies: Qt 4
+How to: In top directory, run "make maze".
+What: Demos the functionality of ARA* in a maze world. For more
+information about this algorithm, see:
+M. Likhachev, G. J. Gordon, and S. Thrun, “ARA*: Anytime A*
+with provable bounds on sub-optimality,” in Proceedings of the 2003
+conference on advances in neural information processing systems (NIPS),
+2003.
+
+Robot Arm Controller
+Dependencies: Eigen 3, plus LCM and the RoSIE project, which is not
+contained in this repo, to see the search actually control a physical
+or 3D simulated arm
+How to: In top directory, run "make robot". Accepts and produces LCM
+messages defined in lcmtypes directory.
+What: A process that communicates with a simulated or physical RoSIE
+arm that recieves requests for plans and sends arm commands in return.
 
 Author: Elizabeth Mamantov
 2015

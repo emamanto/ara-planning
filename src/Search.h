@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <ctime>
 
-#define FIRST_SOL
+//#define FIRST_SOL
 //#define MAZE_FIGURE
 #ifdef MAZE_FIGURE
 #undef FIRST_SOL

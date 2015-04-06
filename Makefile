@@ -9,7 +9,6 @@ EXECUTABLE=arm_ara
 MAZE_EXECUTABLE=maze_ara
 ROBOT_EXECUTABLE=robot_ara
 TEST_EXECUTABLE=tests
-RRT_EXECUTABLE=rrtstar
 
 .phony: build build_maze build_robot clean cfg run maze robot test build_test
 
@@ -24,9 +23,6 @@ build_robot: $(GEN_MAKEFILE)
 
 build_test: $(GEN_MAKEFILE)
 	     make $(MAKE_FLAGS) -C $(BIN_DIR) $(TEST_EXECUTABLE)
-
-build_rrt:  $(GEN_MAKEFILE)
-	     make $(MAKE_FLAGS) -C $(BIN_DIR) $(RRT_EXECUTABLE)
 
 $(GEN_MAKEFILE):
 	mkdir -p $(BIN_DIR); \
@@ -47,8 +43,6 @@ $(ROBOT_EXECUTABLE): build_robot
 
 $(TEST_EXECUTABLE): build_test
 
-$(RRT_EXECUTABLE): build_rrt
-
 run: $(EXECUTABLE)
 	$(BIN_DIR)/$(EXECUTABLE)
 
@@ -60,6 +54,3 @@ robot: $(ROBOT_EXECUTABLE)
 
 test: $(TEST_EXECUTABLE)
 	$(BIN_DIR)/$(TEST_EXECUTABLE)
-
-rrt: $(RRT_EXECUTABLE)
-	$(BIN_DIR)/$(RRT_EXECUTABLE)
