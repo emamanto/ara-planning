@@ -17,7 +17,8 @@ set( srcs main.cpp
   Visualizer.cpp
   ArmControlPanel.cpp
   SearchWidget.cpp
-  SearchControlPanel.cpp )
+  SearchControlPanel.cpp
+  Shortcut.cpp )
 
 set( test_srcs tests.cpp
   Arm.cpp
