@@ -1,11 +1,12 @@
 #pragma once
 
+#include <pthread.h>
 #include <QWidget>
 #include <QPainter>
 #include "Arm.h"
 #include "ArmStates.h"
 #include "Search.h"
-#include <pthread.h>
+#include "Shortcut.h"
 
 typedef std::vector<search_result<arm_state, action> > arastar_solution;
 

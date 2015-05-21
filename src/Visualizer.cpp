@@ -275,7 +275,7 @@ void* Visualizer::searchThread(void* arg)
                                arm_state(a->get_joints()),
                                a->get_big_primitives(),
                                a->get_small_primitives(),
-                               100.f);
+                               10.f);
     v->planCompleted();
 }
 
@@ -287,6 +287,11 @@ void Visualizer::planCompleted()
         return;
     }
     latest_plan = latest_search.at(latest_search.size()-1).path;
+    std::cout << "Shortcutting plan! Originally: "
+              << latest_plan.size() << std::endl;
+    latest_plan = shortcut(latest_plan, latest_plan_start);
+    std::cout << "Ultimate path length: " << latest_plan.size()
+              << std::endl;
     arm->set_joints(latest_plan_start);
     arm->apply(latest_plan);
     emit(searchFinished());

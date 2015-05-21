@@ -284,6 +284,16 @@ pose Arm::apply_at(action a, pose start)
     return end;
 }
 
+pose Arm::apply_at(plan p, pose start)
+{
+    pose end = start;
+    for (plan::iterator i = p.begin(); i != p.end(); i++)
+    {
+        end = apply_at(*i, end);
+    }
+    return end;
+}
+
 // Pseudoinverse method
 // http://en.wikipedia.org/wiki/Inverse_kinematics#The_Jacobian_inverse_technique
 action Arm::solve_ik(float x, float y, pose position)

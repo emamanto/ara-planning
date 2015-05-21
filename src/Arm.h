@@ -91,6 +91,7 @@ public:
     bool apply(action a);
     bool apply(plan p);
     pose apply_at(action a, pose start);
+    pose apply_at(plan p, pose start);
 
     action solve_ik(float x, float y, pose position);
 

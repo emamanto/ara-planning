@@ -22,7 +22,8 @@ set( srcs main.cpp
 
 set( test_srcs tests.cpp
   Arm.cpp
-  ArmStates.cpp )
+  ArmStates.cpp
+  Shortcut.cpp )
 
 set( rrt_srcs RRTStarPlanner.cpp
   ProbCogArm.cpp )

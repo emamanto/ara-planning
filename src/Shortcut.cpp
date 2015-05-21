@@ -1,9 +1,10 @@
 #include "Shortcut.h"
+#include <iostream>
 
 bool subdivision_collision_check(pose p, action a, int depth)
 {
     // Cutoff?
-    if (depth > 20) return false;
+    if (depth > 10) return false;
     Arm* arm = Arm::the_instance();
     action half;
     for (int i = 0; i < arm->get_num_joints(); i++)
@@ -20,8 +21,10 @@ bool subdivision_collision_check(pose p, action a, int depth)
     else return true;
 }
 
-plan shortcut(plan original, pose start)
+plan shortcut_partial(plan original, pose start)
 {
+    std::cout << "Shortcutting a plan of length " << original.size()
+              << std::endl;
     if (original.size() == 1) return original;
 
     Arm* arm = Arm::the_instance();
@@ -37,28 +40,71 @@ plan shortcut(plan original, pose start)
 
     if (subdivision_collision_check(start, sc, 0))
     {
+        std::cout << "Collision" << std::endl;
         // second to end
         plan p2;
-        for(int i = 1; i < original.size(); i++)
+        for(int i = 0; i < original.size()-1; i++)
         {
-            p2.push_back(original.at(i));
+             p2.push_back(original.at(i));
         }
-        pose new_start = arm->apply_at(original.at(0), start);
-        plan p2_sc = shortcut(p2 , new_start);
+        plan p2_sc = shortcut_partial(p2, start);
 
         plan combined;
-        combined.push_back(original.at(0));
         for(int i = 0; i < p2_sc.size(); i++)
         {
             combined.push_back(p2_sc.at(i));
         }
+        combined.push_back(original.at(original.size()-1));
+
         return combined;
     }
     else
     {
+        std::cout << "Found a shortcut!" << std::endl;
         // shortcut
         plan shorter;
         shorter.push_back(sc);
         return shorter;
     }
+}
+
+plan shortcut(plan original, pose start)
+{
+    Arm* arm = Arm::the_instance();
+    plan shortened;
+    for (plan::iterator i = original.begin();
+         i != original.end(); i++)
+    {
+        shortened.push_back(*i);
+    }
+
+    for (int i = 0; i < shortened.size(); i++)
+    {
+        std::cout << "Shortening between " << i
+                  << " and end" << std::endl;
+        plan before;
+        for (int j = 0; j < i; j++)
+        {
+            before.push_back(shortened.at(j));
+        }
+        plan after;
+        for (int j = i; j < shortened.size(); j++)
+        {
+            after.push_back(shortened.at(j));
+        }
+
+        plan sc = shortcut_partial(after, arm->apply_at(before, start));
+
+        shortened.clear();
+        for (int j = 0; j < i; j++)
+        {
+            shortened.push_back(before.at(j));
+        }
+        for (int j = 0; j < sc.size(); j++)
+        {
+            shortened.push_back(sc.at(j));
+        }
+    }
+
+    return shortened;
 }
