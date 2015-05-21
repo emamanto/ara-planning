@@ -40,25 +40,30 @@ SearchControlPanel::SearchControlPanel(target* goal,
             SLOT(stopSearch()));
 
     clear = new QPushButton(tr("clear"), this);
-    layout->addWidget(clear, 4, 2);
+    layout->addWidget(clear, 5, 0);
     connect(clear, SIGNAL(clicked()), this,
             SLOT(clearSearch()));
+
+    shorten = new QPushButton(tr("shortcut"), this);
+    layout->addWidget(shorten, 5, 1);
+    connect(shorten, SIGNAL(clicked()), this,
+            SLOT(shortcutPlan()));
 
     eu = new QRadioButton(tr("euclidean"), this);
     bfs = new QRadioButton(tr("bfs"), this);
     eu->setChecked(false);
     bfs->setChecked(true);
-    layout->addWidget(eu, 5, 0);
-    layout->addWidget(bfs, 5, 1);
+    layout->addWidget(eu, 6, 0);
+    layout->addWidget(bfs, 6, 1);
     connect(eu, SIGNAL(toggled(bool)), this,
             SLOT(heuristicEuclidean(bool)));
 
     heur = new QCheckBox(tr("heuristic"), this);
-    layout->addWidget(heur, 6, 0);
+    layout->addWidget(heur, 7, 0);
     connect(heur, SIGNAL(stateChanged(int)), this,
             SLOT(heuristicDebug(int)));
     ee = new QCheckBox(tr("ee path"), this);
-    layout->addWidget(ee, 6, 1);
+    layout->addWidget(ee, 7, 1);
     connect(ee, SIGNAL(stateChanged(int)), this,
             SLOT(eePathOnly(int)));
 }
@@ -90,6 +95,12 @@ void SearchControlPanel::heuristicEuclidean(bool check)
     emit(redrawTargetInfo());
 }
 
+void SearchControlPanel::shortcutPlan()
+{
+    emit(shortcutCurrentPlan());
+    emit(redrawTargetInfo());
+}
+
 void SearchControlPanel::startSearch()
 {
     xbox->setEnabled(false);
@@ -97,6 +108,7 @@ void SearchControlPanel::startSearch()
     start->setEnabled(false);
     stop->setEnabled(true);
     clear->setEnabled(false);
+    shorten->setEnabled(false);
     eu->setEnabled(false);
     bfs->setEnabled(false);
     heur->setEnabled(false);
@@ -112,6 +124,7 @@ void SearchControlPanel::clearSearch()
     start->setEnabled(true);
     stop->setEnabled(false);
     clear->setEnabled(false);
+    shorten->setEnabled(false);
     eu->setEnabled(true);
     bfs->setEnabled(true);
     heur->setEnabled(true);
@@ -127,6 +140,7 @@ void SearchControlPanel::stopSearch()
     start->setEnabled(false);
     stop->setEnabled(false);
     clear->setEnabled(true);
+    shorten->setEnabled(true);
     eu->setEnabled(false);
     bfs->setEnabled(false);
     heur->setEnabled(true);
@@ -143,6 +157,7 @@ void SearchControlPanel::searchOver()
     start->setEnabled(false);
     stop->setEnabled(false);
     clear->setEnabled(true);
+    shorten->setEnabled(true);
     eu->setEnabled(false);
     bfs->setEnabled(false);
     heur->setEnabled(true);

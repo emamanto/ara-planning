@@ -287,11 +287,6 @@ void Visualizer::planCompleted()
         return;
     }
     latest_plan = latest_search.at(latest_search.size()-1).path;
-    std::cout << "Shortcutting plan! Originally: "
-              << latest_plan.size() << std::endl;
-    latest_plan = shortcut(latest_plan, latest_plan_start);
-    std::cout << "Ultimate path length: " << latest_plan.size()
-              << std::endl;
     arm->set_joints(latest_plan_start);
     arm->apply(latest_plan);
     emit(searchFinished());
@@ -308,4 +303,13 @@ void Visualizer::clearPlan()
 void Visualizer::stopSearch()
 {
     kill_search = true;
+}
+
+void Visualizer::shortcutPlan()
+{
+   std::cout << "Shortcutting plan! Originally: "
+              << latest_plan.size() << std::endl;
+    latest_plan = shortcut(latest_plan, latest_plan_start);
+    std::cout << "Ultimate path length: " << latest_plan.size()
+              << std::endl;
 }

@@ -28,6 +28,7 @@ public slots:
     void newPlan();
     void clearPlan();
     void stopSearch();
+    void shortcutPlan();
 
 private:
     void paintEvent(QPaintEvent*);

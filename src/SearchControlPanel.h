@@ -23,6 +23,7 @@ signals:
     void initiateSearch();
     void clearSearchVis();
     void killSearch();
+    void shortcutCurrentPlan();
 
 public slots:
     void searchOver();
@@ -32,6 +33,7 @@ private slots:
     void heuristicDebug(int);
     void eePathOnly(int);
     void heuristicEuclidean(bool);
+    void shortcutPlan();
     void startSearch();
     void clearSearch();
     void stopSearch();
@@ -43,6 +45,7 @@ private:
     QPushButton* start;
     QPushButton* stop;
     QPushButton* clear;
+    QPushButton* shorten;
     QRadioButton* eu;
     QRadioButton* bfs;
     QCheckBox* heur;
