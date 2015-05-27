@@ -254,11 +254,9 @@ bool Arm::intersect(line_segment seg1, line_segment seg2)
 
 bool Arm::apply(action a)
 {
-    for (change_vector::iterator it = a.changes.begin();
-         it != a.changes.end(); it++)
+    for (int i = 0; i < num_joints; i++)
     {
-        current_angles.at(it->first) = (current_angles.at(it->first)
-                                        + it->second);
+        current_angles.at(i) = (current_angles.at(i) + a.at(i));
     }
     return is_currently_valid();
 }
@@ -275,11 +273,9 @@ bool Arm::apply(plan p)
 pose Arm::apply_at(action a, pose start)
 {
     pose end = start;
-    for (change_vector::iterator it = a.changes.begin();
-         it != a.changes.end(); it++)
+    for (int i = 0; i < num_joints; i++)
     {
-        end.at(it->first) = (start.at(it->first)
-                             + it->second);
+        end.at(i) = (start.at(i) + a.at(i));
     }
     return end;
 }
@@ -299,12 +295,7 @@ pose Arm::apply_at(plan p, pose start)
 action Arm::solve_ik(float x, float y, pose position)
 {
     //std::cout << "SOLVE IK" << std::endl;
-    action a;
-
-    for (int i = 0; i < num_joints; i++)
-    {
-        a.changes[i] = 0;
-    }
+    action a(num_joints, 0);
 
     Eigen::MatrixXf fk_jacobian(2, num_joints);
     pose cur_joints = position;
@@ -357,13 +348,13 @@ action Arm::solve_ik(float x, float y, pose position)
         for (int i = 0; i < num_joints; i++)
         {
             cur_joints.at(i) += joint_change(i);
-            a.changes[i] += joint_change(i);
+            a.at(i) += joint_change(i);
         }
     }
 
     if (sqrt(pow(x - fx, 2) + pow(y - fy, 2)) < 0.01) return a;
     std::cout << "Failed IK" << std::endl;
-    return action(0, 0);
+    return action(num_joints, 0);
 }
 
 std::vector<action> Arm::get_big_primitives()
@@ -382,14 +373,21 @@ void Arm::set_primitive_change(float c)
     small_primitives.clear();
     for (int i = 0; i < num_joints; i++)
     {
+        action fwd(num_joints, 0);
+        action bck(num_joints, 0);
+
 #ifdef NONUNIFORM_DIM
         if (i < (num_joints + num_joints%2)/2)
 #endif
         {
-            big_primitives.push_back(action(i, c));
-            big_primitives.push_back(action(i, -c));
+            fwd.at(i) = c;
+            bck.at(i) = -c;
+            big_primitives.push_back(fwd);
+            big_primitives.push_back(bck);
         }
-        small_primitives.push_back(action(i, c/2.f));
-        small_primitives.push_back(action(i, -c/2.f));
+        fwd.at(i) = c/2.f;
+        bck.at(i) = -c/2.f;
+        small_primitives.push_back(fwd);
+        small_primitives.push_back(bck);
     }
 }

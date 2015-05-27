@@ -1,23 +1,12 @@
 #pragma once
 
 #include <vector>
-#include <map>
 #include <Eigen/Dense>
 
 #define ARM_LENGTH 300.f
 
 // Change joint by change degrees
-typedef std::map<int, float> change_vector;
-
-struct action
-{
-    change_vector changes;
-
-    action(int j, float c) { changes[j] = c; }
-    action() {}
-    bool operator == (const action& other) const
-    { return (changes == other.changes); }
-};
+typedef std::vector<float> action;
 
 struct line_segment
 {

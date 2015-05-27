@@ -4,12 +4,12 @@
 bool subdivision_collision_check(pose p, action a, int depth)
 {
     // Cutoff?
-    if (depth > 10) return false;
+    if (depth > 6) return false;
     Arm* arm = Arm::the_instance();
-    action half;
+    action half(arm->get_num_joints(), 0);
     for (int i = 0; i < arm->get_num_joints(); i++)
     {
-        half.changes[i] = (a.changes[i]/2);
+        half.at(i) = (a.at(i)/2);
     }
     pose midpt = arm->apply_at(half, p);
     if (arm_state(midpt).valid())
@@ -23,25 +23,25 @@ bool subdivision_collision_check(pose p, action a, int depth)
 
 plan shortcut_partial(plan original, pose start)
 {
-    //std::cout << "Shortcutting a plan of length " << original.size()
+    // std::cout << "Shortcutting a plan of length " << original.size()
     //          << std::endl;
     if (original.size() == 1) return original;
 
     Arm* arm = Arm::the_instance();
-    action sc;
+    action sc(arm->get_num_joints(), 0);
     for (plan::iterator i = original.begin();
          i != original.end(); i++)
     {
         for (int j = 0; j < arm->get_num_joints(); j++)
         {
-            sc.changes[j] += i->changes[j];
+            sc.at(j) += i->at(j);
         }
     }
 
     if (subdivision_collision_check(start, sc, 0))
     {
-        //std::cout << "Collision" << std::endl;
-        // second to end
+        // std::cout << "Collision" << std::endl;
+        //second to end
         plan p2;
         for(int i = 0; i < original.size()-1; i++)
         {
@@ -80,7 +80,7 @@ plan shortcut(plan original, pose start)
 
     for (int i = 0; i < shortened.size(); i++)
     {
-        //std::cout << "Shortening between " << i
+        // std::cout << "Shortening between " << i
         //          << " and end" << std::endl;
         plan before;
         for (int j = 0; j < i; j++)
