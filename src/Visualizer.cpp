@@ -309,7 +309,9 @@ void Visualizer::shortcutPlan()
 {
    std::cout << "Shortcutting plan! Originally: "
               << latest_plan.size() << std::endl;
-    latest_plan = shortcut(latest_plan, latest_plan_start);
+   latest_plan =
+       shortcut<arm_state, action>(latest_plan,
+                                   arm_state(latest_plan_start));
     std::cout << "Ultimate path length: " << latest_plan.size()
               << std::endl;
 }

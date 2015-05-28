@@ -17,13 +17,11 @@ set( srcs main.cpp
   Visualizer.cpp
   ArmControlPanel.cpp
   SearchWidget.cpp
-  SearchControlPanel.cpp
-  Shortcut.cpp )
+  SearchControlPanel.cpp )
 
 set( test_srcs tests.cpp
   Arm.cpp
-  ArmStates.cpp
-  Shortcut.cpp )
+  ArmStates.cpp )
 
 set( rrt_srcs RRTStarPlanner.cpp
   ProbCogArm.cpp )
