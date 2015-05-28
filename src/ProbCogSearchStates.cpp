@@ -3,67 +3,7 @@
 #define D_SMALL 0.1
 #define D_IK 0.05
 
-bool object_world::collision(pose p)
-{
-    // Joints in objects
-    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
-    {
-        point_3d jointp = probcog_arm::joint_xyz(i, p);
-
-        // wall collision
-        if ((wall_x > 0 && jointp[0] > wall_x) ||
-            (wall_x < 0 && jointp[0] < wall_x)) return true;
-        if ((wall_y > 0 && jointp[1] > wall_y) ||
-            (wall_y < 0 && jointp[1] < wall_y)) return true;
-
-        // object collision
-        if (jointp[0] > object_xyz[0] &&
-            jointp[0] < object_xyz[0] + obj_dim[0] &&
-            jointp[1] > object_xyz[1] &&
-            jointp[1] < object_xyz[1] + obj_dim[1] &&
-            jointp[2] > object_xyz[2] &&
-            jointp[2] < object_xyz[2] + obj_dim[2]) return true;
-    }
-
-    // EE in objects
-    point_3d jointp = probcog_arm::ee_xyz(p);
-    // wall collision
-    if ((wall_x > 0 && jointp[0] > wall_x) ||
-        (wall_x < 0 && jointp[0] < wall_x)) return true;
-    if ((wall_y > 0 && jointp[1] > wall_y) ||
-        (wall_y < 0 && jointp[1] < wall_y)) return true;
-
-    // object collision
-    if (jointp[0] > object_xyz[0] &&
-        jointp[0] < object_xyz[0] + obj_dim[0] &&
-        jointp[1] > object_xyz[1] &&
-        jointp[1] < object_xyz[1] + obj_dim[1] &&
-        jointp[2] > object_xyz[2] &&
-        jointp[2] < object_xyz[2] + obj_dim[2]) return true;
-
-    return false;
-}
-
-point_3d object_world::grasp_point()
-{
-    point_3d target;
-    float x;
-    if (object_xyz[0] > 0) x = object_xyz[0] - 0.02;
-    else x = object_xyz[0] + 0.02;
-    target.push_back(x);
-
-    float y;
-    if (object_xyz[1] > 0) y = object_xyz[1] - 0.02;
-    else y = object_xyz[1] + 0.02;
-    target.push_back(y);
-
-    // Want to aim a little under 1/2 way up
-    target.push_back((obj_dim[2]/2.f) - 0.02);
-    return target;
-}
-
 point_3d arm_state::target = point_3d(3, 0);
-object_world arm_state::world = object_world();
 
 arm_state::arm_state() :
     position(probcog_arm::get_num_joints(), 0)
@@ -104,7 +44,7 @@ float arm_state::cost(action a)
 bool arm_state::valid() const
 {
     if(!probcog_arm::is_valid(position)) return false;
-    return !world.collision(position);
+    return true;
 }
 
 bool arm_state::small_steps() const

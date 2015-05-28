@@ -5,6 +5,7 @@
 
 #include "ProbCogSearchStates.h"
 #include "Search.h"
+#include "Shortcut.h"
 //#include "RRTStarPlanner.h"
 #include "dynamixel_status_list_t.hpp"
 #include "dynamixel_command_list_t.hpp"
@@ -49,37 +50,6 @@ public:
                     current_plan.at(current_command_index).at(i);
             }
         }
-        else if (done && current_plan.size() > 0 &&
-                 current_command_index == current_plan.size() - 1)
-        {
-            std::cout << "Arm fixing pitch!" << std::endl;
-            current_command_index++;
-            orientation o = probcog_arm::ee_rpy(current_command);
-            float pitch_diff = o[1] - M_PI/2.f;
-            if (pitch_diff < -M_PI/2.f)
-            {
-                pitch_diff = pitch_diff + M_PI;
-            }
-            else if (pitch_diff > M_PI/2.f)
-            {
-                pitch_diff = pitch_diff - M_PI;
-            }
-            current_command[3] += pitch_diff;
-        }
-        else if (done && current_plan.size() > 0 &&
-                 current_command_index == current_plan.size())
-        {
-            std::cout << "Arm forward to grasp!" << std::endl;
-            current_command_index++;
-            point_3d ee = probcog_arm::ee_xyz(current_command);
-            point_3d forwd = ee;
-            if (ee[0] > 0) forwd[0] += 0.03;
-            else forwd[0] -= 0.03;
-            if (ee[1] > 0) forwd[1] += 0.03;
-            else forwd[1] -= 0.03;
-            action ik = probcog_arm::solve_ik(current_command, forwd);
-            current_command = probcog_arm::apply(current_command, ik);
-        }
 
         dynamixel_command_list_t command;
         command.len = probcog_arm::get_num_joints() + 1;
@@ -118,30 +88,11 @@ public:
     {
         searching = true;
 
-        object_world world;
-        point_3d obj;
-        obj.push_back(0.2);
-        obj.push_back(0.2);
-        obj.push_back(0);
-        world.object_xyz = obj;
-
-        std::vector<float> dimensions;
-        dimensions.push_back(0.05);
-        dimensions.push_back(0.05);
-        dimensions.push_back(0.4);
-        world.obj_dim = dimensions;
-
-        world.wall_x = 0.3;
-        world.wall_y = 0.3;
-
-        arm_state::world = world;
-
         lcm::LCM lcm;
-        point_3d goal = world.grasp_point();
+        point_3d goal;
         for (int i = 0; i < 3; i++)
         {
-            std::cout << goal[i] << std::endl;
-//            goal.push_back(targ->target[i]);
+            goal.push_back(targ->target[i]);
         }
 
         std::cout << "About to search" << std::endl;
@@ -155,6 +106,11 @@ public:
                                    probcog_arm::small_primitives(),
                                    100.f);
         current_plan = latest_search.at(latest_search.size()-1).path;
+        current_plan = shortcut<arm_state, action>(current_plan,
+                                                   arm_state(status));
+        std::cout << "Shortcutted to " << current_plan.size()
+                  << std::endl;
+
         current_command = status;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
         {

@@ -2,24 +2,10 @@
 
 #include "ProbCogArm.h"
 
-// Doesn't actually check if this is a self-consistent world.
-// Don't make objects on wrong sides of walls.
-class object_world
-{
-public:
-    point_3d object_xyz;
-    std::vector<float> obj_dim;
-    float wall_x, wall_y;
-
-    bool collision(pose p);
-    point_3d grasp_point();
-};
-
 class arm_state
 {
 public:
     pose position;
-    static object_world world;
     static point_3d target;
 
     arm_state();
