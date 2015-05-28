@@ -16,6 +16,7 @@ class lcm_handler
 public:
     lcm_handler() :
         current_command(probcog_arm::get_num_joints(), 0),
+        current_command_index(0),
         searching(false) {};
     ~lcm_handler() {};
 
@@ -40,6 +41,7 @@ public:
                 break;
             }
         }
+
         if (done && current_plan.size() > 0 &&
             current_command_index < current_plan.size()-1)
         {
@@ -124,7 +126,7 @@ public:
     pose current_command;
     int current_command_index;
     bool searching;
-    std::vector<pose> current_plan;
+    std::vector<action> current_plan;
 };
 
 int main(int argc, char* argv[])
