@@ -3,6 +3,8 @@ project( ara )
 
 find_package(Qt4 REQUIRED)
 
+find_package(Boost REQUIRED COMPONENTS system)
+
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS "-pthread -I /usr/include/eigen3/")
 
@@ -33,7 +35,7 @@ set( maze_srcs maze_main.cpp
 set( robot_srcs robot_main.cpp
   ProbCogArm.cpp
   ProbCogSearchStates.cpp
-  RRTStarPlanner.cpp )
+  3DCollisionWorld.cpp)
 
 set( headers ArmSim.h
   Visualizer.h
@@ -85,5 +87,6 @@ add_executable(robot_ara
 target_link_libraries(
   robot_ara
   lcm
-  ompl
+  fcl
+  ${Boost_LIBRARIES}
 )
