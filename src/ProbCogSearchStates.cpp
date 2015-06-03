@@ -44,7 +44,7 @@ float arm_state::cost(action a)
 bool arm_state::valid() const
 {
     if(!probcog_arm::is_valid(position)) return false;
-    //if(collision_world::collision(position)) return false;
+    if(collision_world::collision(position)) return false;
     return true;
 }
 

@@ -84,9 +84,6 @@ bool collision_world::collision(pose arm_position)
                                  p));
 
     }
-    std::cout << "Colliding " << world_objects_m->size()
-              << " world objects with " << arm_objects_m->size()
-              << " arm objects." << std::endl;
 
     collision_data data;
     data.request = fcl::CollisionRequest();
