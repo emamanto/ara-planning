@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProbCogArm.h"
+#include "3DCollisionWorld.h"
 
 class arm_state
 {

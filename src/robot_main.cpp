@@ -32,6 +32,11 @@ public:
         }
         if (np != status) status = np;
 
+        if (collision_world::collision(status))
+        {
+            std::cout << "COLLISION" << std::endl;
+        }
+
         bool done = true;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
         {
@@ -139,6 +144,20 @@ int main(int argc, char* argv[])
     }
 
     probcog_arm::INIT();
+    std::vector<float> d;
+    d.push_back(0.1);
+    d.push_back(0.1);
+    d.push_back(0.3);
+
+    std::vector<float> tr;
+    tr.push_back(0.15);
+    tr.push_back(0.15);
+    tr.push_back(0.15);
+    tr.push_back(0);
+    tr.push_back(0);
+    tr.push_back(0);
+    collision_world::add_object(d, tr);
+
     lcm_handler handler;
     lcm.subscribe("ARM_STATUS", &lcm_handler::handle_status_message,
                   &handler);

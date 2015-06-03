@@ -84,19 +84,19 @@ bool collision_world::collision(pose arm_position)
                                  p));
 
     }
-
-    fcl::CollisionRequest request;
-    request.enable_contact = false;
-    request.enable_cost = false;
-
-    fcl::CollisionResult result;
+    std::cout << "Colliding " << world_objects_m->size()
+              << " world objects with " << arm_objects_m->size()
+              << " arm objects." << std::endl;
 
     collision_data data;
-    data.request = request;
-    data.result = result;
+    data.request = fcl::CollisionRequest();
+    data.request.enable_contact = false;
+    data.request.enable_cost = false;
+
+    data.result = fcl::CollisionResult();
 
     arm_objects_m->collide(world_objects_m, &data,
                            collision_function);
 
-    return result.isCollision();
+    return data.result.isCollision();
 }

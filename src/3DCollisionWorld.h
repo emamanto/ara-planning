@@ -29,7 +29,7 @@ public:
     static void add_object(std::vector<float> dim,
                            std::vector<float> xyzrpy);
 
-    bool collision(pose arm_position);
+    static bool collision(pose arm_position);
 
 private:
     collision_world() {};
