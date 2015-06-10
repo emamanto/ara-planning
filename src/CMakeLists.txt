@@ -35,7 +35,8 @@ set( maze_srcs maze_main.cpp
 set( robot_srcs robot_main.cpp
   ProbCogArm.cpp
   ProbCogSearchStates.cpp
-  3DCollisionWorld.cpp)
+  3DCollisionWorld.cpp
+  ProbCogArmCollision.cpp )
 
 set( headers ArmSim.h
   Visualizer.h

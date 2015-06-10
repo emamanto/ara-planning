@@ -5,6 +5,7 @@
 
 #include "ProbCogSearchStates.h"
 #include "Search.h"
+#include "ProbCogArmCollision.h"
 #include "Shortcut.h"
 //#include "RRTStarPlanner.h"
 #include "dynamixel_status_list_t.hpp"
