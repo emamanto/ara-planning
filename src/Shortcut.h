@@ -43,7 +43,7 @@ std::vector<P> shortcut_partial(std::vector<P> original, S start)
 
     if (subdivision_collision_check<S, P>(start, sh_ct, 0))
     {
-        // std::cout << "Collision" << std::endl;
+        // std::cout << "\tCollision" << std::endl;
         //second to end
         std::vector<P> p2;
         for(int i = 0; i < original.size()-1; i++)
@@ -63,7 +63,7 @@ std::vector<P> shortcut_partial(std::vector<P> original, S start)
     }
     else
     {
-        //std::cout << "Found a shortcut!" << std::endl;
+        // std::cout << "\tFound a shortcut!" << std::endl;
         // shortcut
         std::vector<P> shorter;
         shorter.push_back(sh_ct);
