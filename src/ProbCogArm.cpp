@@ -54,7 +54,7 @@ void probcog_arm::INIT()
     configuration.push_back(wrist_pitch);
 
     joint wrist_yaw;
-    wrist_yaw.around = Y_AXIS;
+    wrist_yaw.around = Z_AXIS;
     wrist_yaw.min = -150.f*DEG_TO_RAD;
     wrist_yaw.max = 150.f*DEG_TO_RAD;
     wrist_yaw.length = 0.0;
