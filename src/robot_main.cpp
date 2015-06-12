@@ -13,6 +13,8 @@
 #include "arm_collision_boxes_t.hpp"
 #include "search_target_t.hpp"
 
+//#define PUBLISH_COLLISION_MODEL
+
 class lcm_handler
 {
 public:
@@ -40,8 +42,11 @@ public:
         {
             std::cout << "COLLISION" << std::endl;
         }
+
+#ifdef PUBLISH_COLLISION_MODEL
         arm_collision_boxes_t arm_msg = collision_world::arm_boxes(status);
         lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
+#endif
 
         bool done = true;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
