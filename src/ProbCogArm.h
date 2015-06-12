@@ -33,6 +33,11 @@ public:
     static point_3d joint_xyz(int joint_number, pose p);
     static Eigen::Matrix4f joint_transform(int joint_number, pose p);
 
+    static Eigen::Matrix4f rotation_matrix(float angle, axis around);
+    static Eigen::Matrix4f translation_matrix(float x,
+                                              float y,
+                                              float z);
+
     static point_3d ee_xyz(pose p);
     static orientation ee_rpy(pose p);
     static float ee_dist_to(pose from, point_3d to);
@@ -63,19 +68,17 @@ public:
 
     static bool is_valid(pose p);
 
+    static float hand_length;
+    static float hand_width;
+    static float hand_height;
+
 private:
     probcog_arm() {};
     probcog_arm(probcog_arm const&) {};
     probcog_arm& operator=(probcog_arm const&) {};
 
-    static Eigen::Matrix4f rotation_matrix(float angle, axis around);
-    static Eigen::Matrix4f translation_matrix(float x,
-                                              float y,
-                                              float z);
-
     static int num_joints;
     static float base_height;
-    static float hand_length;
     static std::vector<joint> configuration;
     static std::vector<action> big_prims;
     static std::vector<action> small_prims;

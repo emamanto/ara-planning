@@ -68,10 +68,14 @@ bool collision_world::collision(pose arm_position)
     {
         fcl::Box* box = new
             fcl::Box(probcog_arm::get_component_width(i),
-                     probcog_arm::get_component_length(i),
-                     probcog_arm::get_component_width(i));
+                     probcog_arm::get_component_width(i),
+                     probcog_arm::get_component_length(i));
 
-        Eigen::Matrix4f trmat = probcog_arm::joint_transform(i, arm_position);
+        Eigen::Matrix4f trmat =
+            probcog_arm::joint_transform(i+1, arm_position)*
+            probcog_arm::translation_matrix(0,
+                                            0,
+                                            -probcog_arm::get_component_length(i)/2);
 
         fcl::Matrix3f rot(trmat(0, 0), trmat(0, 1), trmat(0, 2),
                           trmat(1, 0), trmat(1, 1), trmat(1, 2),
@@ -79,11 +83,37 @@ bool collision_world::collision(pose arm_position)
         fcl::Vec3f trans(trmat(0, 3), trmat(1, 3), trmat(2, 3));
         fcl::Transform3f p = fcl::Transform3f(rot, trans);
 
-        arm_objects_m->registerObject(
+        fcl::CollisionObject* obj = new fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(box),
+                                                             p);
+        arm_objects_m->registerObject(obj);
+    }
+
+    // HAND
+    fcl::Box* box = new
+        fcl::Box(probcog_arm::hand_width,
+                 probcog_arm::hand_height*2,
+                 probcog_arm::hand_length);
+
+    int last_joint = probcog_arm::get_num_joints()-1;
+    Eigen::Matrix4f trmat =
+        probcog_arm::joint_transform(last_joint,
+                                     arm_position)*
+        probcog_arm::rotation_matrix(arm_position.at(last_joint),
+                                     probcog_arm::get_joint_axis(last_joint))*
+        probcog_arm::translation_matrix(0,
+                                        0.02,
+                                        probcog_arm::hand_length/2);
+
+    fcl::Matrix3f rot(trmat(0, 0), trmat(0, 1), trmat(0, 2),
+                      trmat(1, 0), trmat(1, 1), trmat(1, 2),
+                      trmat(2, 0), trmat(2, 1), trmat(2, 2));
+    fcl::Vec3f trans(trmat(0, 3), trmat(1, 3), trmat(2, 3));
+    fcl::Transform3f p = fcl::Transform3f(rot, trans);
+
+    arm_objects_m->registerObject(
         new fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(box),
                                  p));
-
-    }
+    // end HAND
 
     collision_data data;
     data.request = fcl::CollisionRequest();
@@ -96,4 +126,39 @@ bool collision_world::collision(pose arm_position)
                            collision_function);
 
     return data.result.isCollision();
+}
+
+arm_collision_boxes_t collision_world::arm_boxes(pose arm_position)
+{
+    collision(arm_position);
+    std::vector<fcl::CollisionObject*> objs;
+    arm_objects_m->getObjects(objs);
+
+    arm_collision_boxes_t msg;
+    msg.len = arm_objects_m->size();
+
+    for (int i = 0; i <= probcog_arm::get_num_joints(); i++)
+    {
+        bbox_info_t cur;
+        cur.joint = i;
+        const fcl::Box* b = static_cast<const fcl::Box*>(objs[i]->getCollisionGeometry());
+        cur.dim[0] = b->side[0];
+        cur.dim[1] = b->side[1];
+        cur.dim[2] = b->side[2];
+
+        fcl::Quaternion3f q = objs[i]->getQuatRotation();
+        cur.quat[0] = q.getW();
+        cur.quat[1] = q.getX();
+        cur.quat[2] = q.getY();
+        cur.quat[3] = q.getZ();
+
+        fcl::Vec3f v = objs[i]->getTranslation();
+        cur.trans[0] = v[0];
+        cur.trans[1] = v[1];
+        cur.trans[2] = v[2];
+
+        msg.boxes.push_back(cur);
+    }
+
+    return msg;
 }

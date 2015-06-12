@@ -10,6 +10,7 @@
 //#include "RRTStarPlanner.h"
 #include "dynamixel_status_list_t.hpp"
 #include "dynamixel_command_list_t.hpp"
+#include "arm_collision_boxes_t.hpp"
 #include "search_target_t.hpp"
 
 class lcm_handler
@@ -26,6 +27,8 @@ public:
                                const dynamixel_status_list_t* stats)
     {
         if (searching) return;
+        lcm::LCM lcm;
+
         pose np;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
         {
@@ -37,6 +40,8 @@ public:
         {
             std::cout << "COLLISION" << std::endl;
         }
+        arm_collision_boxes_t arm_msg = collision_world::arm_boxes(status);
+        lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
 
         bool done = true;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
@@ -71,22 +76,21 @@ public:
         }
 
         dynamixel_command_t hand;
-        if (done && current_plan.size() > 0 &&
-            current_command_index > current_plan.size())
-        {
+        // if (done && current_plan.size() > 0 &&
+        //     current_command_index > current_plan.size())
+        // {
             hand.position_radians = 112.f*DEG_TO_RAD;
             hand.speed = 0.15;
             hand.max_torque = 0.5;
-        }
-        else
-        {
-            hand.position_radians = 0;
-            hand.speed = 0.15;
-            hand.max_torque = 0.5;
-        }
+        // }
+        // else
+        // {
+        //     hand.position_radians = 0;
+        //     hand.speed = 0.15;
+        //     hand.max_torque = 0.5;
+        // }
         command.commands.push_back(hand);
 
-        lcm::LCM lcm;
         lcm.publish("ARM_COMMAND", &command);
     }
 

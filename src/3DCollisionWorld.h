@@ -4,6 +4,7 @@
 
 #include "fcl/collision.h"
 #include "fcl/broadphase/broadphase.h"
+#include "arm_collision_boxes_t.hpp"
 
 #include "ProbCogArm.h"
 
@@ -30,6 +31,8 @@ public:
                            std::vector<float> xyzrpy);
 
     static bool collision(pose arm_position);
+
+    static arm_collision_boxes_t arm_boxes(pose arm_position);
 
 private:
     collision_world() {};
