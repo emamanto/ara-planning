@@ -105,13 +105,13 @@ public:
                                      const observations_t* obs)
     {
         latest_objects = obs->observations;
-        // collision_world::clear();
-        // for (std::vector<object_data_t>::iterator i =
-        //          latest_objects.begin();
-        //      i != latest_objects.end(); i++)
-        // {
-        //     collision_world::add_object(i->bbox_dim, i->bbox_xyzrpy);
-        // }
+        collision_world::clear();
+        for (std::vector<object_data_t>::iterator i =
+                 latest_objects.begin();
+             i != latest_objects.end(); i++)
+        {
+            collision_world::add_object(i->bbox_dim, i->bbox_xyzrpy);
+        }
     }
 
     void handle_target_message(const lcm::ReceiveBuffer* rbuf,
