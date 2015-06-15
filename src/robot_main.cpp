@@ -15,6 +15,7 @@
 #include "observations_t.hpp"
 
 #define PUBLISH_COLLISION_MODEL
+//#define SLOW_SPEED
 
 class lcm_handler
 {
@@ -76,7 +77,11 @@ public:
         {
             dynamixel_command_t c;
             c.position_radians = current_command.at(i);
+#ifdef SLOW_SPEED
+            c.speed = probcog_arm::get_default_speed(i)*0.1;
+#else
             c.speed = probcog_arm::get_default_speed(i);
+#endif
             c.max_torque = probcog_arm::get_default_torque(i);
             command.commands.push_back(c);
         }
