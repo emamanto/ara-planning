@@ -12,8 +12,9 @@
 #include "dynamixel_command_list_t.hpp"
 #include "arm_collision_boxes_t.hpp"
 #include "search_target_t.hpp"
+#include "observations_t.hpp"
 
-//#define PUBLISH_COLLISION_MODEL
+#define PUBLISH_COLLISION_MODEL
 
 class lcm_handler
 {
@@ -99,6 +100,20 @@ public:
         lcm.publish("ARM_COMMAND", &command);
     }
 
+    void handle_observations_message(const lcm::ReceiveBuffer* rbuf,
+                                     const std::string& channel,
+                                     const observations_t* obs)
+    {
+        latest_objects = obs->observations;
+        // collision_world::clear();
+        // for (std::vector<object_data_t>::iterator i =
+        //          latest_objects.begin();
+        //      i != latest_objects.end(); i++)
+        // {
+        //     collision_world::add_object(i->bbox_dim, i->bbox_xyzrpy);
+        // }
+    }
+
     void handle_target_message(const lcm::ReceiveBuffer* rbuf,
                                const std::string& channel,
                                const search_target_t* targ)
@@ -141,6 +156,7 @@ public:
     pose current_command;
     int current_command_index;
     bool searching;
+    std::vector<object_data_t> latest_objects;
     std::vector<action> current_plan;
 };
 
@@ -154,24 +170,13 @@ int main(int argc, char* argv[])
     }
 
     probcog_arm::INIT();
-    std::vector<float> d;
-    d.push_back(0.1);
-    d.push_back(0.1);
-    d.push_back(0.3);
-
-    std::vector<float> tr;
-    tr.push_back(0.15);
-    tr.push_back(0.15);
-    tr.push_back(0.15);
-    tr.push_back(0);
-    tr.push_back(0);
-    tr.push_back(0);
-    collision_world::add_object(d, tr);
 
     lcm_handler handler;
     lcm.subscribe("ARM_STATUS", &lcm_handler::handle_status_message,
                   &handler);
     lcm.subscribe("SEARCH_TARGET", &lcm_handler::handle_target_message,
+                  &handler);
+    lcm.subscribe("OBSERVATIONS", &lcm_handler::handle_observations_message,
                   &handler);
 
     while(0 == lcm.handle());

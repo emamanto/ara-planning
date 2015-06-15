@@ -29,6 +29,10 @@ class collision_world
 public:
     static void add_object(std::vector<float> dim,
                            std::vector<float> xyzrpy);
+    static void add_object(double dim[],
+                           double xyzrpy[]);
+
+    static void clear();
 
     static bool collision(pose arm_position);
 

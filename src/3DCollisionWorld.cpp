@@ -55,13 +55,34 @@ void collision_world::add_object(std::vector<float> dim,
                                  p));
 }
 
+void collision_world::add_object(double dim[], double xyzrpy[])
+{
+    std::vector<float> dim_vec;
+    for (int i = 0; i < 3; i++)
+    {
+        dim_vec.push_back(dim[i]);
+    }
+    std::vector<float> pos_vec;
+    for (int i = 0; i < 6; i++)
+    {
+        pos_vec.push_back(xyzrpy[i]);
+    }
+
+    add_object(dim_vec, pos_vec);
+}
+
+void collision_world::clear()
+{
+    if (world_objects_m) world_objects_m->clear();
+}
+
 bool collision_world::collision(pose arm_position)
 {
-    if (!world_objects_m) return false;
     if (!arm_objects_m)
     {
         arm_objects_m = new fcl::DynamicAABBTreeCollisionManager();
     }
+
     arm_objects_m->clear();
 
     for (int i = 0; i < probcog_arm::get_num_joints(); i++)
@@ -114,6 +135,10 @@ bool collision_world::collision(pose arm_position)
         new fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(box),
                                  p));
     // end HAND
+    if (!world_objects_m) return false;
+    // std::cout << "Checking for collision against "
+    //           << world_objects_m->size() << " world objs"
+    //           << std::endl;
 
     collision_data data;
     data.request = fcl::CollisionRequest();
