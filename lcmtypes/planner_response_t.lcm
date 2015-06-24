@@ -1,0 +1,7 @@
+struct planner_response_t
+{
+    int64_t utime;
+    int64_t planning_time;
+    boolean plan_found;
+    int32_t plan_size;
+}
