@@ -17,6 +17,8 @@ typedef std::vector<search_result<arm_state, action> > arastar_result;
 class planner_interface
 {
 public:
+    planner_interface();
+
     void handle_command_message(const lcm::ReceiveBuffer* rbuf,
                                 const std::string& channel,
                                 const planner_command_t* comm);

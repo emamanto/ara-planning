@@ -1,5 +1,11 @@
 #include "PlannerInterface.h"
 
+planner_interface::planner_interface() :
+    arm_status(probcog_arm::get_num_joints(), 0),
+    kill_search(false)
+{
+}
+
 void* planner_interface::search_thread(void* arg)
 {
     planner_interface* pi = static_cast<planner_interface*>(arg);
@@ -16,12 +22,29 @@ void planner_interface::handle_command_message(
     const std::string& channel,
     const planner_command_t* comm)
 {
-    if (comm->command_type.compare("SEARCH"))
+    std::cout << "Received a command message." << std::endl;
+    if (comm->command_type.compare("SEARCH") == 0)
     {
+        point_3d goal;
+        for (int i = 0; i < 3; i++)
+        {
+            goal.push_back(comm->target[i]);
+        }
+        arm_state::target = goal;
+
+        std::cout << "Initiating a search!" << std::endl;
         latest_start_pose = arm_status;
+        kill_search = false;
+        search_thread(this);
     }
-    else if (comm->command_type.compare("STOP"))
+    else if (comm->command_type.compare("STOP") == 0)
     {
+        std::cout << "Stopping a search!" << std::endl;
+        kill_search = true;
+    }
+    else if (comm->command_type.compare("EXECUTE") == 0)
+    {
+        std::cout << "Time to execute!" << std::endl;
     }
 }
 

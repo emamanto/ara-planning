@@ -18,6 +18,9 @@ int main(int argc, char* argv[])
     lcm.subscribe("OBSERVATIONS",
                   &planner_interface::handle_observations_message,
                   &pi);
+    lcm.subscribe("PLANNER_COMMANDS",
+                  &planner_interface::handle_command_message,
+                  &pi);
 
     while(0 == lcm.handle());
 
