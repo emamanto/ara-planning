@@ -61,6 +61,7 @@ public:
 
     static pose apply(pose from, action act);
 
+    static void set_primitive_change(float big_deg);
     static std::vector<action>& big_primitives()
     { return big_prims; }
     static std::vector<action>& small_primitives()

@@ -42,4 +42,6 @@ private:
     pose arm_status;
     arastar_result latest_search;
     bool kill_search;
+
+    static float PRIMITIVE_SIZE_MIN, PRIMITIVE_SIZE_MAX;
 };

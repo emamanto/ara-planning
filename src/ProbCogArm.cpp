@@ -65,31 +65,7 @@ void probcog_arm::INIT()
 
     // Discounting hand joint for now, treating as stick on end
 
-    for (int i = 0; i < num_joints; i++)
-    {
-        // change here if desired
-        float big = 10.f*M_PI/180.f;
-        float small = big/2.f;
-
-        if (i < 3)
-        {
-        action bp = action(num_joints, 0);
-        bp.at(i) = big;
-        big_prims.push_back(bp);
-
-        action bn = action(num_joints, 0);
-        bn.at(i) = -big;
-        big_prims.push_back(bn);
-        }
-
-        action sp = action(num_joints, 0);
-        sp.at(i) = small;
-        small_prims.push_back(sp);
-
-        action sn = action(num_joints, 0);
-        sn.at(i) = -small;
-        small_prims.push_back(sn);
-    }
+    set_primitive_change(10.f);
 }
 
 Eigen::Matrix4f probcog_arm::joint_transform(int joint_number,
@@ -234,6 +210,38 @@ pose probcog_arm::apply(pose from, action act)
         end.at(i) += act.at(i);
     }
     return end;
+}
+
+void probcog_arm::set_primitive_change(float big_deg)
+{
+    big_prims.clear();
+    small_prims.clear();
+
+    for (int i = 0; i < num_joints; i++)
+    {
+        // change here if desired
+        float big = big_deg*M_PI/180.f;
+        float small = big/2.f;
+
+        if (i < 3)
+        {
+        action bp = action(num_joints, 0);
+        bp.at(i) = big;
+        big_prims.push_back(bp);
+
+        action bn = action(num_joints, 0);
+        bn.at(i) = -big;
+        big_prims.push_back(bn);
+        }
+
+        action sp = action(num_joints, 0);
+        sp.at(i) = small;
+        small_prims.push_back(sp);
+
+        action sn = action(num_joints, 0);
+        sn.at(i) = -small;
+        small_prims.push_back(sn);
+    }
 }
 
 bool probcog_arm::is_valid(pose p)

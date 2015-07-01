@@ -2,6 +2,9 @@
 
 pthread_t planner_interface::thrd = pthread_t();
 
+float planner_interface::PRIMITIVE_SIZE_MIN = 2.f;
+float planner_interface::PRIMITIVE_SIZE_MAX = 40.f;
+
 planner_interface::planner_interface() :
     arm_status(probcog_arm::get_num_joints(), 0),
     kill_search(false)
@@ -51,6 +54,13 @@ void planner_interface::handle_command_message(
             goal.push_back(comm->target[i]);
         }
         arm_state::target = goal;
+
+        float big_prim_size = (comm->primitive_size)*
+            (PRIMITIVE_SIZE_MAX - PRIMITIVE_SIZE_MIN) +
+            PRIMITIVE_SIZE_MIN;
+        std::cout << "Set the primitive to " << big_prim_size
+                  << std::endl;
+        probcog_arm::set_primitive_change(big_prim_size);
 
         std::cout << "Initiating a search!" << std::endl;
         latest_start_pose = arm_status;
