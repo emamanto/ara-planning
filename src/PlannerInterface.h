@@ -2,6 +2,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <iostream>
+#include <pthread.h>
 
 #include "ProbCogSearchStates.h"
 #include "Search.h"
@@ -9,6 +10,7 @@
 #include "Shortcut.h"
 
 #include "planner_command_t.hpp"
+#include "planner_response_t.hpp"
 #include "dynamixel_status_list_t.hpp"
 #include "observations_t.hpp"
 
@@ -31,8 +33,10 @@ public:
                                      const observations_t* obs);
 
 private:
-    void* search_thread(void* arg);
+    static void* search_thread(void* arg);
+    void search_complete();
 
+    static pthread_t thrd;
     std::vector<object_data_t> latest_objects;
     pose latest_start_pose;
     pose arm_status;

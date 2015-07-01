@@ -1,5 +1,7 @@
 #include "PlannerInterface.h"
 
+pthread_t planner_interface::thrd = pthread_t();
+
 planner_interface::planner_interface() :
     arm_status(probcog_arm::get_num_joints(), 0),
     kill_search(false)
@@ -15,6 +17,24 @@ void* planner_interface::search_thread(void* arg)
                                probcog_arm::big_primitives(),
                                probcog_arm::small_primitives(),
                                100.f);
+    pi->search_complete();
+}
+
+void planner_interface::search_complete()
+{
+    lcm::LCM lcm;
+    planner_response_t resp;
+    if (latest_search.size() > 1)
+    {
+        resp.plan_found = true;
+    }
+    else
+    {
+        resp.plan_found = false;
+    }
+    resp.plan_size = latest_search.at(latest_search.size()-1).path.size();
+
+    lcm.publish("PLANNER_RESPONSES", &resp);
 }
 
 void planner_interface::handle_command_message(
@@ -35,7 +55,9 @@ void planner_interface::handle_command_message(
         std::cout << "Initiating a search!" << std::endl;
         latest_start_pose = arm_status;
         kill_search = false;
-        search_thread(this);
+
+        latest_search.clear();
+        pthread_create(&thrd, NULL, &search_thread, this);
     }
     else if (comm->command_type.compare("STOP") == 0)
     {
