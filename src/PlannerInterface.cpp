@@ -1,6 +1,6 @@
 #include "PlannerInterface.h"
 
-//#define PUBLISH_COLLISION_MODEL
+#define PUBLISH_COLLISION_MODEL
 
 pthread_t planner_interface::thrd = pthread_t();
 
@@ -119,8 +119,11 @@ void planner_interface::handle_status_message(
 
     lcm::LCM lcm;
 #ifdef PUBLISH_COLLISION_MODEL
-    arm_collision_boxes_t arm_msg = collision_world::arm_boxes(arm_status);
-    lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
+    if (task != SEARCHING)
+    {
+        arm_collision_boxes_t arm_msg = collision_world::arm_boxes(arm_status);
+        lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
+    }
 #endif
 
     if (task == EXECUTING)
