@@ -12,9 +12,12 @@
 #include "planner_command_t.hpp"
 #include "planner_response_t.hpp"
 #include "dynamixel_status_list_t.hpp"
+#include "dynamixel_command_list_t.hpp"
 #include "observations_t.hpp"
 
 typedef std::vector<search_result<arm_state, action> > arastar_result;
+
+enum planner_status{SEARCHING, EXECUTING, WAITING};
 
 class planner_interface
 {
@@ -41,6 +44,10 @@ private:
     pose latest_start_pose;
     pose arm_status;
     arastar_result latest_search;
+    std::vector<action> current_plan;
+    planner_status task;
+    int current_command_index;
+    pose current_command;
     bool kill_search;
 
     static float PRIMITIVE_SIZE_MIN, PRIMITIVE_SIZE_MAX;

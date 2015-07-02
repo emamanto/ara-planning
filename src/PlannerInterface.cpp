@@ -1,12 +1,16 @@
 #include "PlannerInterface.h"
 
+//#define PUBLISH_COLLISION_MODEL
+
 pthread_t planner_interface::thrd = pthread_t();
 
 float planner_interface::PRIMITIVE_SIZE_MIN = 2.f;
-float planner_interface::PRIMITIVE_SIZE_MAX = 40.f;
+float planner_interface::PRIMITIVE_SIZE_MAX = 20.f;
 
 planner_interface::planner_interface() :
     arm_status(probcog_arm::get_num_joints(), 0),
+    task(WAITING),
+    current_command_index(0),
     kill_search(false)
 {
 }
@@ -14,6 +18,7 @@ planner_interface::planner_interface() :
 void* planner_interface::search_thread(void* arg)
 {
     planner_interface* pi = static_cast<planner_interface*>(arg);
+    std::cout << "Searching" << std::endl;
     arastar<arm_state, action>(&(pi->latest_search),
                                &(pi->kill_search),
                                arm_state(pi->latest_start_pose),
@@ -37,6 +42,7 @@ void planner_interface::search_complete()
     }
     resp.plan_size = latest_search.at(latest_search.size()-1).path.size();
 
+    task = WAITING;
     lcm.publish("PLANNER_RESPONSES", &resp);
 }
 
@@ -48,6 +54,7 @@ void planner_interface::handle_command_message(
     std::cout << "Received a command message." << std::endl;
     if (comm->command_type.compare("SEARCH") == 0)
     {
+        task = SEARCHING;
         point_3d goal;
         for (int i = 0; i < 3; i++)
         {
@@ -62,7 +69,9 @@ void planner_interface::handle_command_message(
                   << std::endl;
         probcog_arm::set_primitive_change(big_prim_size);
 
-        std::cout << "Initiating a search!" << std::endl;
+        std::cout << "Initiating a search to " << goal[0]
+                  << ", " << goal[1] << ", " << goal[2]
+                  << std::endl;
         latest_start_pose = arm_status;
         kill_search = false;
 
@@ -73,10 +82,26 @@ void planner_interface::handle_command_message(
     {
         std::cout << "Stopping a search!" << std::endl;
         kill_search = true;
+        //task = WAITING; ??
     }
     else if (comm->command_type.compare("EXECUTE") == 0)
     {
         std::cout << "Time to execute!" << std::endl;
+
+        current_plan = latest_search.at(latest_search.size()-1).path;
+        // current_plan = shortcut<arm_state, action>(current_plan,
+        //                                            arm_state(status));
+        // std::cout << "Shortcutted to " << current_plan.size()
+        //           << std::endl;
+
+        current_command = arm_status;
+        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        {
+            current_command.at(i) += current_plan.at(0).at(i);
+        }
+        current_command_index = 0;
+
+        task = EXECUTING;
     }
 }
 
@@ -92,11 +117,56 @@ void planner_interface::handle_status_message(
     }
     if (np != arm_status) arm_status = np;
 
-#ifdef PUBLISH_COLLISION_MODEL
     lcm::LCM lcm;
-    arm_collision_boxes_t arm_msg = collision_world::arm_boxes(status);
+#ifdef PUBLISH_COLLISION_MODEL
+    arm_collision_boxes_t arm_msg = collision_world::arm_boxes(arm_status);
     lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
 #endif
+
+    if (task == EXECUTING)
+    {
+        bool done = true;
+        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        {
+            if (fabs(arm_status[i] - current_command[i]) > 0.01)
+            {
+                done = false;
+                break;
+            }
+        }
+
+        if (done && current_command_index < current_plan.size()-1)
+        {
+            current_command_index++;
+            for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            {
+                current_command.at(i) +=
+                    current_plan.at(current_command_index).at(i);
+            }
+        }
+
+        dynamixel_command_list_t command;
+        command.len = probcog_arm::get_num_joints() + 1;
+        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        {
+            dynamixel_command_t c;
+            c.position_radians = current_command.at(i);
+#ifdef SLOW_SPEED
+            c.speed = probcog_arm::get_default_speed(i)*0.1;
+#else
+            c.speed = probcog_arm::get_default_speed(i);
+#endif
+            c.max_torque = probcog_arm::get_default_torque(i);
+            command.commands.push_back(c);
+        }
+
+        dynamixel_command_t hand;
+        hand.position_radians = 112.f*DEG_TO_RAD;
+        hand.speed = 0.15;
+        hand.max_torque = 0.5;
+        command.commands.push_back(hand);
+        lcm.publish("ARM_COMMAND", &command);
+    }
 }
 
 void planner_interface::handle_observations_message(
@@ -104,6 +174,8 @@ void planner_interface::handle_observations_message(
         const std::string& channel,
         const observations_t* obs)
 {
+    if (task == SEARCHING) return;
+
     latest_objects = obs->observations;
     collision_world::clear();
     for (std::vector<object_data_t>::iterator i =
