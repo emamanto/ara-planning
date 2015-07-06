@@ -32,15 +32,19 @@ void planner_interface::search_complete()
 {
     lcm::LCM lcm;
     planner_response_t resp;
-    if (latest_search.size() > 1)
+    resp.response_type = "SEARCH";
+    resp.finished = true;
+    if (latest_search.size() > 0 &&
+        !latest_search.at(0).path.empty())
     {
-        resp.plan_found = true;
+        resp.success = true;
     }
     else
     {
-        resp.plan_found = false;
+        resp.success = false;
     }
-    resp.plan_size = latest_search.at(latest_search.size()-1).path.size();
+    resp.plan_size =
+        latest_search.at(latest_search.size()-1).path.size();
 
     task = WAITING;
     lcm.publish("PLANNER_RESPONSES", &resp);
@@ -146,6 +150,21 @@ void planner_interface::handle_status_message(
                 current_command.at(i) +=
                     current_plan.at(current_command_index).at(i);
             }
+        }
+        if (done && current_command_index == current_plan.size()-1)
+        {
+            current_command_index++;
+            task = WAITING;
+            lcm::LCM lcm;
+            planner_response_t resp;
+            resp.response_type = "EXECUTE";
+            resp.finished = true;
+            resp.success = true;
+            resp.plan_size =
+                latest_search.at(latest_search.size()-1).path.size();
+
+            task = WAITING;
+            lcm.publish("PLANNER_RESPONSES", &resp);
         }
 
         dynamixel_command_list_t command;
