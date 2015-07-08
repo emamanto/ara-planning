@@ -9,7 +9,7 @@ float planner_interface::PRIMITIVE_SIZE_MAX = 20.f;
 
 planner_interface::planner_interface() :
     arm_status(probcog_arm::get_num_joints(), 0),
-    task(WAITING),
+    task(WAITING_INITIAL),
     current_command_index(0),
     kill_search(false)
 {
@@ -88,10 +88,16 @@ void planner_interface::handle_command_message(
         kill_search = true;
         //task = WAITING; ??
     }
+    else if (comm->command_type.compare("RESET") == 0)
+    {
+        std::cout << "Resetting the arm." << std::endl;
+        current_command = pose(probcog_arm::get_num_joints(), 0);
+        current_plan.clear();
+        current_command_index = -1;
+        task = EXECUTING;
+    }
     else if (comm->command_type.compare("EXECUTE") == 0)
     {
-        std::cout << "Time to execute!" << std::endl;
-
         current_plan = latest_search.at(latest_search.size()-1).path;
         // current_plan = shortcut<arm_state, action>(current_plan,
         //                                            arm_state(status));
@@ -130,6 +136,27 @@ void planner_interface::handle_status_message(
     }
 #endif
 
+    if (task == WAITING_INITIAL)
+    {
+        dynamixel_command_list_t command;
+        command.len = probcog_arm::get_num_joints() + 1;
+        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        {
+            dynamixel_command_t c;
+            c.position_radians = 0;
+            c.speed = probcog_arm::get_default_speed(i);
+            c.max_torque = probcog_arm::get_default_torque(i);
+            command.commands.push_back(c);
+        }
+
+        dynamixel_command_t hand;
+        hand.position_radians = 112.f*DEG_TO_RAD;
+        hand.speed = 0.15;
+        hand.max_torque = 0.5;
+        command.commands.push_back(hand);
+        lcm.publish("ARM_COMMAND", &command);
+    }
+
     if (task == EXECUTING)
     {
         bool done = true;
@@ -160,8 +187,11 @@ void planner_interface::handle_status_message(
             resp.response_type = "EXECUTE";
             resp.finished = true;
             resp.success = true;
-            resp.plan_size =
-                latest_search.at(latest_search.size()-1).path.size();
+            if (!latest_search.empty()){
+                resp.plan_size =
+                    latest_search.at(latest_search.size()-1).path.size();
+            }
+            else resp.plan_size = 0;
 
             task = WAITING;
             lcm.publish("PLANNER_RESPONSES", &resp);
