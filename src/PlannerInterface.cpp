@@ -8,6 +8,7 @@ float planner_interface::PRIMITIVE_SIZE_MIN = 2.f;
 float planner_interface::PRIMITIVE_SIZE_MAX = 20.f;
 
 planner_interface::planner_interface() :
+    latest_plan_executed(false),
     arm_status(probcog_arm::get_num_joints(), 0),
     task(WAITING_INITIAL),
     current_command_index(0),
@@ -30,6 +31,7 @@ void* planner_interface::search_thread(void* arg)
 
 void planner_interface::search_complete()
 {
+    latest_plan_executed = false;
     lcm::LCM lcm;
     planner_response_t resp;
     resp.response_type = "SEARCH";
@@ -48,6 +50,7 @@ void planner_interface::search_complete()
 
     task = WAITING;
     lcm.publish("PLANNER_RESPONSES", &resp);
+    last_response = resp;
 }
 
 void planner_interface::handle_command_message(
@@ -55,8 +58,14 @@ void planner_interface::handle_command_message(
     const std::string& channel,
     const planner_command_t* comm)
 {
-    std::cout << "Received a command message." << std::endl;
-    if (comm->command_type.compare("SEARCH") == 0)
+    if (task == WAITING)
+    {
+        lcm::LCM lcm;
+        lcm.publish("PLANNER_RESPONSES", &last_response);
+    }
+
+    if (comm->command_type.compare("SEARCH") == 0 &&
+        task != SEARCHING)
     {
         task = SEARCHING;
         point_3d goal;
@@ -82,21 +91,24 @@ void planner_interface::handle_command_message(
         latest_search.clear();
         pthread_create(&thrd, NULL, &search_thread, this);
     }
-    else if (comm->command_type.compare("STOP") == 0)
+    else if (comm->command_type.compare("STOP") == 0 &&
+             task != WAITING)
     {
         std::cout << "Stopping a search!" << std::endl;
         kill_search = true;
         //task = WAITING; ??
     }
-    else if (comm->command_type.compare("RESET") == 0)
+    else if (comm->command_type.compare("RESET") == 0 &&
+             task != EXECUTING)
     {
+        task = EXECUTING;
         std::cout << "Resetting the arm." << std::endl;
         current_command = pose(probcog_arm::get_num_joints(), 0);
         current_plan.clear();
         current_command_index = -1;
-        task = EXECUTING;
     }
-    else if (comm->command_type.compare("EXECUTE") == 0)
+    else if (comm->command_type.compare("EXECUTE") == 0 &&
+             task != EXECUTING && !latest_plan_executed)
     {
         current_plan = latest_search.at(latest_search.size()-1).path;
         // current_plan = shortcut<arm_state, action>(current_plan,
@@ -182,6 +194,7 @@ void planner_interface::handle_status_message(
         {
             current_command_index++;
             task = WAITING;
+            latest_plan_executed = true;
             lcm::LCM lcm;
             planner_response_t resp;
             resp.response_type = "EXECUTE";
@@ -193,8 +206,8 @@ void planner_interface::handle_status_message(
             }
             else resp.plan_size = 0;
 
-            task = WAITING;
             lcm.publish("PLANNER_RESPONSES", &resp);
+            last_response = resp;
         }
 
         dynamixel_command_list_t command;

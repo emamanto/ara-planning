@@ -42,6 +42,9 @@ private:
     static pthread_t thrd;
     std::vector<object_data_t> latest_objects;
     pose latest_start_pose;
+    // For the record, this is so the same plan doesn't get
+    // executed twice due to LCM spamming
+    bool latest_plan_executed;
     pose arm_status;
     arastar_result latest_search;
     std::vector<action> current_plan;
@@ -49,6 +52,7 @@ private:
     int current_command_index;
     pose current_command;
     bool kill_search;
+    planner_response_t last_response;
 
     static float PRIMITIVE_SIZE_MIN, PRIMITIVE_SIZE_MAX;
 };
