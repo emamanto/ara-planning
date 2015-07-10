@@ -86,6 +86,7 @@ add_executable(maze_ara
 target_link_libraries(
   maze_ara
   ${QT_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 add_executable(robot_ara

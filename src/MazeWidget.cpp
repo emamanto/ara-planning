@@ -6,7 +6,7 @@ using namespace std;
 #define BOX_WIDTH 21
 #define BOX_HEIGHT 18
 #define EPSILON_START 3.5f
-//#define ASTAR
+#define ASTAR
 
 MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
 {
@@ -30,15 +30,19 @@ MazeWidget::MazeWidget(QWidget* parent) : QWidget(parent)
     for (std::vector<float>::iterator e = desired_epsilons.begin();
          e != desired_epsilons.end(); e++)
     {
-        solutions.push_back(astar(box(0, 0), ps, ps, *e));
+        search_request<box, primitive> request(box(0, 0),
+                                               ps, ps, *e);
+        solutions.push_back(astar(request));
     }
 #else
     float epsilon = 3.5;
-    std::vector<search_result<box, primitive> > all_solutions =
-        std::vector<search_result<box, primitive> >();
-    bool kill = false;
-    arastar(&all_solutions, &kill, box(0,0), ps, ps, epsilon);
+    search_request<box, primitive> request(box(0, 0),
+                                           ps, ps, epsilon);
 
+    arastar<box, primitive>(request);
+
+    std::vector<search_result<box, primitive> > all_solutions =
+        request.copy_solutions();
     epsilon += 0.5;
     for (std::vector<search_result<box, primitive> >::iterator s =
              all_solutions.begin(); s != all_solutions.end(); s++)

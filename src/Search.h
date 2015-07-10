@@ -8,9 +8,10 @@
 #include <iostream>
 #include <unistd.h>
 #include <ctime>
+#include <boost/thread.hpp>
 
 #define FIRST_SOL
-//#define MAZE_FIGURE
+#define MAZE_FIGURE
 #ifdef MAZE_FIGURE
 #undef FIRST_SOL
 #endif
@@ -41,152 +42,145 @@ public:
     std::set<S> inconsistent;
 };
 
+// Info that needs to be thread safe
+template <typename S, typename P>
+class search_request
+{
+public:
+    search_request(S start_pose,
+                   std::vector<P> big,
+                   std::vector<P> small,
+                   float eps = 10.f) : start(start_pose),
+                                       big_prs(big),
+                                       s_prs(small),
+                                       killed(false),
+                                       epsilon(eps) {};
+
+    S begin() const
+    {
+        return start;
+    }
+
+    void kill()
+    {
+        boost::lock_guard<boost::mutex> guard(kill_mtx);
+        killed = true;
+    }
+
+    bool check_killed()
+    {
+        boost::lock_guard<boost::mutex> guard(kill_mtx);
+        return killed;
+    }
+
+    void add_solution(search_result<S, P> addition)
+    {
+        boost::lock_guard<boost::mutex> guard(solns_mtx);
+        solutions.push_back(addition);
+    }
+
+    std::vector<search_result<S, P> > copy_solutions()
+    {
+        boost::lock_guard<boost::mutex> guard(solns_mtx);
+        return solutions;
+    }
+
+    void set_epsilon(float eps)
+    {
+        boost::lock_guard<boost::mutex> guard(epsilon_mtx);
+        epsilon = eps;
+    }
+
+    float check_epsilon()
+    {
+        boost::lock_guard<boost::mutex> guard(epsilon_mtx);
+        return epsilon;
+    }
+
+    // Copy
+    std::vector<P> big_primitives() const
+    {
+        return big_prs;
+    }
+
+    // Copy
+    std::vector<P> small_primitives() const
+    {
+        return s_prs;
+    }
+
+    int num_solutions()
+    {
+        boost::lock_guard<boost::mutex> guard(solns_mtx);
+        return solutions.size();
+    }
+
+private:
+    std::vector<search_result<S, P> > solutions;
+    bool killed;
+    S start;
+    std::vector<P> big_prs;
+    std::vector<P> s_prs;
+    float epsilon;
+    boost::mutex solns_mtx;
+    boost::mutex kill_mtx;
+    boost::mutex epsilon_mtx;
+};
+
 template <class S>
 float heuristic(S s) { return s.heuristic(); }
 
-template <class S, typename P>
-search_result<S, P> astar(S begin,
-                          std::vector<P> big_primitives,
-                          std::vector<P> small_primitives,
-                          float epsilon = 1.f)
+// NOT thread safe, only access within search thread while searching
+template <typename S, typename P>
+struct search_progress_info
 {
-    std::priority_queue<search_node<S, P> > OPEN =
-        std::priority_queue<search_node<S, P> >();
-    std::map<S, float> costs = std::map<S, float>();
-    search_result<S, P> sol;
-
-    // g(s) = 0
-    search_node<S, P> snode;
-    snode.state = begin;
-    costs[begin] = 0;
-
-    // f(start) = epsilon * heuristic(start)
-    snode.f_value = costs[begin] + epsilon*heuristic(begin);
-
-    // insert start into OPEN
-    OPEN.push(snode);
-
-    std::vector<P> final_path;
-    std::vector<P>* primitives;
-    bool extra_prim = false;
-
-    while(true)
-    {
-        if (OPEN.empty())
-        {
-            sol.path.clear();
-            std::cout << "No solution found by astar"
-                      << std::endl;
-            return sol;
-        }
-
-        // remove s with smallest f-value from OPEN
-        search_node<S, P> s(OPEN.top());
-        OPEN.pop();
-
-        if (s.state.is_goal())
-        {
-            sol.path = s.path;
-            break;
-        }
-
-        sol.expanded.insert(s.state);
-
-        if (s.state.small_steps())
-        {
-            primitives = &small_primitives;
-            if (s.state.use_finisher())
-            {
-                primitives->push_back(s.state.compute_finisher());
-                extra_prim = true;
-            }
-        }
-        else
-        {
-            primitives = &big_primitives;
-        }
-
-        for (typename std::vector<P>::iterator p =
-                 primitives->begin();
-             p != primitives->end(); p++)
-        {
-            S child = s.state.apply(*p);
-            if (!child.valid()) continue;
-            float new_cost = costs[s.state] + s.state.cost(*p);
-
-            // if s' not visited before (g(s') = inf)
-            // or g(s') > g(s) + c(s, s')
-            if ( !costs.count(child) ||
-                 costs[child] > new_cost)
-            {
-                // g(s') = g(s) + c(s, s')
-                costs[child] = new_cost;
-
-                search_node<S, P> nnode;
-                nnode.state = child;
-                nnode.path = s.path;
-                nnode.path.push_back(*p);
-                nnode.f_value = (costs[child] +
-                                 epsilon*heuristic(child));
-
-                // insert s' into OPEN with above f(s')
-                OPEN.push(nnode);
-            }
-        }
-        if (extra_prim)
-        {
-            primitives->pop_back();
-            extra_prim = false;
-        }
-    }
-
-    return sol;
-}
+    S goal;
+    bool goal_found;
+    std::vector<P> best_path;
+    std::set<search_node<S, P> > INCONS;
+    std::priority_queue<search_node<S, P> > OPEN;
+    std::map<S, float> costs;
+};
 
 template <class S, typename P>
-bool improve_path(S& goal,
-                  bool goal_found,
-                  bool* dead,
-                  std::vector<P>& big_primitives,
-                  std::vector<P>& small_primitives,
-                  std::vector<search_result<S, P> >* solutions,
-                  std::vector<P>& best_path,
-                  std::set<search_node<S, P> >& INCONS,
-                  std::priority_queue<search_node<S, P> >& OPEN,
-                  std::map<S, float>& costs,
-                  float epsilon,
-                  bool* kill)
+bool improve_path(search_request<S, P>& request,
+                  search_progress_info<S, P>& progress)
 {
     std::set<S> CLOSED = std::set<S>();
 
+    // Copy out of thread-safe structure just once
+    float epsilon = request.check_epsilon();
+    std::vector<P> small_primitives = request.small_primitives();
+    std::vector<P> big_primitives = request.big_primitives();
+
     search_result<S, P> result;
-    result.path = best_path;
+    result.path = progress.best_path;
     std::vector<P>* primitives;
     bool extra_prim = false;
 
-    bool can_kill = !solutions->empty();
+    bool can_kill = !(request.num_solutions() == 0);
 
-    while(!goal_found ||
-          (costs[goal] + epsilon*heuristic(goal)) >
-          OPEN.top().f_value)
+    while(!progress.goal_found ||
+          (progress.costs[progress.goal] +
+           epsilon*heuristic(progress.goal)) >
+          progress.OPEN.top().f_value)
     {
-        if (can_kill && *kill)
+        if (can_kill && request.check_killed())
         {
-            *dead = true;
             return false;
         }
 
-        if (OPEN.empty())
+        if (progress.OPEN.empty())
         {
             result.path.clear();
-            solutions->push_back(result);
+            request.add_solution(result);
             std::cout << "No solution found by improve_path"
                       << std::endl;
             return false;
         }
         // remove s with smallest fvalue from OPEN
-        search_node<S, P> s(OPEN.top());
-        OPEN.pop();
+        search_node<S, P> s(progress.OPEN.top());
+        progress.OPEN.pop();
         result.expanded.insert(s.state);
 
         // CLOSED = CLOSED U s
@@ -211,38 +205,39 @@ bool improve_path(S& goal,
         {
             S child = s.state.apply(*p);
             if (!child.valid()) continue;
-            float new_cost = costs[s.state] + s.state.cost(*p);
+            float new_cost = progress.costs[s.state] +
+                s.state.cost(*p);
 
             // if s' not visited before (g(s') = inf)
             // or g(s') > g(s) + c(s, s')
-            if ( !costs.count(child) ||
-                 costs[child] > new_cost)
+            if ( !progress.costs.count(child) ||
+                 progress.costs[child] > new_cost)
             {
                 // g(s') = g(s) + c(s, s')
-                costs[child] = new_cost;
+                progress.costs[child] = new_cost;
 
                 search_node<S, P> nnode;
                 nnode.state = child;
                 nnode.path = s.path;
                 nnode.path.push_back(*p);
-                nnode.f_value = (costs[child] +
+                nnode.f_value = (progress.costs[child] +
                                  epsilon*heuristic(child));
 
                 if (nnode.state.is_goal())
                 {
                     result.path = nnode.path;
-                    goal = nnode.state;
-                    goal_found = true;
+                    progress.goal = nnode.state;
+                    progress.goal_found = true;
                 }
 
                 if (!CLOSED.count(child))
                 {
                     // f(s') = g(s') + epsilon*heuristic(s')
-                    OPEN.push(nnode);
+                    progress.OPEN.push(nnode);
                 }
                 else
                 {
-                    INCONS.insert(nnode);
+                    progress.INCONS.insert(nnode);
                 }
             }
         }
@@ -253,49 +248,51 @@ bool improve_path(S& goal,
         }
     }
 
-    if (result.path != best_path)
+    if (result.path != progress.best_path)
     {
-        best_path = result.path;
+        progress.best_path = result.path;
     }
 
-    for (typename std::set<search_node<S, P> >::iterator i = INCONS.begin();
-         i != INCONS.end(); i++)
+    for (typename std::set<search_node<S, P> >::iterator i =
+             progress.INCONS.begin();
+         i != progress.INCONS.end(); i++)
     {
         result.inconsistent.insert(i->state);
     }
 
-    std::priority_queue<search_node<S, P> > cop(OPEN);
+    std::priority_queue<search_node<S, P> > cop(progress.OPEN);
     while(!cop.empty())
     {
         result.inconsistent.insert(cop.top().state);
         cop.pop();
     }
-    solutions->push_back(result);
-    return goal_found;
+    request.add_solution(result);
+    return progress.goal_found;
 }
 
 template <class S, typename P>
-float min_gh(std::map<S, float>& costs,
-             std::priority_queue<search_node<S, P> > OPEN_copy,
-             std::set<search_node<S, P> > INCONS)
+float min_gh(search_progress_info<S, P>& progress)
 {
+    std::priority_queue<search_node<S, P> > OPEN_copy(progress.OPEN);
+
     // Min over s in OPEN, INCONS g(s) + h(s)
-    float min_g_plus_h = (costs[OPEN_copy.top().state] +
+    float min_g_plus_h = (progress.costs[OPEN_copy.top().state] +
                           heuristic(OPEN_copy.top().state));
     while (!OPEN_copy.empty())
     {
         OPEN_copy.pop();
-        float g_h = (costs[OPEN_copy.top().state] +
+        float g_h = (progress.costs[OPEN_copy.top().state] +
                      heuristic(OPEN_copy.top().state));
         if ( g_h < min_g_plus_h)
         {
             min_g_plus_h = g_h;
         }
     }
-    for (typename std::set<search_node<S, P> >::iterator i = INCONS.begin();
-         i != INCONS.end(); i++)
+    for (typename std::set<search_node<S, P> >::iterator i =
+             progress.INCONS.begin();
+         i != progress.INCONS.end(); i++)
     {
-        float g_h = (costs[i->state] + heuristic(i->state));
+        float g_h = (progress.costs[i->state] + heuristic(i->state));
         if ( g_h < min_g_plus_h)
         {
             min_g_plus_h = g_h;
@@ -305,54 +302,43 @@ float min_gh(std::map<S, float>& costs,
 }
 
 template <typename S, typename P>
-void arastar(std::vector<search_result<S, P> >* solutions,
-             bool* kill,
-             S begin,
-             std::vector<P> big_prs,
-             std::vector<P> s_prs,
-             float e_start = 5.f)
+void arastar(search_request<S, P>& request)
 {
     std::clock_t t;
     t = std::clock();
-    bool goal_found = false;
-    std::priority_queue<search_node<S, P> > OPEN =
-        std::priority_queue<search_node<S, P> >();
-    solutions->clear();
-    std::vector<P> best_path = std::vector<P>();
-    std::set<search_node<S, P> > INCONS =
-        std::set<search_node<S, P> >();
-    std::map<S, float> costs = std::map<S, float>();
-    float epsilon = e_start;
-    S goal;
+
+    search_progress_info<S, P> progress;
+    progress.OPEN = std::priority_queue<search_node<S, P> >();
+    progress.best_path = std::vector<P>();
+    progress.INCONS = std::set<search_node<S, P> >();
+    progress.costs = std::map<S, float>();
+    progress.goal_found = false;
 
     // g(goal) = inf; g(start) = 0;
-    costs[begin] = 0;
+    progress.costs[request.begin()] = 0;
 
     search_node<S, P> snode;
-    snode.state = begin;
-    snode.f_value = (costs[begin] + epsilon*heuristic(begin));
-    OPEN.push(snode);
+    snode.state = request.begin();
+    snode.f_value = (progress.costs[snode.state] +
+                     request.check_epsilon()*heuristic(snode.state));
+    progress.OPEN.push(snode);
 
     bool killed = false;
-    goal_found = improve_path<S, P>(goal, goal_found, &killed,
-                                    big_prs, s_prs,
-                                    solutions, best_path,
-                                    INCONS, OPEN,
-                                    costs, epsilon, kill);
-    if (killed) return;
-    if (OPEN.empty()) return;
-    best_path = solutions->at(0).path;
+    progress.goal_found = improve_path<S, P>(request, progress);
+    if (request.check_killed()) return;
+    if (progress.OPEN.empty()) return;
+    //best_path = solutions->at(0).path;
 
     // g(goal)/min{s E OPEN U INCONS} (g+h)
-    float alt = costs[goal] / min_gh<S, P>(costs, OPEN, INCONS);
+    float alt = progress.costs[progress.goal] / min_gh<S, P>(progress);
 
     t = std::clock() - t;
 
-    float e_prime = epsilon;
+    float e_prime = request.check_epsilon();
     if (alt < e_prime) e_prime = alt;
     std::cout << "The first solution is suboptimal by: " <<
         e_prime << ", ";
-    std::cout << solutions->at(0).expanded.size()
+    std::cout << request.copy_solutions().at(0).expanded.size()
               << " expansions, ";
     std::cout << ((float)t) / CLOCKS_PER_SEC << " s"  << std::endl;
 #ifdef FIRST_SOL
@@ -364,54 +350,59 @@ void arastar(std::vector<search_result<S, P> >* solutions,
         sleep(0.001);
 
         // decrease epsilon
+        float tmp = request.check_epsilon();
 #ifdef MAZE_FIGURE
-        epsilon = epsilon - 0.5f;
+        request.set_epsilon(tmp - 0.5f);
 #else
-        epsilon = epsilon - 1.f;
+        request.set_epsilon(tmp - 1.f);
 #endif
 
         // Move states from INCONS to OPEN
-        for (typename std::set<search_node<S, P> >::iterator i = INCONS.begin();
-             i != INCONS.end(); i++)
+        for (typename std::set<search_node<S, P> >::iterator i =
+                 progress.INCONS.begin();
+             i != progress.INCONS.end(); i++)
         {
-            OPEN.push(*i);
+            progress.OPEN.push(*i);
         }
-        INCONS.clear();
+        progress.INCONS.clear();
 
         // Update priorities of all states in OPEN
         std::vector<search_node<S, P> > OPEN_update;
-        while (!OPEN.empty())
+        while (!progress.OPEN.empty())
         {
-            OPEN_update.push_back(OPEN.top());
-            OPEN.pop();
+            OPEN_update.push_back(progress.OPEN.top());
+            progress.OPEN.pop();
         }
-        for (typename std::vector<search_node<S, P> >::iterator o = OPEN_update.begin();
+        for (typename std::vector<search_node<S, P> >::iterator o =
+                 OPEN_update.begin();
              o != OPEN_update.end(); o++)
         {
-            o->f_value = (costs[o->state] +
-                          epsilon*heuristic(o->state));
-            OPEN.push(*o);
+            o->f_value = (progress.costs[o->state] +
+                          request.check_epsilon()*heuristic(o->state));
+            progress.OPEN.push(*o);
         }
 
-        goal_found = improve_path<S,P>(goal, goal_found, &killed,
-                                       big_prs, s_prs,
-                                       solutions, best_path,
-                                       INCONS, OPEN,
-                                       costs, epsilon, kill);
-        if (killed) return;
-        if (OPEN.empty()) return;
+        progress.goal_found = improve_path<S,P>(request, progress);
+        if (request.check_killed()) return;
+        if (progress.OPEN.empty()) return;
 
         // g(goal)/min{s E OPEN U INCONS} (g+h)
-        float alt = costs[goal] / min_gh<S,P>(costs, OPEN, INCONS);
+        float alt = progress.costs[progress.goal] / min_gh<S,P>(progress);
 
-        e_prime = epsilon;
+        e_prime = request.check_epsilon();
         if (alt < e_prime) e_prime = alt;
-        std::cout << "Epsilon is: " << epsilon <<
+        std::cout << "Epsilon is: " << request.check_epsilon() <<
             ", Solution is suboptimal by: " << e_prime << ", ";
-        std::cout << solutions->at(solutions->size()-1).expanded.size()
+        std::cout << request.copy_solutions().at(request.num_solutions()-1).expanded.size()
                   << " expansions" << std::endl;
 
     }
 }
 
-
+template <class S, typename P>
+search_result<S, P> astar(search_request<S, P>& req)
+{
+    req.kill();
+    arastar<S, P>(req);
+    return req.copy_solutions().at(0);
+}
