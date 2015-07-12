@@ -63,6 +63,7 @@ add_executable(arm_ara
 target_link_libraries(
   arm_ara
   ${QT_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 add_executable(tests

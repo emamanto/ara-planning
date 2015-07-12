@@ -55,6 +55,25 @@ public:
                                        s_prs(small),
                                        killed(false),
                                        epsilon(eps) {};
+    search_request() {};
+
+    // Should really only call this when the search is no longer
+    // going for this request...
+    search_request& operator=(const search_request& other)
+    {
+        boost::lock_guard<boost::mutex> guard1(kill_mtx);
+        boost::lock_guard<boost::mutex> guard2(solns_mtx);
+        boost::lock_guard<boost::mutex> guard3(epsilon_mtx);
+        killed = false;
+        solutions.clear();
+
+        start = other.start;
+        big_prs = other.big_prs;
+        s_prs = other.s_prs;
+        epsilon = other.epsilon;
+
+        return *this;
+    }
 
     S begin() const
     {

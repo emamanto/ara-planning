@@ -48,11 +48,11 @@ private:
     obstacles* obs;
     pose latest_plan_start;
     arastar_solution latest_search;
+    search_request<arm_state, action> latest_request;
     plan latest_plan;
     bool draw_heuristic;
     bool draw_plan;
     bool ee_only;
-    bool kill_search;
     QTransform original, arm_base;
 
     static pthread_t search_thread;

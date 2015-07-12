@@ -13,8 +13,7 @@ Visualizer::Visualizer(Arm* arm, target* goal, obstacles* obs,
     latest_plan_start(arm->get_joints()),
     draw_heuristic(false),
     draw_plan(false),
-    ee_only(false),
-    kill_search(false)
+    ee_only(false)
 {
     setFixedSize(ARM_LENGTH*2+40,ARM_LENGTH+20);
 
@@ -250,37 +249,35 @@ void Visualizer::eePath(bool on)
 
 void Visualizer::newPlan()
 {
-    kill_search = false;
     latest_plan_start = arm->get_joints();
     arm_state::new_goal(target::the_instance()->x,
                         target::the_instance()->y);
-#ifdef ASTAR
-    search_result<arm_state, action> final =
-        astar<arm_state, action>(arm_state(arm->get_joints()),
-                                 arm->get_big_primitives(),
-                                 arm->get_small_primitives(),
-                                 5.f);
-#else
     latest_search.clear();
+    latest_request =
+        search_request<arm_state, action>(arm_state(arm->get_joints()),
+                                          arm->get_big_primitives(),
+                                          arm->get_small_primitives());
+
     pthread_create(&search_thread, NULL, &searchThread, this);
-#endif
 }
 
 void* Visualizer::searchThread(void* arg)
 {
     Visualizer* v = static_cast<Visualizer*>(arg);
     Arm* a = Arm::the_instance();
-    arastar<arm_state, action>(&v->latest_search,
-                               &v->kill_search,
-                               arm_state(a->get_joints()),
-                               a->get_big_primitives(),
-                               a->get_small_primitives(),
-                               10.f);
+
+#ifdef ASTAR
+    astar<arm_state, action>(v->latest_request);
+#else
+    arastar<arm_state, action>(v->latest_request);
+#endif
+
     v->planCompleted();
 }
 
 void Visualizer::planCompleted()
 {
+    latest_search = latest_request.copy_solutions();
     if (latest_search.size() == 1 && latest_search.at(0).path.empty())
     {
         std::cout << "Planning failed." << std::endl;
@@ -302,7 +299,7 @@ void Visualizer::clearPlan()
 
 void Visualizer::stopSearch()
 {
-    kill_search = true;
+    latest_request.kill();
 }
 
 void Visualizer::shortcutPlan()
