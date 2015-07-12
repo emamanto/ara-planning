@@ -11,8 +11,7 @@ planner_interface::planner_interface() :
     latest_plan_executed(false),
     arm_status(probcog_arm::get_num_joints(), 0),
     task(WAITING_INITIAL),
-    current_command_index(0),
-    kill_search(false)
+    current_command_index(0)
 {
 }
 
@@ -20,12 +19,7 @@ void* planner_interface::search_thread(void* arg)
 {
     planner_interface* pi = static_cast<planner_interface*>(arg);
     std::cout << "Searching" << std::endl;
-    arastar<arm_state, action>(&(pi->latest_search),
-                               &(pi->kill_search),
-                               arm_state(pi->latest_start_pose),
-                               probcog_arm::big_primitives(),
-                               probcog_arm::small_primitives(),
-                               100.f);
+    arastar<arm_state, action>(pi->latest_request);
     pi->search_complete();
 }
 
@@ -36,6 +30,7 @@ void planner_interface::search_complete()
     planner_response_t resp;
     resp.response_type = "SEARCH";
     resp.finished = true;
+    latest_search = latest_request.copy_solutions();
     if (latest_search.size() > 0 &&
         !latest_search.at(0).path.empty())
     {
@@ -45,6 +40,7 @@ void planner_interface::search_complete()
     {
         resp.success = false;
     }
+
     resp.plan_size =
         latest_search.at(latest_search.size()-1).path.size();
 
@@ -86,17 +82,20 @@ void planner_interface::handle_command_message(
                   << ", " << goal[1] << ", " << goal[2]
                   << std::endl;
         latest_start_pose = arm_status;
-        kill_search = false;
 
         latest_search.clear();
+        latest_request =
+            search_request<arm_state, action>(arm_state(latest_start_pose),
+                                              probcog_arm::big_primitives(),
+                                              probcog_arm::small_primitives());
+
         pthread_create(&thrd, NULL, &search_thread, this);
     }
     else if (comm->command_type.compare("STOP") == 0 &&
              task != WAITING)
     {
         std::cout << "Stopping a search!" << std::endl;
-        kill_search = true;
-        //task = WAITING; ??
+        latest_request.kill();
     }
     else if (comm->command_type.compare("RESET") == 0 &&
              task != EXECUTING)
