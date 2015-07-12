@@ -135,13 +135,14 @@ public:
         std::cout << "About to search" << std::endl;
         arm_state::target = goal;
         std::vector<search_result<arm_state, action> > latest_search;
-        bool kill_search = false;
-        arastar<arm_state, action>(&latest_search,
-                                   &kill_search,
-                                   arm_state(status),
-                                   probcog_arm::big_primitives(),
-                                   probcog_arm::small_primitives(),
-                                   100.f);
+
+        search_request<arm_state, action> req(arm_state(status),
+                                              probcog_arm::big_primitives(),
+                                              probcog_arm::small_primitives());
+
+
+        arastar<arm_state, action>(req);
+        latest_search = req.copy_solutions();
         current_plan = latest_search.at(latest_search.size()-1).path;
         current_plan = shortcut<arm_state, action>(current_plan,
                                                    arm_state(status));
