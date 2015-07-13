@@ -99,6 +99,20 @@ void planner_interface::handle_command_message(
         std::cout << "Stopping a search!" << std::endl;
         latest_request.kill();
     }
+    else if (comm->command_type.compare("PAUSE") == 0 &&
+             task != PAUSED)
+    {
+        std::cout << "Pausing the search!" << std::endl;
+        latest_request.pause();
+        task = PAUSED;
+    }
+    else if (comm->command_type.compare("CONTINUE") == 0 &&
+             task == PAUSED)
+    {
+        std::cout << "Resuming the search!" << std::endl;
+        latest_request.unpause();
+        task = SEARCHING;
+    }
     else if (comm->command_type.compare("RESET") == 0 &&
              task != EXECUTING)
     {

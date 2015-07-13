@@ -17,7 +17,8 @@
 
 typedef std::vector<search_result<arm_state, action> > arastar_result;
 
-enum planner_status{SEARCHING, EXECUTING, WAITING, WAITING_INITIAL};
+enum planner_status{SEARCHING, EXECUTING, WAITING,
+                    PAUSED, WAITING_INITIAL};
 
 class planner_interface
 {

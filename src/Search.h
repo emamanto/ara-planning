@@ -50,10 +50,11 @@ public:
     search_request(S start_pose,
                    std::vector<P> big,
                    std::vector<P> small,
-                   float eps = 10.f) : start(start_pose),
+                   float eps = 10.f) : killed(false),
+                                       paused(false),
+                                       start(start_pose),
                                        big_prs(big),
                                        s_prs(small),
-                                       killed(false),
                                        epsilon(eps) {};
     search_request() {};
 
@@ -65,6 +66,7 @@ public:
         boost::lock_guard<boost::mutex> guard2(solns_mtx);
         boost::lock_guard<boost::mutex> guard3(epsilon_mtx);
         killed = false;
+        paused = false;
         solutions.clear();
 
         start = other.start;
@@ -90,6 +92,24 @@ public:
     {
         boost::lock_guard<boost::mutex> guard(kill_mtx);
         return killed;
+    }
+
+    void pause()
+    {
+        boost::lock_guard<boost::mutex> guard(pause_mtx);
+        paused = true;
+    }
+
+    void unpause()
+    {
+        boost::lock_guard<boost::mutex> guard(pause_mtx);
+        paused = false;
+    }
+
+    bool check_paused()
+    {
+        boost::lock_guard<boost::mutex> guard(pause_mtx);
+        return paused;
     }
 
     void add_solution(search_result<S, P> addition)
@@ -137,12 +157,14 @@ public:
 private:
     std::vector<search_result<S, P> > solutions;
     bool killed;
+    bool paused;
     S start;
     std::vector<P> big_prs;
     std::vector<P> s_prs;
     float epsilon;
     boost::mutex solns_mtx;
     boost::mutex kill_mtx;
+    boost::mutex pause_mtx;
     boost::mutex epsilon_mtx;
 };
 
@@ -184,6 +206,11 @@ bool improve_path(search_request<S, P>& request,
            epsilon*heuristic(progress.goal)) >
           progress.OPEN.top().f_value)
     {
+        while (request.check_paused())
+        {
+            sleep(0.1);
+        }
+
         if (can_kill && request.check_killed())
         {
             return false;
@@ -366,7 +393,10 @@ void arastar(search_request<S, P>& request)
 
     while (e_prime > 1.f)
     {
-        sleep(0.001);
+        while (request.check_paused())
+        {
+            sleep(0.1);
+        }
 
         // decrease epsilon
         float tmp = request.check_epsilon();
