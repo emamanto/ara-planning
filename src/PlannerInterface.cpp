@@ -6,12 +6,14 @@ pthread_t planner_interface::thrd = pthread_t();
 
 float planner_interface::PRIMITIVE_SIZE_MIN = 2.f;
 float planner_interface::PRIMITIVE_SIZE_MAX = 20.f;
+float planner_interface::MIN_PROP_SPEED = 0.2f;
 
 planner_interface::planner_interface() :
     latest_plan_executed(false),
     arm_status(probcog_arm::get_num_joints(), 0),
     task(WAITING_INITIAL),
-    current_command_index(0)
+    current_command_index(0),
+    requested_speed(1)
 {
 }
 
@@ -121,6 +123,7 @@ void planner_interface::handle_command_message(
             current_command.at(i) += current_plan.at(0).at(i);
         }
         current_command_index = 0;
+        requested_speed = comm->speed;
 
         task = EXECUTING;
     }
@@ -215,10 +218,12 @@ void planner_interface::handle_status_message(
         {
             dynamixel_command_t c;
             c.position_radians = current_command.at(i);
-#ifdef SLOW_SPEED
+#ifdef SLOW_SPEED // Will override Soar's requests
             c.speed = probcog_arm::get_default_speed(i)*0.1;
 #else
-            c.speed = probcog_arm::get_default_speed(i);
+            c.speed = (MIN_PROP_SPEED + (1.f - MIN_PROP_SPEED) *
+                       requested_speed) *
+                probcog_arm::get_default_speed(i);
 #endif
             c.max_torque = probcog_arm::get_default_torque(i);
             command.commands.push_back(c);
@@ -226,7 +231,8 @@ void planner_interface::handle_status_message(
 
         dynamixel_command_t hand;
         hand.position_radians = 112.f*DEG_TO_RAD;
-        hand.speed = 0.15;
+        hand.speed = (MIN_PROP_SPEED + (1.f - MIN_PROP_SPEED) *
+                       requested_speed) * 0.15;
         hand.max_torque = 0.5;
         command.commands.push_back(hand);
         lcm.publish("ARM_COMMAND", &command);

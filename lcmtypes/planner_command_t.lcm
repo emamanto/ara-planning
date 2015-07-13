@@ -5,4 +5,5 @@ struct planner_command_t
     double target[3];         // Will be valid for type SEARCH
     double primitive_size;    // Will be valid for type SEARCH
     double time_limit;	      // Will be valid for type SEARCH
+    double speed;	      // Will be valid for type EXECUTE
 }

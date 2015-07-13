@@ -53,6 +53,8 @@ private:
     int current_command_index;
     pose current_command;
     planner_response_t last_response;
+    float requested_speed;
 
     static float PRIMITIVE_SIZE_MIN, PRIMITIVE_SIZE_MAX;
+    static float MIN_PROP_SPEED;
 };
