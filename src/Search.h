@@ -52,6 +52,7 @@ public:
                    std::vector<P> small,
                    float eps = 10.f) : killed(false),
                                        paused(false),
+                                       pause_waiting(false),
                                        start(start_pose),
                                        big_prs(big),
                                        s_prs(small),
@@ -96,8 +97,26 @@ public:
 
     void pause()
     {
-        boost::lock_guard<boost::mutex> guard(pause_mtx);
+        pause_mtx.lock();
         paused = true;
+        pause_mtx.unlock();
+        set_pause_waiting(true);
+        while(check_pause_waiting())
+        {
+            sleep(0.01);
+        }
+    }
+
+    void set_pause_waiting(bool b)
+    {
+        boost::lock_guard<boost::mutex> guard(waiting_mtx);
+        pause_waiting = b;
+    }
+
+    bool check_pause_waiting()
+    {
+        boost::lock_guard<boost::mutex> guard(waiting_mtx);
+        return pause_waiting;
     }
 
     void unpause()
@@ -158,6 +177,7 @@ private:
     std::vector<search_result<S, P> > solutions;
     bool killed;
     bool paused;
+    bool pause_waiting;
     S start;
     std::vector<P> big_prs;
     std::vector<P> s_prs;
@@ -165,6 +185,7 @@ private:
     boost::mutex solns_mtx;
     boost::mutex kill_mtx;
     boost::mutex pause_mtx;
+    boost::mutex waiting_mtx;
     boost::mutex epsilon_mtx;
 };
 
@@ -208,6 +229,10 @@ bool improve_path(search_request<S, P>& request,
     {
         while (request.check_paused())
         {
+            if (request.check_pause_waiting())
+            {
+                request.set_pause_waiting(false);
+            }
             sleep(0.1);
         }
 
@@ -395,6 +420,10 @@ void arastar(search_request<S, P>& request)
     {
         while (request.check_paused())
         {
+            if (request.check_pause_waiting())
+            {
+                request.set_pause_waiting(false);
+            }
             sleep(0.1);
         }
 
