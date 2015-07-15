@@ -17,7 +17,7 @@
 
 typedef std::vector<search_result<arm_state, action> > arastar_result;
 
-enum planner_status{SEARCHING, EXECUTING, WAITING,
+enum planner_status{SEARCHING, POSTPROCESSING, EXECUTING, WAITING,
                     PAUSED, WAITING_INITIAL};
 
 class planner_interface
@@ -46,6 +46,7 @@ private:
     // For the record, this is so the same plan doesn't get
     // executed twice due to LCM spamming
     bool latest_plan_executed;
+    bool latest_plan_smoothed;
     pose arm_status;
     arastar_result latest_search;
     search_request<arm_state, action> latest_request;

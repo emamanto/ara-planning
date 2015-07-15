@@ -10,6 +10,7 @@ float planner_interface::MIN_PROP_SPEED = 0.2f;
 
 planner_interface::planner_interface() :
     latest_plan_executed(false),
+    latest_plan_smoothed(false),
     arm_status(probcog_arm::get_num_joints(), 0),
     task(WAITING_INITIAL),
     current_command_index(0),
@@ -28,6 +29,7 @@ void* planner_interface::search_thread(void* arg)
 void planner_interface::search_complete()
 {
     latest_plan_executed = false;
+    latest_plan_smoothed = false;
     lcm::LCM lcm;
     planner_response_t resp;
     resp.response_type = "SEARCH";
@@ -46,6 +48,7 @@ void planner_interface::search_complete()
     resp.plan_size =
         latest_search.at(latest_search.size()-1).path.size();
 
+    current_plan = latest_search.at(latest_search.size()-1).path;
     task = WAITING;
     lcm.publish("PLANNER_RESPONSES", &resp);
     last_response = resp;
@@ -113,6 +116,22 @@ void planner_interface::handle_command_message(
         latest_request.unpause();
         task = SEARCHING;
     }
+    else if (comm->command_type.compare("POSTPROCESS") == 0 &&
+             task != POSTPROCESSING && !latest_plan_smoothed)
+    {
+        std::cout << "Going to smooth the existing path!" << std::endl;
+        task = POSTPROCESSING;
+        // SHORTCUT **Add actually using the parameter in the msg
+        std::cout << "Originally: " << current_plan.size()
+                  << std::endl;
+        current_plan =
+            shortcut<arm_state, action>(current_plan,
+                                        arm_state(latest_start_pose));
+        std::cout << "Ultimate path length: " << current_plan.size()
+                  << std::endl;
+        latest_plan_smoothed = true;
+        task = WAITING;
+    }
     else if (comm->command_type.compare("RESET") == 0 &&
              task != EXECUTING)
     {
@@ -125,7 +144,6 @@ void planner_interface::handle_command_message(
     else if (comm->command_type.compare("EXECUTE") == 0 &&
              task != EXECUTING && !latest_plan_executed)
     {
-        current_plan = latest_search.at(latest_search.size()-1).path;
         // current_plan = shortcut<arm_state, action>(current_plan,
         //                                            arm_state(status));
         // std::cout << "Shortcutted to " << current_plan.size()
