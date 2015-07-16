@@ -2,6 +2,7 @@ struct planner_command_t
 {
     int64_t utime;
     string command_type;
+    int32_t command_id;
     double target[3];         // Will be valid for type SEARCH
     double primitive_size;    // Will be valid for type SEARCH
     double time_limit;	      // Will be valid for type SEARCH

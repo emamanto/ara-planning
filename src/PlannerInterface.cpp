@@ -9,12 +9,13 @@ float planner_interface::PRIMITIVE_SIZE_MAX = 20.f;
 float planner_interface::MIN_PROP_SPEED = 0.2f;
 
 planner_interface::planner_interface() :
-    latest_plan_executed(false),
-    latest_plan_smoothed(false),
     arm_status(probcog_arm::get_num_joints(), 0),
+    search_cmd_id(-1),
+    execute_cmd_id(-1),
     task(WAITING_INITIAL),
     current_command_index(0),
-    requested_speed(1)
+    requested_speed(1),
+    last_id_handled(-1)
 {
 }
 
@@ -28,12 +29,11 @@ void* planner_interface::search_thread(void* arg)
 
 void planner_interface::search_complete()
 {
-    latest_plan_executed = false;
-    latest_plan_smoothed = false;
     lcm::LCM lcm;
     planner_response_t resp;
     resp.response_type = "SEARCH";
     resp.finished = true;
+    resp.response_id = search_cmd_id;
     latest_search = latest_request.copy_solutions();
     if (latest_search.size() > 0 &&
         !latest_search.at(0).path.empty())
@@ -66,7 +66,7 @@ void planner_interface::handle_command_message(
     }
 
     if (comm->command_type.compare("SEARCH") == 0 &&
-        task != SEARCHING)
+        comm->command_id > last_id_handled)
     {
         task = SEARCHING;
         point_3d goal;
@@ -93,62 +93,80 @@ void planner_interface::handle_command_message(
             search_request<arm_state, action>(arm_state(latest_start_pose),
                                               probcog_arm::big_primitives(),
                                               probcog_arm::small_primitives());
-
+        last_id_handled = comm->command_id;
+        search_cmd_id = comm->command_id;
         pthread_create(&thrd, NULL, &search_thread, this);
     }
     else if (comm->command_type.compare("STOP") == 0 &&
-             task != WAITING)
+             comm->command_id > last_id_handled)
     {
         std::cout << "Stopping a search!" << std::endl;
         latest_request.kill();
+        last_id_handled = comm->command_id;
+        // RESPONSE
     }
     else if (comm->command_type.compare("PAUSE") == 0 &&
-             task != PAUSED)
+             comm->command_id > last_id_handled)
     {
         std::cout << "Pausing the search!" << std::endl;
         latest_request.pause();
+        last_id_handled = comm->command_id;
         task = PAUSED;
+        // RESPONSE
     }
     else if (comm->command_type.compare("CONTINUE") == 0 &&
-             task == PAUSED)
+             comm->command_id > last_id_handled)
     {
         std::cout << "Resuming the search!" << std::endl;
         latest_request.unpause();
+        last_id_handled = comm->command_id;
         task = SEARCHING;
+        // RESPONSE
     }
     else if (comm->command_type.compare("POSTPROCESS") == 0 &&
-             task != POSTPROCESSING && !latest_plan_smoothed)
+             comm->command_id > last_id_handled)
     {
         std::cout << "Going to smooth the existing path!" << std::endl;
         task = POSTPROCESSING;
         // SHORTCUT **Add actually using the parameter in the msg
-        std::cout << "Originally: " << current_plan.size()
-                  << std::endl;
+        int original = current_plan.size();
+        std::cout << "Originally: " << original << std::endl;
         current_plan =
             shortcut<arm_state, action>(current_plan,
                                         arm_state(latest_start_pose));
         std::cout << "Ultimate path length: " << current_plan.size()
                   << std::endl;
-        latest_plan_smoothed = true;
+        last_id_handled = comm->command_id;
+
+        lcm::LCM lcm;
+        planner_response_t resp;
+        resp.response_type = "POSTPROCESS";
+        resp.response_id = comm->command_id;
+        resp.finished = true;
+        resp.success = (current_plan.size() < original);
+        resp.plan_size = current_plan.size();
+
+        lcm.publish("PLANNER_RESPONSES", &resp);
+        last_response = resp;
+
         task = WAITING;
     }
     else if (comm->command_type.compare("RESET") == 0 &&
-             task != EXECUTING)
+             comm->command_id > last_id_handled)
     {
         task = EXECUTING;
+        last_id_handled = comm->command_id;
+        execute_cmd_id = comm->command_id;
         std::cout << "Resetting the arm." << std::endl;
         current_command = pose(probcog_arm::get_num_joints(), 0);
         current_plan.clear();
         current_command_index = -1;
     }
     else if (comm->command_type.compare("EXECUTE") == 0 &&
-             task != EXECUTING && !latest_plan_executed)
+             comm->command_id > last_id_handled)
     {
-        // current_plan = shortcut<arm_state, action>(current_plan,
-        //                                            arm_state(status));
-        // std::cout << "Shortcutted to " << current_plan.size()
-        //           << std::endl;
-
+        last_id_handled = comm->command_id;
+        execute_cmd_id = comm->command_id;
         current_command = arm_status;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
         {
@@ -228,12 +246,12 @@ void planner_interface::handle_status_message(
         {
             current_command_index++;
             task = WAITING;
-            latest_plan_executed = true;
             lcm::LCM lcm;
             planner_response_t resp;
             resp.response_type = "EXECUTE";
             resp.finished = true;
             resp.success = true;
+            resp.response_id = execute_cmd_id;
             if (!latest_search.empty()){
                 resp.plan_size =
                     latest_search.at(latest_search.size()-1).path.size();

@@ -1,6 +1,7 @@
 struct planner_response_t
 {
     string response_type;
+    int32_t response_id;
     int64_t utime;
     int64_t task_time;
     boolean finished;
