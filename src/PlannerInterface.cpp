@@ -112,7 +112,27 @@ void planner_interface::handle_command_message(
         latest_request.pause();
         last_id_handled = comm->command_id;
         task = PAUSED;
-        // RESPONSE
+
+        lcm::LCM lcm;
+        planner_response_t resp;
+        resp.response_type = "PAUSE";
+        resp.response_id = comm->command_id;
+        resp.finished = true;
+        resp.success = true;
+
+        latest_search = latest_request.copy_solutions();
+        if (latest_search.size() > 0)
+        {
+            current_plan = latest_search.at(latest_search.size()-1).path;
+            resp.plan_size = current_plan.size();
+        }
+        else
+        {
+            resp.plan_size = 0;
+        }
+
+        lcm.publish("PLANNER_RESPONSES", &resp);
+        last_response = resp;
     }
     else if (comm->command_type.compare("CONTINUE") == 0 &&
              comm->command_id > last_id_handled)
@@ -121,7 +141,17 @@ void planner_interface::handle_command_message(
         latest_request.unpause();
         last_id_handled = comm->command_id;
         task = SEARCHING;
-        // RESPONSE
+
+        lcm::LCM lcm;
+        planner_response_t resp;
+        resp.response_type = "PAUSE";
+        resp.response_id = comm->command_id;
+        resp.finished = true;
+        resp.success = true;
+        resp.plan_size = last_response.plan_size;
+
+        lcm.publish("PLANNER_RESPONSES", &resp);
+        last_response = resp;
     }
     else if (comm->command_type.compare("POSTPROCESS") == 0 &&
              comm->command_id > last_id_handled)
