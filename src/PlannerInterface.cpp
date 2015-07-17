@@ -282,11 +282,7 @@ void planner_interface::handle_status_message(
             resp.finished = true;
             resp.success = true;
             resp.response_id = execute_cmd_id;
-            if (!latest_search.empty()){
-                resp.plan_size =
-                    latest_search.at(latest_search.size()-1).path.size();
-            }
-            else resp.plan_size = 0;
+            resp.plan_size = current_plan.size();
 
             lcm.publish("PLANNER_RESPONSES", &resp);
             last_response = resp;
