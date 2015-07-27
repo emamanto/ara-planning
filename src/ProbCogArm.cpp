@@ -217,7 +217,9 @@ void probcog_arm::set_primitive_change(float big_deg)
     big_prims.clear();
     small_prims.clear();
 
-    for (int i = 0; i < num_joints; i++)
+    // Skip the last joint, which is wrist yaw
+    // This will be fixed during search from now on
+    for (int i = 0; i < num_joints-1; i++)
     {
         // change here if desired
         float big = big_deg*M_PI/180.f;
