@@ -121,6 +121,16 @@ orientation probcog_arm::ee_rpy(pose p)
     return rpy;
 }
 
+float probcog_arm::ee_pitch(pose p)
+{
+    point_3d ee = ee_xyz(p);
+    Eigen::Matrix4f xform = joint_transform(num_joints-1, p);
+    float z_diff = ee.at(2)-xform(2,3);
+
+    float pitch = asin(z_diff/hand_length);
+    return pitch;
+}
+
 float probcog_arm::ee_dist_to(pose from, point_3d to)
 {
     point_3d ee = ee_xyz(from);

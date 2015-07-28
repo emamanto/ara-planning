@@ -39,7 +39,9 @@ public:
                                               float z);
 
     static point_3d ee_xyz(pose p);
+    // RPY may be meaningless...
     static orientation ee_rpy(pose p);
+    static float ee_pitch(pose p);
     static float ee_dist_to(pose from, point_3d to);
 
     static action solve_ik(pose from, point_3d to);
