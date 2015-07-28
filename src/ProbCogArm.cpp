@@ -208,7 +208,67 @@ action probcog_arm::solve_ik(pose from, point_3d to)
     if (sqrt(pow(to.at(0) - fxyz.at(0), 2) +
              pow(to.at(1) - fxyz.at(1), 2) +
              pow(to.at(2) - fxyz.at(2), 2)) < 0.01) return a;
-    std::cout << "Failed IK" << std::endl;
+    //std::cout << "Failed IK" << std::endl;
+    return action(num_joints, 0);
+}
+
+action probcog_arm::solve_gripper(pose from, float to_pitch)
+{
+    action a(num_joints, 0.f);
+
+    Eigen::MatrixXf fk_jacobian(1, 3);
+    pose cur_joints = from;
+    Eigen::VectorXf joint_change;
+    int i = 0;
+    float fpitch;
+
+    while (true)
+    {
+        i++;
+        fpitch = ee_pitch(cur_joints);
+        if (fabs(to_pitch-fpitch) < 0.01)
+        {
+            return a;
+        }
+        if (i > 100) break;
+
+        for (int k = 1; k < 4; k++)
+        {
+            float delta = cur_joints.at(k)*pow(10, -2);
+            if ( delta < pow(10, -4)) delta = pow(10, -4);
+            pose posd = cur_joints;
+            posd.at(k) = cur_joints.at(k) + delta;
+            float pitch_d = ee_pitch(posd);
+            fk_jacobian(0, k-1) = (pitch_d - fpitch) / delta;
+        }
+
+        Eigen::JacobiSVD<Eigen::MatrixXf> svd(fk_jacobian,
+                                              (Eigen::ComputeFullU |
+                                               Eigen::ComputeFullV));
+
+        Eigen::MatrixXf sigma_pseudoinv =
+            Eigen::MatrixXf::Zero(1, 3);
+        sigma_pseudoinv.diagonal() = svd.singularValues();
+
+        if (sigma_pseudoinv(0, 0) < 0.000001) break;
+
+        sigma_pseudoinv(0, 0) = 1.f/sigma_pseudoinv(0, 0);
+        sigma_pseudoinv.transposeInPlace();
+
+        Eigen::MatrixXf jacobian_plus =
+            svd.matrixV()*sigma_pseudoinv*(svd.matrixU().transpose());
+
+        Eigen::Matrix<float, 1, 1> dp;
+        dp << (to_pitch - fpitch);
+        joint_change = jacobian_plus*dp;
+
+        for (int k = 1; k < 4; k++)
+        {
+            cur_joints.at(k) += joint_change(k);
+            a.at(k) += joint_change(k);
+        }
+    }
+    //std::cout << "Failed Gripper IK" << std::endl;
     return action(num_joints, 0);
 }
 

@@ -4,6 +4,8 @@
 #define D_IK 0.05
 
 point_3d arm_state::target = point_3d(3, 0);
+float arm_state::target_pitch = -M_PI/2.f;
+bool arm_state::pitch_matters = true;
 
 arm_state::arm_state() :
     position(probcog_arm::get_num_joints(), 0)
@@ -62,12 +64,35 @@ bool arm_state::use_finisher() const
 
 action arm_state::compute_finisher() const
 {
-    return probcog_arm::solve_ik(position, target);
+    action xyz = probcog_arm::solve_ik(position, target);
+    if (!pitch_matters) return xyz;
+
+    action pitch = probcog_arm::solve_gripper(position, target_pitch);
+    // std::cout << "The pitch action is: ";
+    // for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+    // {
+    //     std::cout << pitch.at(i);
+    // }
+    // std::cout << std::endl;
+
+    action total;
+    bool invalid = true;
+    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+    {
+        total.push_back(xyz.at(i) + pitch.at(i));
+        if (pitch.at(i) != 0) invalid = false;
+    }
+    invalid = (invalid ||
+               probcog_arm::ee_dist_to(probcog_arm::apply(position, total),
+                                       target) > 0.01);
+    if (invalid) return pitch;
+    return total;
 }
 
 bool arm_state::is_goal() const
 {
-    if (target_distance() < 0.001) return true;
+    if (target_distance() < 0.01 &&
+        fabs(probcog_arm::ee_pitch(position) - target_pitch) < 0.01) return true;
     else return false;
 }
 

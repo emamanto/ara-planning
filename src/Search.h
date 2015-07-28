@@ -11,10 +11,10 @@
 #include <boost/thread.hpp>
 
 #define FIRST_SOL
-#define MAZE_FIGURE
-#ifdef MAZE_FIGURE
-#undef FIRST_SOL
-#endif
+// #define MAZE_FIGURE
+// #ifdef MAZE_FIGURE
+// #undef FIRST_SOL
+// #endif
 
 template <typename S, typename P>
 class search_node

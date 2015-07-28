@@ -45,6 +45,7 @@ public:
     static float ee_dist_to(pose from, point_3d to);
 
     static action solve_ik(pose from, point_3d to);
+    static action solve_gripper(pose from, float to_pitch);
 
     static float get_joint_max(int joint_number)
     { return configuration.at(joint_number).max; }
