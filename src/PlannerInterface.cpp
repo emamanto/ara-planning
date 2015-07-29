@@ -299,6 +299,7 @@ void planner_interface::handle_command_message(
         {
             current_command.at(i) += current_plan.at(0).at(i);
         }
+        current_hand_command = 112.f*DEG_TO_RAD;
         current_command_index = 0;
         requested_speed = comm->speed;
 
@@ -316,6 +317,8 @@ void planner_interface::handle_status_message(
     {
         np.push_back(stats->statuses[i].position_radians);
     }
+    float hand_status =
+        stats->statuses[probcog_arm::get_num_joints()].position_radians;
     if (np != arm_status) arm_status = np;
 
     lcm::LCM lcm;
@@ -348,7 +351,7 @@ void planner_interface::handle_status_message(
         lcm.publish("ARM_COMMAND", &command);
     }
 
-    if (task == EXECUTING)
+    if (task == EXECUTING || task == GRASPING)
     {
         bool done = true;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
@@ -359,30 +362,60 @@ void planner_interface::handle_status_message(
                 break;
             }
         }
+        if (fabs(current_hand_command - hand_status) > 0.01)
+        {
+            done = false;
+        }
 
         if (done && current_command_index < current_plan.size()-1)
         {
             current_command_index++;
-            for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            if (task == GRASPING &&
+                current_plan.at(current_command_index).size() == 1)
             {
-                current_command.at(i) +=
-                    current_plan.at(current_command_index).at(i);
+                dynamixel_command_t hand;
+                if (current_plan.at(current_command_index).at(0) == 0)
+                {
+                    current_hand_command = 112.f*DEG_TO_RAD;
+                }
+                else { current_hand_command = 45.f*DEG_TO_RAD; }
+            }
+            else
+            {
+                for (int i = 0;
+                     i < probcog_arm::get_num_joints(); i++)
+                {
+                    current_command.at(i) +=
+                        current_plan.at(current_command_index).at(i);
+                }
             }
         }
-        if (done && current_command_index == current_plan.size()-1)
+        else if (done &&
+                 current_command_index == current_plan.size()-1)
         {
-            current_command_index++;
-            task = WAITING;
-            lcm::LCM lcm;
-            planner_response_t resp;
-            resp.response_type = "EXECUTE";
-            resp.finished = true;
-            resp.success = true;
-            resp.response_id = execute_cmd_id;
-            resp.plan_size = current_plan.size();
+            if (task == EXECUTING)
+            {
+                std::cout << "Execution switching to GRASPING"
+                          << std::endl;
+                current_plan = plan_grasp(arm_status);
+                current_command_index = 0;
+                task = GRASPING;
+            }
+            else
+            {
+                current_command_index++;
+                task = WAITING;
+                lcm::LCM lcm;
+                planner_response_t resp;
+                resp.response_type = "EXECUTE";
+                resp.finished = true;
+                resp.success = true;
+                resp.response_id = execute_cmd_id;
+                resp.plan_size = current_plan.size();
 
-            lcm.publish("PLANNER_RESPONSES", &resp);
-            last_response = resp;
+                lcm.publish("PLANNER_RESPONSES", &resp);
+                last_response = resp;
+            }
         }
 
         dynamixel_command_list_t command;
@@ -403,7 +436,7 @@ void planner_interface::handle_status_message(
         }
 
         dynamixel_command_t hand;
-        hand.position_radians = 112.f*DEG_TO_RAD;
+        hand.position_radians = current_hand_command;
         hand.speed = (MIN_PROP_SPEED + (1.f - MIN_PROP_SPEED) *
                        requested_speed) * 0.15;
         hand.max_torque = 0.5;

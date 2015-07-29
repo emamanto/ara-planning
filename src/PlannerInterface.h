@@ -17,8 +17,8 @@
 
 typedef std::vector<search_result<arm_state, action> > arastar_result;
 
-enum planner_status{SEARCHING, POSTPROCESSING, EXECUTING, WAITING,
-                    PAUSED, WAITING_INITIAL};
+enum planner_status{SEARCHING, POSTPROCESSING, EXECUTING, GRASPING,
+                    WAITING, PAUSED, WAITING_INITIAL};
 
 class planner_interface
 {
@@ -54,6 +54,7 @@ private:
     planner_status task;
     int current_command_index;
     pose current_command;
+    float current_hand_command;
     planner_response_t last_response;
     float requested_speed;
     int last_id_handled;

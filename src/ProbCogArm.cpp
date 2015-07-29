@@ -96,7 +96,7 @@ point_3d probcog_arm::ee_xyz(pose p)
     Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
                              rotation_matrix(p.at(num_joints-1),
                                              get_joint_axis(num_joints-1))*
-                             translation_matrix(0, 0.03, hand_length));
+                             translation_matrix(0, 0, hand_length));
 
     point_3d xyz;
     xyz.push_back(xform(0,3));
