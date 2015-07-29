@@ -39,6 +39,8 @@ public:
 private:
     static void* search_thread(void* arg);
     void search_complete();
+    void set_grasp_target(double dim[], double xyzrpy[]);
+    std::vector<action> plan_grasp(pose start);
 
     static pthread_t thrd;
     std::vector<object_data_t> latest_objects;
@@ -55,6 +57,8 @@ private:
     planner_response_t last_response;
     float requested_speed;
     int last_id_handled;
+    double* target_obj_dim;
+    double* target_obj_xyzrpy;
 
     static float PRIMITIVE_SIZE_MIN, PRIMITIVE_SIZE_MAX;
     static float MIN_PROP_SPEED;

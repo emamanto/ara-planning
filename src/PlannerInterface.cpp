@@ -54,6 +54,105 @@ void planner_interface::search_complete()
     last_response = resp;
 }
 
+void planner_interface::set_grasp_target(double dim[], double xyzrpy[])
+{
+    arm_state::pitch_matters = true;
+    if (fabs(xyzrpy[0]) < 0.2 && fabs(xyzrpy[1]) < 0.2
+        && xyzrpy[2] < 0.3)
+    {
+        arm_state::target_pitch = -M_PI/2.f;
+        arm_state::target[0] = xyzrpy[0];
+        arm_state::target[1] = xyzrpy[1];
+        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.03;
+    }
+    else if (xyzrpy[2] < 0.1)
+    {
+        arm_state::target_pitch = -M_PI/2.f;
+        arm_state::target[0] = xyzrpy[0];
+        arm_state::target[1] = xyzrpy[1];
+        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.03;
+    }
+    else
+    {
+        arm_state::target_pitch = 0.f;
+        arm_state::target[2] = xyzrpy[2];
+
+        if (fabs(xyzrpy[0]) < 0.01)
+        {
+            arm_state::target[0] = 0;
+            float offset = dim[1]/2.f + 0.04;
+            if (xyzrpy[1] < 0) offset *= -1;
+            arm_state::target[1] = xyzrpy[1] - offset;
+        }
+        else if (fabs(xyzrpy[1]) < 0.01)
+        {
+            arm_state::target[1] = 0;
+            float offset = dim[0]/2.f + 0.04;
+            if (xyzrpy[0] < 0) offset *= -1;
+            arm_state::target[0] = xyzrpy[0] - offset;
+        }
+        else if (fabs(xyzrpy[0]) > fabs(xyzrpy[1]))
+        {
+            float offset = dim[0]/2.f + 0.04;
+            if (xyzrpy[0] < 0) offset *= -1;
+            arm_state::target[0] = xyzrpy[0] - offset;
+            arm_state::target[1] = (arm_state::target[0] *
+                                    xyzrpy[1]) / xyzrpy[0];
+        }
+        else
+        {
+            float offset = dim[1]/2.f + 0.04;
+            if (xyzrpy[1] < 0) offset *= -1;
+            arm_state::target[1] = xyzrpy[1] - offset;
+            arm_state::target[0] = (arm_state::target[1] *
+                                    xyzrpy[0]) / xyzrpy[1];
+        }
+    }
+}
+
+std::vector<action> planner_interface::plan_grasp(pose start)
+{
+    std::vector<action> plan;
+
+    // Side grab
+    if (fabs(probcog_arm::ee_pitch(start)) < 0.01)
+    {
+        // Spin wrist
+        action spin(probcog_arm::get_num_joints(), 0);
+        spin.at(probcog_arm::get_num_joints()-1) = M_PI/4.f;
+        plan.push_back(spin);
+
+        action hand_open(1, 1);
+        plan.push_back(hand_open);
+
+        // Forward into obj (?) XXX
+        // This seems like I might want to store the grasp point
+        // calculation instead of basically reversing it here...
+    }
+    // Straight down grab
+    else if (fabs(probcog_arm::ee_pitch(start) - -M_PI/2) < 0.01)
+    {
+        // Spin wrist
+        action spin(probcog_arm::get_num_joints(), 0);
+        spin.at(probcog_arm::get_num_joints()-1) =
+            target_obj_xyzrpy[5];
+        plan.push_back(spin);
+
+        action hand_open(1, 1);
+        plan.push_back(hand_open);
+
+        // Down onto obj (?)
+        point_3d end = probcog_arm::ee_xyz(start);
+        end.at(2) = end.at(2) - 0.04;
+        action down = probcog_arm::solve_ik(start, end);
+        plan.push_back(down);
+    }
+
+    action hand_close(1, 0);
+    plan.push_back(hand_close);
+    return plan;
+}
+
 void planner_interface::handle_command_message(
     const lcm::ReceiveBuffer* rbuf,
     const std::string& channel,
@@ -69,12 +168,7 @@ void planner_interface::handle_command_message(
         comm->command_id > last_id_handled)
     {
         task = SEARCHING;
-        point_3d goal;
-        for (int i = 0; i < 3; i++)
-        {
-            goal.push_back(comm->target[i]);
-        }
-        arm_state::target = goal;
+        set_grasp_target(target_obj_dim, target_obj_xyzrpy);
 
         float big_prim_size = (comm->primitive_size)*
             (PRIMITIVE_SIZE_MAX - PRIMITIVE_SIZE_MIN) +
@@ -83,8 +177,11 @@ void planner_interface::handle_command_message(
                   << std::endl;
         probcog_arm::set_primitive_change(big_prim_size);
 
-        std::cout << "Initiating a search to " << goal[0]
-                  << ", " << goal[1] << ", " << goal[2]
+        std::cout << "Initiating a search to "
+                  << arm_state::target[0] << ", "
+                  << arm_state::target[1] << ", "
+                  << arm_state::target[2] << ", pitch "
+                  << arm_state::target_pitch
                   << std::endl;
         latest_start_pose = arm_status;
 
@@ -329,5 +426,7 @@ void planner_interface::handle_observations_message(
          i != latest_objects.end(); i++)
     {
         collision_world::add_object(i->bbox_dim, i->bbox_xyzrpy);
+        target_obj_dim = i->bbox_dim;
+        target_obj_xyzrpy = i->bbox_xyzrpy;
     }
 }

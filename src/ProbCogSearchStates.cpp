@@ -4,7 +4,7 @@
 #define D_IK 0.05
 
 point_3d arm_state::target = point_3d(3, 0);
-float arm_state::target_pitch = -M_PI/2.f;
+float arm_state::target_pitch = 0.f;
 bool arm_state::pitch_matters = true;
 
 arm_state::arm_state() :
@@ -68,12 +68,6 @@ action arm_state::compute_finisher() const
     if (!pitch_matters) return xyz;
 
     action pitch = probcog_arm::solve_gripper(position, target_pitch);
-    // std::cout << "The pitch action is: ";
-    // for (int i = 0; i < probcog_arm::get_num_joints(); i++)
-    // {
-    //     std::cout << pitch.at(i);
-    // }
-    // std::cout << std::endl;
 
     action total;
     bool invalid = true;
