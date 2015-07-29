@@ -85,9 +85,10 @@ action arm_state::compute_finisher() const
 
 bool arm_state::is_goal() const
 {
-    if (target_distance() < 0.01 &&
-        fabs(probcog_arm::ee_pitch(position) - target_pitch) < 0.01) return true;
-    else return false;
+    if (target_distance() > 0.01) return false;
+    if (fabs(probcog_arm::ee_pitch(position) - target_pitch) > 0.01
+        && pitch_matters) return false;
+    else return true;
 }
 
 float arm_state::heuristic() const
