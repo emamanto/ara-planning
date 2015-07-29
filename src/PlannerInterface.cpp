@@ -168,7 +168,20 @@ void planner_interface::handle_command_message(
         comm->command_id > last_id_handled)
     {
         task = SEARCHING;
-        set_grasp_target(target_obj_dim, target_obj_xyzrpy);
+        if (comm->target_object_id > 0)
+        {
+            set_grasp_target(target_obj_dim, target_obj_xyzrpy);
+        }
+        else
+        {
+            point_3d goal;
+            for (int i = 0; i < 3; i++)
+            {
+                goal.push_back(comm->target[i]);
+            }
+            arm_state::target = goal;
+            arm_state::pitch_matters = false;
+        }
 
         float big_prim_size = (comm->primitive_size)*
             (PRIMITIVE_SIZE_MAX - PRIMITIVE_SIZE_MIN) +
