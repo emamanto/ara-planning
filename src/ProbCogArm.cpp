@@ -262,7 +262,7 @@ action probcog_arm::solve_gripper(pose from, float to_pitch)
         dp << (to_pitch - fpitch);
         joint_change = jacobian_plus*dp;
 
-        for (int k = 1; k < 4; k++)
+        for (int k = 0; k < 3; k++)
         {
             cur_joints.at(k) += joint_change(k);
             a.at(k) += joint_change(k);

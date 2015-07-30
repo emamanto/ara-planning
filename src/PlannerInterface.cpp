@@ -325,6 +325,8 @@ void planner_interface::handle_command_message(
         current_command = pose(probcog_arm::get_num_joints(), 0);
         current_plan.clear();
         current_command_index = -1;
+        add_grasp = false;
+        add_drop = false;
     }
     else if (comm->command_type.compare("EXECUTE") == 0 &&
              comm->command_id > last_id_handled)
@@ -404,7 +406,8 @@ void planner_interface::handle_status_message(
         {
             done = false;
         }
-        if (current_plan.at(current_command_index).size() == 1
+        if (current_command_index >= 0 &&
+            current_plan.at(current_command_index).size() == 1
             && fabs(stats->statuses[5].speed) < 0.01)
         {
             done = true;
