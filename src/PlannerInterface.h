@@ -40,7 +40,7 @@ private:
     static void* search_thread(void* arg);
     void search_complete();
     void set_grasp_target(double dim[], double xyzrpy[]);
-    std::vector<action> plan_grasp(pose start);
+    std::vector<action> plan_grasp(pose start, bool is_drop);
 
     static pthread_t thrd;
     std::vector<object_data_t> latest_objects;
@@ -52,6 +52,7 @@ private:
     search_request<arm_state, action> latest_request;
     std::vector<action> current_plan;
     bool add_grasp;
+    bool add_drop;
     planner_status task;
     int current_command_index;
     pose current_command;
