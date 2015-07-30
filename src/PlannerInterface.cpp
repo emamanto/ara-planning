@@ -179,14 +179,12 @@ void planner_interface::handle_command_message(
         task = SEARCHING;
         if (comm->target_object_id > 0)
         {
-            std::cout << "This is a grab" << std::endl;
             set_grasp_target(target_obj_dim, target_obj_xyzrpy);
             add_grasp = true;
             add_drop = false;
         }
         else if (comm->target_object_id < -1)
         {
-            std::cout << "This is a drop" << std::endl;
             double drop_point[6];
             drop_point[0] = comm->target[0];
             drop_point[1] = comm->target[1];
@@ -198,7 +196,6 @@ void planner_interface::handle_command_message(
         }
         else
         {
-            std::cout << "This is just a move" << std::endl;
             point_3d goal;
             for (int i = 0; i < 3; i++)
             {
@@ -407,18 +404,15 @@ void planner_interface::handle_status_message(
         {
             done = false;
         }
-        /// XXX Check for grasp on object??
         if (current_plan.at(current_command_index).size() == 1
             && fabs(stats->statuses[5].speed) < 0.01)
         {
-            std::cout << "We have a grasp! " << std::endl;
             done = true;
         }
 
         if (done && current_command_index < current_plan.size()-1)
         {
             current_command_index++;
-            std::cout << "New command index: " << current_command_index << std::endl;
             if (task == GRASPING &&
                 current_plan.at(current_command_index).size() == 1)
             {
@@ -461,8 +455,6 @@ void planner_interface::handle_status_message(
             else
             {
                 current_command_index++;
-                std::cout << "New command index and done: "
-                      << current_command_index << std::endl;
                 task = WAITING;
                 lcm::LCM lcm;
                 planner_response_t resp;
