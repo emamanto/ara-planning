@@ -12,6 +12,7 @@ planner_interface::planner_interface() :
     arm_status(probcog_arm::get_num_joints(), 0),
     search_cmd_id(-1),
     execute_cmd_id(-1),
+    add_grasp(false),
     task(WAITING_INITIAL),
     current_command_index(0),
     requested_speed(1),
@@ -171,6 +172,7 @@ void planner_interface::handle_command_message(
         if (comm->target_object_id > 0)
         {
             set_grasp_target(target_obj_dim, target_obj_xyzrpy);
+            add_grasp = true;
         }
         else
         {
@@ -181,6 +183,7 @@ void planner_interface::handle_command_message(
             }
             arm_state::target = goal;
             arm_state::pitch_matters = false;
+            add_grasp = false;
         }
 
         float big_prim_size = (comm->primitive_size)*
@@ -379,6 +382,9 @@ void planner_interface::handle_status_message(
         {
             done = false;
         }
+        /// XXX Check for grasp on object??
+        if (current_plan.at(current_command_index).size() == 1
+            && fabs(stats->statuses[5].speed) < 0.01) done = true;
 
         if (done && current_command_index < current_plan.size()-1)
         {
@@ -406,7 +412,7 @@ void planner_interface::handle_status_message(
         else if (done &&
                  current_command_index == current_plan.size()-1)
         {
-            if (task == EXECUTING)
+            if (task == EXECUTING && add_grasp)
             {
                 std::cout << "Execution switching to GRASPING"
                           << std::endl;

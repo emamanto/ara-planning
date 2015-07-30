@@ -51,6 +51,7 @@ private:
     int execute_cmd_id;
     search_request<arm_state, action> latest_request;
     std::vector<action> current_plan;
+    bool add_grasp;
     planner_status task;
     int current_command_index;
     pose current_command;
