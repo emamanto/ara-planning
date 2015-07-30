@@ -61,6 +61,7 @@ private:
     float requested_speed;
     int last_id_handled;
     double* target_obj_dim;
+    double* grasped_obj_dim;
     double* target_obj_xyzrpy;
 
     static float PRIMITIVE_SIZE_MIN, PRIMITIVE_SIZE_MAX;

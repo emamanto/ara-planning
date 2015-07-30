@@ -67,7 +67,7 @@ void planner_interface::set_grasp_target(double dim[], double xyzrpy[])
         arm_state::target[1] = xyzrpy[1];
         arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.03;
     }
-    else if (xyzrpy[2] < 0.1)
+    else if (xyzrpy[2] < 0.2)
     {
         arm_state::target_pitch = -M_PI/2.f;
         arm_state::target[0] = xyzrpy[0];
@@ -179,23 +179,26 @@ void planner_interface::handle_command_message(
         task = SEARCHING;
         if (comm->target_object_id > 0)
         {
+            std::cout << "THIS IS A GRAB" << std::endl;
             set_grasp_target(target_obj_dim, target_obj_xyzrpy);
             add_grasp = true;
             add_drop = false;
         }
         else if (comm->target_object_id < -1)
         {
+            std::cout << "THIS IS A DROP" << std::endl;
             double drop_point[6];
             drop_point[0] = comm->target[0];
             drop_point[1] = comm->target[1];
-            drop_point[2] = target_obj_dim[2];
+            drop_point[2] = 0;
             for (int i = 3; i < 6; i++) drop_point[i] = 0;
-            set_grasp_target(target_obj_dim, drop_point);
+            set_grasp_target(grasped_obj_dim, drop_point);
             add_grasp = false;
             add_drop = true;
         }
         else
         {
+            std::cout << "THIS IS A MOVE" << std::endl;
             point_3d goal;
             for (int i = 0; i < 3; i++)
             {
@@ -445,6 +448,7 @@ void planner_interface::handle_status_message(
                           << std::endl;
                 current_plan = plan_grasp(arm_status, false);
                 current_command_index = 0;
+                grasped_obj_dim = target_obj_dim;
                 task = GRASPING;
             }
             else if (task == EXECUTING && add_drop)
@@ -508,12 +512,17 @@ void planner_interface::handle_observations_message(
 
     latest_objects = obs->observations;
     collision_world::clear();
+    float height = 10;
     for (std::vector<object_data_t>::iterator i =
              latest_objects.begin();
          i != latest_objects.end(); i++)
     {
         collision_world::add_object(i->bbox_dim, i->bbox_xyzrpy);
-        target_obj_dim = i->bbox_dim;
-        target_obj_xyzrpy = i->bbox_xyzrpy;
+        if (i->bbox_dim[2] < height)
+        {
+            height = i->bbox_dim[2];
+            target_obj_dim = i->bbox_dim;
+            target_obj_xyzrpy = i->bbox_xyzrpy;
+        }
     }
 }
