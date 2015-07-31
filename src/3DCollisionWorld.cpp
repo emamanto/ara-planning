@@ -75,7 +75,25 @@ void collision_world::add_object(double dim[], double xyzrpy[])
 
 void collision_world::clear()
 {
-    if (world_objects_m) world_objects_m->clear();
+    if (world_objects_m)
+    {
+        world_objects_m->clear();
+    }
+    else
+    {
+        world_objects_m = new fcl::DynamicAABBTreeCollisionManager();
+    }
+
+    // TABLE
+    std::vector<float> dims;
+    dims.push_back(1);
+    dims.push_back(1);
+    dims.push_back(0.04);
+
+    std::vector<float> pos;
+    for (int i = 0; i < 6; i++) pos.push_back(0);
+
+    add_object(dims, pos);
 }
 
 bool collision_world::collision(pose arm_position)
@@ -91,6 +109,10 @@ bool collision_world::collision(pose arm_position)
     if (!base_objects_m)
     {
         base_objects_m = new fcl::DynamicAABBTreeCollisionManager();
+    }
+    if (!world_objects_m)
+    {
+        world_objects_m = new fcl::DynamicAABBTreeCollisionManager();
     }
 
     arm_objects_m->clear();
@@ -126,9 +148,9 @@ bool collision_world::collision(pose arm_position)
 
     // HAND
     fcl::Box* box = new
-        fcl::Box(probcog_arm::hand_width+0.04,
-                 probcog_arm::hand_height*2+0.02,
-                 probcog_arm::hand_length+0.02);
+        fcl::Box(probcog_arm::hand_width+0.01,
+                 probcog_arm::hand_height*2+0.01,
+                 probcog_arm::hand_length+0.01);
 
     int last_joint = probcog_arm::get_num_joints()-1;
     Eigen::Matrix4f trmat =
@@ -182,16 +204,6 @@ bool collision_world::collision(pose arm_position)
 
     // end BASE
 
-    // TABLE
-    std::vector<float> dims;
-    dims.push_back(1);
-    dims.push_back(1);
-    dims.push_back(0.04);
-
-    std::vector<float> pos;
-    for (int i = 0; i < 6; i++) pos.push_back(0);
-
-    add_object(dims, pos);
     // std::cout << "Checking for collision against "
     //           << world_objects_m->size() << " world objs"
     //           << std::endl;
