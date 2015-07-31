@@ -324,9 +324,6 @@ bool probcog_arm::is_valid(pose p)
         if (p.at(i) < configuration.at(i).min ||
             p.at(i) > configuration.at(i).max) return false;
     }
-    // EE above table check
-    point_3d xyz = ee_xyz(p);
-    if (xyz.at(2) < 0.01) return false;
     return true;
 }
 

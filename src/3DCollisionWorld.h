@@ -45,4 +45,6 @@ private:
 
     static fcl::BroadPhaseCollisionManager* world_objects_m;
     static fcl::BroadPhaseCollisionManager* arm_objects_m;
+    static fcl::BroadPhaseCollisionManager* hand_objects_m;
+    static fcl::BroadPhaseCollisionManager* base_objects_m;
 };

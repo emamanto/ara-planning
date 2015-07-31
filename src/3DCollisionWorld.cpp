@@ -21,6 +21,8 @@ bool collision_function(fcl::CollisionObject* o1,
 
 fcl::BroadPhaseCollisionManager* collision_world::world_objects_m = 0;
 fcl::BroadPhaseCollisionManager* collision_world::arm_objects_m = 0;
+fcl::BroadPhaseCollisionManager* collision_world::hand_objects_m = 0;
+fcl::BroadPhaseCollisionManager* collision_world::base_objects_m = 0;
 
 void collision_world::add_object(std::vector<float> dim,
                                  std::vector<float> xyzrpy)
@@ -82,8 +84,18 @@ bool collision_world::collision(pose arm_position)
     {
         arm_objects_m = new fcl::DynamicAABBTreeCollisionManager();
     }
+    if (!hand_objects_m)
+    {
+        hand_objects_m = new fcl::DynamicAABBTreeCollisionManager();
+    }
+    if (!base_objects_m)
+    {
+        base_objects_m = new fcl::DynamicAABBTreeCollisionManager();
+    }
 
     arm_objects_m->clear();
+    hand_objects_m->clear();
+    base_objects_m->clear();
 
     for (int i = 0; i < probcog_arm::get_num_joints(); i++)
     {
@@ -107,13 +119,16 @@ bool collision_world::collision(pose arm_position)
         fcl::CollisionObject* obj = new fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(box),
                                                              p);
         arm_objects_m->registerObject(obj);
+
+        if (i < 2) base_objects_m->registerObject(obj);
+        if (i > 2) hand_objects_m->registerObject(obj);
     }
 
     // HAND
     fcl::Box* box = new
-        fcl::Box(probcog_arm::hand_width,
-                 probcog_arm::hand_height*2,
-                 probcog_arm::hand_length);
+        fcl::Box(probcog_arm::hand_width+0.04,
+                 probcog_arm::hand_height*2+0.02,
+                 probcog_arm::hand_length+0.02);
 
     int last_joint = probcog_arm::get_num_joints()-1;
     Eigen::Matrix4f trmat =
@@ -131,11 +146,52 @@ bool collision_world::collision(pose arm_position)
     fcl::Vec3f trans(trmat(0, 3), trmat(1, 3), trmat(2, 3));
     fcl::Transform3f p = fcl::Transform3f(rot, trans);
 
-    arm_objects_m->registerObject(
-        new fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(box),
-                                 p));
+    fcl::CollisionObject* hobj = new fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(box), p);
+
+    arm_objects_m->registerObject(hobj);
+    hand_objects_m->registerObject(hobj);
     // end HAND
-    if (!world_objects_m) return false;
+
+    // BASE
+    fcl::Box* base_box = new
+        fcl::Box(0.065, 0.065, probcog_arm::base_height-0.02);
+
+    fcl::Matrix3f brot(1, 0, 0,
+                      0, 1, 0,
+                      0, 0, 1);
+    fcl::Vec3f btrans(0, 0, probcog_arm::base_height/2 + 0.011);
+    fcl::Transform3f q = fcl::Transform3f(brot, btrans);
+
+    fcl::CollisionObject* bobj = new
+        fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(base_box), q);
+    base_objects_m->registerObject(bobj);
+    arm_objects_m->registerObject(bobj);
+
+    // Self-collision check
+    collision_data self_data;
+    self_data.request = fcl::CollisionRequest();
+    self_data.request.enable_contact = false;
+    self_data.request.enable_cost = false;
+
+    self_data.result = fcl::CollisionResult();
+
+    hand_objects_m->collide(base_objects_m, &self_data,
+                            collision_function);
+
+    if (self_data.result.isCollision()) return true;
+
+    // end BASE
+
+    // TABLE
+    std::vector<float> dims;
+    dims.push_back(1);
+    dims.push_back(1);
+    dims.push_back(0.04);
+
+    std::vector<float> pos;
+    for (int i = 0; i < 6; i++) pos.push_back(0);
+
+    add_object(dims, pos);
     // std::cout << "Checking for collision against "
     //           << world_objects_m->size() << " world objs"
     //           << std::endl;
@@ -162,7 +218,7 @@ arm_collision_boxes_t collision_world::arm_boxes(pose arm_position)
     arm_collision_boxes_t msg;
     msg.len = arm_objects_m->size();
 
-    for (int i = 0; i <= probcog_arm::get_num_joints(); i++)
+    for (int i = 0; i <= probcog_arm::get_num_joints()+1; i++)
     {
         bbox_info_t cur;
         cur.joint = i;

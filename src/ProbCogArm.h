@@ -76,13 +76,13 @@ public:
     static float hand_width;
     static float hand_height;
 
+    static float base_height;
 private:
     probcog_arm() {};
     probcog_arm(probcog_arm const&) {};
     probcog_arm& operator=(probcog_arm const&) {};
 
     static int num_joints;
-    static float base_height;
     static std::vector<joint> configuration;
     static std::vector<action> big_prims;
     static std::vector<action> small_prims;

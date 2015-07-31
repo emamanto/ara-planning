@@ -134,6 +134,7 @@ public:
 
         std::cout << "About to search" << std::endl;
         arm_state::target = goal;
+        arm_state::pitch_matters = false;
         std::vector<search_result<arm_state, action> > latest_search;
 
         search_request<arm_state, action> req(arm_state(status),
