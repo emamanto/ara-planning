@@ -65,14 +65,14 @@ void planner_interface::set_grasp_target(double dim[], double xyzrpy[])
         arm_state::target_pitch = -M_PI/2.f;
         arm_state::target[0] = xyzrpy[0];
         arm_state::target[1] = xyzrpy[1];
-        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.03;
+        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.05;
     }
     else if (xyzrpy[2] < 0.2)
     {
         arm_state::target_pitch = -M_PI/2.f;
         arm_state::target[0] = xyzrpy[0];
         arm_state::target[1] = xyzrpy[1];
-        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.03;
+        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.05;
     }
     else
     {
@@ -118,7 +118,7 @@ std::vector<action> planner_interface::plan_grasp(pose start,
     std::vector<action> plan;
 
     // Side grab
-    if (fabs(probcog_arm::ee_pitch(start)) < 0.01)
+    if (fabs(probcog_arm::ee_pitch(start)) < 0.1)
     {
         // Spin wrist
         action spin(probcog_arm::get_num_joints(), 0);
@@ -133,7 +133,7 @@ std::vector<action> planner_interface::plan_grasp(pose start,
         // calculation instead of basically reversing it here...
     }
     // Straight down grab
-    else if (fabs(probcog_arm::ee_pitch(start) - -M_PI/2) < 0.01)
+    else if (fabs(probcog_arm::ee_pitch(start) - -M_PI/2) < 0.1)
     {
         // Spin wrist
         action spin(probcog_arm::get_num_joints(), 0);
@@ -148,7 +148,7 @@ std::vector<action> planner_interface::plan_grasp(pose start,
         if (!is_drop)
         {
             point_3d end = probcog_arm::ee_xyz(start);
-            end.at(2) = end.at(2) - 0.04;
+            end.at(2) = end.at(2) - 0.08;
             action down = probcog_arm::solve_ik(start, end);
             plan.push_back(down);
         }
@@ -398,19 +398,20 @@ void planner_interface::handle_status_message(
         bool done = true;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
         {
-            if (fabs(arm_status[i] - current_command[i]) > 0.01)
+            if (fabs(arm_status[i] - current_command[i]) > 0.1)
             {
                 done = false;
                 break;
             }
         }
-        if (fabs(current_hand_command - hand_status) > 0.01
+        if (fabs(current_hand_command - hand_status) > 0.1
             && !add_drop)
         {
             done = false;
         }
         if (current_command_index >= 0 &&
             current_plan.at(current_command_index).size() == 1
+            && current_command_index > 3
             && fabs(stats->statuses[5].speed) < 0.01)
         {
             done = true;
@@ -448,6 +449,7 @@ void planner_interface::handle_status_message(
                           << std::endl;
                 current_plan = plan_grasp(arm_status, false);
                 current_command_index = 0;
+                current_hand_command = 45.f*DEG_TO_RAD;
                 grasped_obj_dim = target_obj_dim;
                 task = GRASPING;
             }
