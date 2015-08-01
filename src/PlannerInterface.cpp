@@ -326,6 +326,7 @@ void planner_interface::handle_command_message(
         execute_cmd_id = comm->command_id;
         std::cout << "Resetting the arm." << std::endl;
         current_command = pose(probcog_arm::get_num_joints(), 0);
+        current_hand_command = 112.f*DEG_TO_RAD;
         current_plan.clear();
         current_command_index = -1;
         add_grasp = false;
@@ -354,14 +355,17 @@ void planner_interface::handle_status_message(
     const std::string& channel,
     const dynamixel_status_list_t* stats)
 {
+    // First 5 arm joints status
     pose np;
     for (int i = 0; i < probcog_arm::get_num_joints(); i++)
     {
         np.push_back(stats->statuses[i].position_radians);
     }
+    if (np != arm_status) arm_status = np;
+
+    // Hand joint status
     float hand_status =
         stats->statuses[probcog_arm::get_num_joints()].position_radians;
-    if (np != arm_status) arm_status = np;
 
     lcm::LCM lcm;
 #ifdef PUBLISH_COLLISION_MODEL
@@ -392,9 +396,10 @@ void planner_interface::handle_status_message(
         command.commands.push_back(hand);
         lcm.publish("ARM_COMMAND", &command);
     }
-
+    // **********IMPORTANT EXECUTION CONTROL*****************
     if (task == EXECUTING || task == GRASPING)
     {
+        // First check if the current action is done
         bool done = true;
         for (int i = 0; i < probcog_arm::get_num_joints(); i++)
         {
@@ -409,16 +414,23 @@ void planner_interface::handle_status_message(
         {
             done = false;
         }
-        if (current_command_index >= 0 &&
-            current_plan.at(current_command_index).size() == 1
-            && current_command_index > 3
-            && fabs(stats->statuses[5].speed) < 0.01)
+        // Special done check, should only fire when CLOSING
+        if (current_command_index > 0 && // Not reset
+            current_plan.at(current_command_index).size() == 1 &&
+            current_plan.at(current_command_index).at(0) == 0 &&
+            fabs(stats->statuses[5].speed) < 0.01)
         {
+            std::cout << "Grasping: Probably got an object!"
+                      << std::endl;
             done = true;
         }
 
         if (done && current_command_index < current_plan.size()-1)
         {
+            std::cout << "Finished command "
+                      << current_command_index << " out of "
+                      << current_plan.size() << std::endl;
+
             current_command_index++;
             if (task == GRASPING &&
                 current_plan.at(current_command_index).size() == 1)
@@ -426,9 +438,16 @@ void planner_interface::handle_status_message(
                 dynamixel_command_t hand;
                 if (current_plan.at(current_command_index).at(0) == 0)
                 {
+                    std::cout << "The new command is a CLOSE!"
+                              << std::endl;
                     current_hand_command = 112.f*DEG_TO_RAD;
                 }
-                else { current_hand_command = 45.f*DEG_TO_RAD; }
+                else
+                {
+                    std::cout << "The new command is an OPEN!"
+                              << std::endl;
+                    current_hand_command = 0.f;
+                }
             }
             else
             {
@@ -443,13 +462,18 @@ void planner_interface::handle_status_message(
         else if (done &&
                  current_command_index == current_plan.size()-1)
         {
+            std::cout << "Finished command "
+                      << current_command_index << " out of "
+                      << current_plan.size()
+                      << " and it is the last" << std::endl;
+
             if (task == EXECUTING && add_grasp)
             {
-                std::cout << "Execution switching to GRASPING"
-                          << std::endl;
+                std::cout << "Execution switching to GRASPING";
                 current_plan = plan_grasp(arm_status, false);
+                std::cout << " with a plan of "
+                          << current_plan.size() << std::endl;
                 current_command_index = 0;
-                current_hand_command = 45.f*DEG_TO_RAD;
                 grasped_obj_dim = target_obj_dim;
                 task = GRASPING;
             }
@@ -458,11 +482,15 @@ void planner_interface::handle_status_message(
                 std::cout << "Execution switching to DROPPING"
                           << std::endl;
                 current_plan = plan_grasp(arm_status, true);
+                std::cout << " with a plan of "
+                          << current_plan.size() << std::endl;
                 current_command_index = 0;
                 task = GRASPING;
             }
             else
             {
+                std::cout << "* The current plan is finished *"
+                          << std::endl;
                 current_command_index++;
                 task = WAITING;
                 lcm::LCM lcm;
@@ -503,6 +531,7 @@ void planner_interface::handle_status_message(
         command.commands.push_back(hand);
         lcm.publish("ARM_COMMAND", &command);
     }
+    // **********END IMPORTANT EXECUTION CONTROL*****************
 }
 
 void planner_interface::handle_observations_message(
