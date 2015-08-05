@@ -176,15 +176,16 @@ void planner_interface::handle_command_message(
     if (comm->command_type.compare("PLAN") == 0 &&
         comm->command_id > last_id_handled)
     {
-        task = SEARCHING;
         if (comm->plan_type.compare("GRASP") == 0)
         {
+            task = PLANNING_GRASP;
             set_grasp_target(target_obj_dim, target_obj_xyzrpy);
             add_grasp = true;
             add_drop = false;
         }
         else if (comm->plan_type.compare("DROP") == 0)
         {
+            task = PLANNING_DROP;
             double drop_point[6];
             drop_point[0] = comm->target[0];
             drop_point[1] = comm->target[1];
@@ -196,6 +197,7 @@ void planner_interface::handle_command_message(
         }
         else
         {
+            task = PLANNING_MOVE;
             point_3d goal;
             for (int i = 0; i < 3; i++)
             {
@@ -245,6 +247,7 @@ void planner_interface::handle_command_message(
         std::cout << "Pausing the search!" << std::endl;
         latest_request.pause();
         last_id_handled = comm->command_id;
+        paused_task = task;
         task = PAUSED;
 
         lcm::LCM lcm;
@@ -274,7 +277,8 @@ void planner_interface::handle_command_message(
         std::cout << "Resuming the search!" << std::endl;
         latest_request.unpause();
         last_id_handled = comm->command_id;
-        task = SEARCHING;
+        task = paused_task;
+        paused_task = NONE;
 
         lcm::LCM lcm;
         planner_response_t resp;
@@ -362,7 +366,7 @@ void planner_interface::handle_status_message(
 
     lcm::LCM lcm;
 #ifdef PUBLISH_COLLISION_MODEL
-    if (task != SEARCHING)
+    if (!planning())
     {
         arm_collision_boxes_t arm_msg = collision_world::arm_boxes(arm_status);
         lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
@@ -507,7 +511,7 @@ void planner_interface::handle_observations_message(
         const std::string& channel,
         const observations_t* obs)
 {
-    if (task == SEARCHING) return;
+    if (planning()) return;
 
     latest_objects = obs->observations;
     collision_world::clear();

@@ -17,8 +17,16 @@
 
 typedef std::vector<search_result<arm_state, action> > arastar_result;
 
-enum planner_status{SEARCHING, POSTPROCESSING, EXECUTING, GRASPING,
-                    WAITING, PAUSED, WAITING_INITIAL};
+enum planner_status{PLANNING_GRASP,
+                    PLANNING_DROP,
+                    PLANNING_MOVE,
+                    POSTPROCESSING,
+                    EXECUTING,
+                    GRASPING,
+                    WAITING,
+                    PAUSED,
+                    WAITING_INITIAL,
+                    NONE};
 
 class planner_interface
 {
@@ -42,27 +50,40 @@ private:
     void set_grasp_target(double dim[], double xyzrpy[]);
     std::vector<action> plan_grasp(pose start, bool is_drop);
 
+    bool planning() {return (task == PLANNING_GRASP ||
+                             task == PLANNING_DROP ||
+                             task == PLANNING_MOVE); }
+
     static pthread_t thrd;
+    planner_status task;
+    planner_status paused_task;
+
+    // Observations
     std::vector<object_data_t> latest_objects;
-    pose latest_start_pose;
+    double* target_obj_dim;
+    double* grasped_obj_dim;
+    double* target_obj_xyzrpy;
+
+    // Control
     pose arm_status;
-    arastar_result latest_search;
+    int current_command_index;
+    pose current_command;
+    float current_hand_command;
+    float requested_speed;
+
+    // LCM
+    planner_response_t last_response;
+    int last_id_handled;
     int search_cmd_id;
     int execute_cmd_id;
+
+    // Latest search/plan
+    pose latest_start_pose;
+    arastar_result latest_search;
     search_request<arm_state, action> latest_request;
     std::vector<action> current_plan;
     bool add_grasp;
     bool add_drop;
-    planner_status task;
-    int current_command_index;
-    pose current_command;
-    float current_hand_command;
-    planner_response_t last_response;
-    float requested_speed;
-    int last_id_handled;
-    double* target_obj_dim;
-    double* grasped_obj_dim;
-    double* target_obj_xyzrpy;
 
     static float PRIMITIVE_SIZE_MIN, PRIMITIVE_SIZE_MAX;
     static float MIN_PROP_SPEED;
