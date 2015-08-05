@@ -63,6 +63,7 @@ public:
     { return configuration.at(joint_number).default_torque; }
 
     static pose apply(pose from, action act);
+    static pose apply(pose from, std::vector<action> plan);
 
     static void set_primitive_change(float big_deg);
     static std::vector<action>& big_primitives()

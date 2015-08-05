@@ -282,6 +282,17 @@ pose probcog_arm::apply(pose from, action act)
     return end;
 }
 
+pose probcog_arm::apply(pose from, std::vector<action> plan)
+{
+    pose end = from;
+    for (std::vector<action>::iterator i = plan.begin();
+         i != plan.end(); i++)
+    {
+        end = apply(end, *i);
+    }
+    return end;
+}
+
 void probcog_arm::set_primitive_change(float big_deg)
 {
     big_prims.clear();
