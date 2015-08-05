@@ -36,6 +36,9 @@ public:
 
     static bool collision(pose arm_position);
 
+    static void set_held_object(double dims[]);
+    static void clear_held_object();
+
     static arm_collision_boxes_t arm_boxes(pose arm_position);
 
 private:
@@ -47,4 +50,6 @@ private:
     static fcl::BroadPhaseCollisionManager* arm_objects_m;
     static fcl::BroadPhaseCollisionManager* hand_objects_m;
     static fcl::BroadPhaseCollisionManager* base_objects_m;
+    static bool has_held_object;
+    static std::vector<float> held_object_dims;
 };

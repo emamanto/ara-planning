@@ -446,6 +446,7 @@ void planner_interface::handle_status_message(
                 current_plan = plan_grasp(arm_status, false);
                 current_command_index = 0;
                 grasped_obj_dim = target_obj_dim;
+                collision_world::set_held_object(grasped_obj_dim);
                 task = GRASPING;
             }
             else if (task == EXECUTING && add_drop)
@@ -454,6 +455,7 @@ void planner_interface::handle_status_message(
                           << std::endl;
                 current_plan = plan_grasp(arm_status, true);
                 current_command_index = 0;
+                collision_world::clear_held_object();
                 task = GRASPING;
             }
             else

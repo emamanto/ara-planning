@@ -23,6 +23,8 @@ fcl::BroadPhaseCollisionManager* collision_world::world_objects_m = 0;
 fcl::BroadPhaseCollisionManager* collision_world::arm_objects_m = 0;
 fcl::BroadPhaseCollisionManager* collision_world::hand_objects_m = 0;
 fcl::BroadPhaseCollisionManager* collision_world::base_objects_m = 0;
+bool collision_world::has_held_object = false;
+std::vector<float> collision_world::held_object_dims = std::vector<float>(3, 0);
 
 void collision_world::add_object(std::vector<float> dim,
                                  std::vector<float> xyzrpy)
@@ -147,10 +149,24 @@ bool collision_world::collision(pose arm_position)
     }
 
     // HAND
-    fcl::Box* box = new
-        fcl::Box(probcog_arm::hand_width+0.01,
-                 probcog_arm::hand_height*2+0.01,
-                 probcog_arm::hand_length+0.01);
+    float width = std::max(probcog_arm::hand_width,
+                           held_object_dims.at(1));
+    float len = (probcog_arm::hand_length + held_object_dims.at(2) -
+                 0.02);
+
+    fcl::Box* box;
+    if (has_held_object)
+    {
+        box = new fcl::Box(width+0.01,
+                           probcog_arm::hand_height*2+0.01,
+                           len+0.01);
+    }
+    else
+    {
+        box = new fcl::Box(probcog_arm::hand_width+0.01,
+                           probcog_arm::hand_height*2+0.01,
+                           probcog_arm::hand_length+0.01);
+    }
 
     int last_joint = probcog_arm::get_num_joints()-1;
     Eigen::Matrix4f trmat =
@@ -219,6 +235,24 @@ bool collision_world::collision(pose arm_position)
                            collision_function);
 
     return data.result.isCollision();
+}
+
+void collision_world::set_held_object(double dims[])
+{
+    has_held_object = true;
+    std::cout << "Held object is in collision map." << std::endl;
+    held_object_dims.clear();
+    for (int i = 0; i < 3; i++)
+    {
+        held_object_dims.push_back(dims[i]);
+    }
+}
+
+void collision_world::clear_held_object()
+{
+    has_held_object = false;
+    std::cout << "No held object in collision map." << std::endl;
+    held_object_dims = std::vector<float>(3, 0);
 }
 
 arm_collision_boxes_t collision_world::arm_boxes(pose arm_position)
