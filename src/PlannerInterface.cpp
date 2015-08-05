@@ -33,7 +33,7 @@ void planner_interface::search_complete()
 {
     lcm::LCM lcm;
     planner_response_t resp;
-    resp.response_type = "SEARCH";
+    resp.response_type = "PLAN";
     resp.finished = true;
     resp.response_id = search_cmd_id;
     latest_search = latest_request.copy_solutions();
@@ -173,20 +173,18 @@ void planner_interface::handle_command_message(
         lcm.publish("PLANNER_RESPONSES", &last_response);
     }
 
-    if (comm->command_type.compare("SEARCH") == 0 &&
+    if (comm->command_type.compare("PLAN") == 0 &&
         comm->command_id > last_id_handled)
     {
         task = SEARCHING;
-        if (comm->target_object_id > 0)
+        if (comm->plan_type.compare("GRASP") == 0)
         {
-            std::cout << "THIS IS A GRAB" << std::endl;
             set_grasp_target(target_obj_dim, target_obj_xyzrpy);
             add_grasp = true;
             add_drop = false;
         }
-        else if (comm->target_object_id < -1)
+        else if (comm->plan_type.compare("DROP") == 0)
         {
-            std::cout << "THIS IS A DROP" << std::endl;
             double drop_point[6];
             drop_point[0] = comm->target[0];
             drop_point[1] = comm->target[1];
@@ -198,7 +196,6 @@ void planner_interface::handle_command_message(
         }
         else
         {
-            std::cout << "THIS IS A MOVE" << std::endl;
             point_3d goal;
             for (int i = 0; i < 3; i++)
             {
