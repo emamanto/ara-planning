@@ -25,7 +25,7 @@ planner_interface::planner_interface() :
 void* planner_interface::search_thread(void* arg)
 {
     planner_interface* pi = static_cast<planner_interface*>(arg);
-    std::cout << "Searching" << std::endl;
+    std::cout << "[PLANNER] Search thread started." << std::endl;
     arastar<arm_state, action>(pi->latest_request);
     pi->search_complete();
 }
@@ -255,11 +255,11 @@ void planner_interface::handle_command_message(
         float big_prim_size = (comm->primitive_size)*
             (PRIMITIVE_SIZE_MAX - PRIMITIVE_SIZE_MIN) +
             PRIMITIVE_SIZE_MIN;
-        std::cout << "Set the primitive to " << big_prim_size
+        std::cout << "[PLANNER] Primitive size is " << big_prim_size
                   << std::endl;
         probcog_arm::set_primitive_change(big_prim_size);
 
-        std::cout << "Initiating a search to "
+        std::cout << "[PLANNER] Initiating a search to "
                   << arm_state::target[0] << ", "
                   << arm_state::target[1] << ", "
                   << arm_state::target[2] << ", pitch "
@@ -279,7 +279,7 @@ void planner_interface::handle_command_message(
     else if (comm->command_type.compare("STOP") == 0 &&
              comm->command_id > last_id_handled)
     {
-        std::cout << "Stopping a search!" << std::endl;
+        std::cout << "[PLANNER] Stopping the search." << std::endl;
         latest_request.kill();
         last_id_handled = comm->command_id;
         // RESPONSE
@@ -287,7 +287,7 @@ void planner_interface::handle_command_message(
     else if (comm->command_type.compare("PAUSE") == 0 &&
              comm->command_id > last_id_handled)
     {
-        std::cout << "Pausing the search!" << std::endl;
+        std::cout << "[PLANNER] Pausing the search." << std::endl;
         latest_request.pause();
         last_id_handled = comm->command_id;
         paused_task = task;
@@ -317,7 +317,7 @@ void planner_interface::handle_command_message(
     else if (comm->command_type.compare("CONTINUE") == 0 &&
              comm->command_id > last_id_handled)
     {
-        std::cout << "Resuming the search!" << std::endl;
+        std::cout << "[PLANNER] Resuming the search." << std::endl;
         latest_request.unpause();
         last_id_handled = comm->command_id;
         task = paused_task;
@@ -337,16 +337,14 @@ void planner_interface::handle_command_message(
     else if (comm->command_type.compare("POSTPROCESS") == 0 &&
              comm->command_id > last_id_handled)
     {
-        std::cout << "Going to smooth the existing path!" << std::endl;
         task = POSTPROCESSING;
         // SHORTCUT **Add actually using the parameter in the msg
         int original = current_plan.size();
-        std::cout << "Originally: " << original << std::endl;
+        std::cout << "[PLANNER] Smoothing a path of " << original;
         current_plan =
             shortcut<arm_state, action>(current_plan,
                                         arm_state(latest_start_pose));
-        std::cout << "Ultimate path length: " << current_plan.size()
-                  << std::endl;
+        std::cout << " to " << current_plan.size() << std::endl;
         last_id_handled = comm->command_id;
 
         lcm::LCM lcm;
@@ -368,7 +366,8 @@ void planner_interface::handle_command_message(
         task = EXECUTING;
         last_id_handled = comm->command_id;
         execute_cmd_id = comm->command_id;
-        std::cout << "Resetting the arm." << std::endl;
+        std::cout << "[PLANNER] Resetting the arm."
+                  << std::endl << std::endl;
         current_command = pose(probcog_arm::get_num_joints(), 0);
         current_plan.clear();
         current_plan_type = MOVE;
@@ -386,6 +385,8 @@ void planner_interface::handle_command_message(
         requested_speed = comm->speed;
 
         task = EXECUTING;
+        std::cout << "[PLANNER] Starting execution."
+                  << std::endl << std::endl;
     }
 }
 
@@ -455,7 +456,9 @@ void planner_interface::handle_status_message(
             current_plan.at(current_command_index).size() == 1
             && fabs(stats->statuses[5].speed) < 0.01)
         {
+#ifdef DEBUG_EXECUTION
             std::cout << "Probably grasped!" << std::endl;
+#endif
             done = true;
         }
 
