@@ -129,8 +129,19 @@ std::vector<action> planner_interface::plan_grasp(pose start)
     {
         // 1. Spin wrist
         action spin(probcog_arm::get_num_joints(), 0);
-        spin.at(probcog_arm::get_num_joints()-1) =
-            target_obj_xyzrpy[5];
+        float spin_angle = (M_PI/2.f + arm_status.at(0)) +
+            (M_PI/2.f - target_obj_xyzrpy[5]);
+
+        while (spin_angle > probcog_arm::get_joint_max(4))
+        {
+            spin_angle -= M_PI/2.f;
+        }
+        while (spin_angle < probcog_arm::get_joint_min(4))
+        {
+            spin_angle += M_PI/2.f;
+        }
+
+        spin.at(probcog_arm::get_num_joints()-1) = spin_angle;
         plan.push_back(spin);
 
         // 2. Open hand
