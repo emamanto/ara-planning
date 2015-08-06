@@ -1,6 +1,8 @@
 #include "PlannerInterface.h"
 
 #define PUBLISH_COLLISION_MODEL
+//#define DEBUG_EXECUTION
+//#define SLOW_SPEED
 
 pthread_t planner_interface::thrd = pthread_t();
 
@@ -122,50 +124,91 @@ void planner_interface::set_grasp_target(double dim[], double xyzrpy[])
 std::vector<action> planner_interface::plan_grasp(pose start)
 {
     std::vector<action> plan;
-
-    // Side grab
-    if (fabs(probcog_arm::ee_pitch(start)) < 0.01)
-    {
-        // Spin wrist
-        action spin(probcog_arm::get_num_joints(), 0);
-        spin.at(probcog_arm::get_num_joints()-1) = M_PI/4.f;
-        plan.push_back(spin);
-
-        action hand_open(1, 1);
-        plan.push_back(hand_open);
-
-        // Forward into obj (?) XXX
-        // This seems like I might want to store the grasp point
-        // calculation instead of basically reversing it here...
-    }
     // Straight down grab
-    else if (fabs(probcog_arm::ee_pitch(start) - -M_PI/2) < 0.01)
+    if (fabs(probcog_arm::ee_pitch(start) - -M_PI/2) < 0.1)
     {
-        // Spin wrist
+        // 1. Spin wrist
         action spin(probcog_arm::get_num_joints(), 0);
         spin.at(probcog_arm::get_num_joints()-1) =
             target_obj_xyzrpy[5];
         plan.push_back(spin);
 
+        // 2. Open hand
         action hand_open(1, 1);
         plan.push_back(hand_open);
 
-        // Down onto obj (?)
-        if (current_plan_type == GRASP)
-        {
-            point_3d end = probcog_arm::ee_xyz(start);
-            end.at(2) = end.at(2) - 0.04;
-            action down = probcog_arm::solve_ik(start, end);
-            plan.push_back(down);
-        }
-    }
+        // 3. Down onto obj
+        point_3d end = probcog_arm::ee_xyz(start);
+        end.at(2) = end.at(2) - 0.05;
+        action down = probcog_arm::solve_ik(start, end);
+        plan.push_back(down);
 
-    if (current_plan_type == GRASP)
-    {
+        // 4. Close hand
         action hand_close(1, 0);
         plan.push_back(hand_close);
+
+        // 5. Back up to grasp point
+        action up = down;
+        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            up.at(i) *= -1;
+        plan.push_back(up);
+
+        // 6. Unspin wrist
+        action unspin = spin;
+        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            unspin.at(i) *= -1;
+        plan.push_back(unspin);
     }
+    else std::cout << "You're doing something wrong!!" << std::endl;
+
+#ifdef DEBUG_EXECUTION
+    std::cout << "Made a grasp plan of " << plan.size()
+              << " steps." << std::endl;
+#endif
+
     return plan;
+}
+
+std::vector<action> planner_interface::plan_drop(pose start)
+{
+    std::vector<action> plan;
+
+    // Straight down drop
+    if (fabs(probcog_arm::ee_pitch(start) - -M_PI/2) < 0.1)
+    {
+        // 1. Down for gentler drop
+        point_3d end = probcog_arm::ee_xyz(start);
+        end.at(2) = end.at(2) - 0.05;
+        action down = probcog_arm::solve_ik(start, end);
+        plan.push_back(down);
+
+        // 2. Open hand
+        action hand_open(1, 1);
+        plan.push_back(hand_open);
+
+        // 3. Back up
+        action up = down;
+        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            up.at(i) *= -1;
+        plan.push_back(up);
+    }
+    else std::cout << "You're doing something wrong!!" << std::endl;
+
+#ifdef DEBUG_EXECUTION
+    std::cout << "Made a drop plan of " << plan.size()
+              << " steps." << std::endl;
+#endif
+    return plan;
+}
+
+void planner_interface::forward_command()
+{
+    for (int i = 0;
+         i < probcog_arm::get_num_joints(); i++)
+    {
+        current_command.at(i) +=
+            current_plan.at(current_command_index).at(i);
+    }
 }
 
 void planner_interface::handle_command_message(
@@ -193,7 +236,7 @@ void planner_interface::handle_command_message(
             double drop_point[6];
             drop_point[0] = comm->target[0];
             drop_point[1] = comm->target[1];
-            drop_point[2] = comm->target[2];
+            drop_point[2] = comm->target[2] + target_obj_dim[2]/2.f;
             for (int i = 3; i < 6; i++) drop_point[i] = 0;
             set_grasp_target(grasped_obj_dim, drop_point);
         }
@@ -337,12 +380,9 @@ void planner_interface::handle_command_message(
         last_id_handled = comm->command_id;
         execute_cmd_id = comm->command_id;
         current_command = arm_status;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
-        {
-            current_command.at(i) += current_plan.at(0).at(i);
-        }
-        current_hand_command = 112.f*DEG_TO_RAD;
         current_command_index = 0;
+        forward_command();
+        current_hand_command = 112.f*DEG_TO_RAD;
         requested_speed = comm->speed;
 
         task = EXECUTING;
@@ -404,16 +444,28 @@ void planner_interface::handle_status_message(
                 break;
             }
         }
+        if (task == GRASPING &&
+            current_plan.at(current_command_index).size() == 1)
+        {
+            if (fabs(hand_status - current_hand_command) > 0.01)
+                done = false;
+        }
         if (current_command_index >= 0 &&
             current_plan_type == GRASP &&
             current_plan.at(current_command_index).size() == 1
             && fabs(stats->statuses[5].speed) < 0.01)
         {
+            std::cout << "Probably grasped!" << std::endl;
             done = true;
         }
 
         if (done && current_command_index < current_plan.size()-1)
         {
+#ifdef DEBUG_EXECUTION
+            std::cout << "Finished command " << current_command_index
+                      << " out of " << current_plan.size()
+                      << std::endl;
+#endif
             current_command_index++;
             if (task == GRASPING &&
                 current_plan.at(current_command_index).size() == 1)
@@ -427,12 +479,7 @@ void planner_interface::handle_status_message(
             }
             else
             {
-                for (int i = 0;
-                     i < probcog_arm::get_num_joints(); i++)
-                {
-                    current_command.at(i) +=
-                        current_plan.at(current_command_index).at(i);
-                }
+                forward_command();
             }
         }
         else if (done &&
@@ -440,25 +487,37 @@ void planner_interface::handle_status_message(
         {
             if (task == EXECUTING && current_plan_type == GRASP)
             {
+#ifdef DEBUG_EXECUTION
                 std::cout << "Execution switching to GRASPING"
                           << std::endl;
+#endif
                 current_plan = plan_grasp(arm_status);
                 current_command_index = 0;
+                forward_command();
                 grasped_obj_dim = target_obj_dim;
                 collision_world::set_held_object(grasped_obj_dim);
                 task = GRASPING;
             }
             else if (task == EXECUTING && current_plan_type == DROP)
             {
+#ifdef DEBUG_EXECUTION
                 std::cout << "Execution switching to DROPPING"
                           << std::endl;
-                current_plan = plan_grasp(arm_status);
+#endif
+                current_plan = plan_drop(arm_status);
                 current_command_index = 0;
+                forward_command();
                 collision_world::clear_held_object();
                 task = GRASPING;
             }
             else
             {
+#ifdef DEBUG_EXECUTION
+                std::cout << "Finished command "
+                          << current_command_index
+                          << " so the plan is done." << std::endl;
+#endif
+
                 current_command_index++;
                 task = WAITING;
                 lcm::LCM lcm;
@@ -493,8 +552,13 @@ void planner_interface::handle_status_message(
 
         dynamixel_command_t hand;
         hand.position_radians = current_hand_command;
+#ifdef SLOW_SPEED // Will override Soar's requests
+        hand.speed = 0.015;
+#else
         hand.speed = (MIN_PROP_SPEED + (1.f - MIN_PROP_SPEED) *
                        requested_speed) * 0.15;
+#endif
+
         hand.max_torque = 0.5;
         command.commands.push_back(hand);
         lcm.publish("ARM_COMMAND", &command);

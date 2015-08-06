@@ -51,6 +51,9 @@ private:
     void search_complete();
     void set_grasp_target(double dim[], double xyzrpy[]);
     std::vector<action> plan_grasp(pose start);
+    std::vector<action> plan_drop(pose start);
+
+    void forward_command();
 
     bool planning() {return (task == PLANNING_GRASP ||
                              task == PLANNING_DROP ||
