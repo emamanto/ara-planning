@@ -12,12 +12,11 @@ planner_interface::planner_interface() :
     arm_status(probcog_arm::get_num_joints(), 0),
     search_cmd_id(-1),
     execute_cmd_id(-1),
-    add_grasp(false),
-    add_drop(false),
     task(WAITING_INITIAL),
     current_command_index(0),
     requested_speed(1),
-    last_id_handled(-1)
+    last_id_handled(-1),
+    current_plan_type(MOVE)
 {
 }
 
@@ -29,6 +28,7 @@ void* planner_interface::search_thread(void* arg)
     pi->search_complete();
 }
 
+// Called by search thread once search is finished/stopped
 void planner_interface::search_complete()
 {
     lcm::LCM lcm;
@@ -51,6 +51,13 @@ void planner_interface::search_complete()
         latest_search.at(latest_search.size()-1).path.size();
 
     current_plan = latest_search.at(latest_search.size()-1).path;
+
+    // Keep track of what kind of plan we just made because we
+    // can't add the grasp/drop plan onto it yet (shortcutting)
+    if (task == PLANNING_GRASP) current_plan_type = GRASP;
+    else if (task == PLANNING_DROP) current_plan_type = DROP;
+    else current_plan_type = MOVE;
+
     task = WAITING;
     lcm.publish("PLANNER_RESPONSES", &resp);
     last_response = resp;
@@ -65,14 +72,14 @@ void planner_interface::set_grasp_target(double dim[], double xyzrpy[])
         arm_state::target_pitch = -M_PI/2.f;
         arm_state::target[0] = xyzrpy[0];
         arm_state::target[1] = xyzrpy[1];
-        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.03;
+        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.04;
     }
     else if (xyzrpy[2] < 0.2)
     {
         arm_state::target_pitch = -M_PI/2.f;
         arm_state::target[0] = xyzrpy[0];
         arm_state::target[1] = xyzrpy[1];
-        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.03;
+        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.04;
     }
     else
     {
@@ -112,8 +119,7 @@ void planner_interface::set_grasp_target(double dim[], double xyzrpy[])
     }
 }
 
-std::vector<action> planner_interface::plan_grasp(pose start,
-                                                  bool is_drop)
+std::vector<action> planner_interface::plan_grasp(pose start)
 {
     std::vector<action> plan;
 
@@ -145,7 +151,7 @@ std::vector<action> planner_interface::plan_grasp(pose start,
         plan.push_back(hand_open);
 
         // Down onto obj (?)
-        if (!is_drop)
+        if (current_plan_type == GRASP)
         {
             point_3d end = probcog_arm::ee_xyz(start);
             end.at(2) = end.at(2) - 0.04;
@@ -154,7 +160,7 @@ std::vector<action> planner_interface::plan_grasp(pose start,
         }
     }
 
-    if (!is_drop)
+    if (current_plan_type == GRASP)
     {
         action hand_close(1, 0);
         plan.push_back(hand_close);
@@ -180,8 +186,6 @@ void planner_interface::handle_command_message(
         {
             task = PLANNING_GRASP;
             set_grasp_target(target_obj_dim, target_obj_xyzrpy);
-            add_grasp = true;
-            add_drop = false;
         }
         else if (comm->plan_type.compare("DROP") == 0)
         {
@@ -192,8 +196,6 @@ void planner_interface::handle_command_message(
             drop_point[2] = comm->target[2];
             for (int i = 3; i < 6; i++) drop_point[i] = 0;
             set_grasp_target(grasped_obj_dim, drop_point);
-            add_grasp = false;
-            add_drop = true;
         }
         else
         {
@@ -205,8 +207,6 @@ void planner_interface::handle_command_message(
             }
             arm_state::target = goal;
             arm_state::pitch_matters = false;
-            add_grasp = false;
-            add_drop = false;
         }
 
         float big_prim_size = (comm->primitive_size)*
@@ -328,9 +328,8 @@ void planner_interface::handle_command_message(
         std::cout << "Resetting the arm." << std::endl;
         current_command = pose(probcog_arm::get_num_joints(), 0);
         current_plan.clear();
+        current_plan_type = MOVE;
         current_command_index = -1;
-        add_grasp = false;
-        add_drop = false;
     }
     else if (comm->command_type.compare("EXECUTE") == 0 &&
              comm->command_id > last_id_handled)
@@ -405,12 +404,8 @@ void planner_interface::handle_status_message(
                 break;
             }
         }
-        if (fabs(current_hand_command - hand_status) > 0.01
-            && !add_drop)
-        {
-            done = false;
-        }
         if (current_command_index >= 0 &&
+            current_plan_type == GRASP &&
             current_plan.at(current_command_index).size() == 1
             && fabs(stats->statuses[5].speed) < 0.01)
         {
@@ -443,21 +438,21 @@ void planner_interface::handle_status_message(
         else if (done &&
                  current_command_index == current_plan.size()-1)
         {
-            if (task == EXECUTING && add_grasp)
+            if (task == EXECUTING && current_plan_type == GRASP)
             {
                 std::cout << "Execution switching to GRASPING"
                           << std::endl;
-                current_plan = plan_grasp(arm_status, false);
+                current_plan = plan_grasp(arm_status);
                 current_command_index = 0;
                 grasped_obj_dim = target_obj_dim;
                 collision_world::set_held_object(grasped_obj_dim);
                 task = GRASPING;
             }
-            else if (task == EXECUTING && add_drop)
+            else if (task == EXECUTING && current_plan_type == DROP)
             {
                 std::cout << "Execution switching to DROPPING"
                           << std::endl;
-                current_plan = plan_grasp(arm_status, true);
+                current_plan = plan_grasp(arm_status);
                 current_command_index = 0;
                 collision_world::clear_held_object();
                 task = GRASPING;

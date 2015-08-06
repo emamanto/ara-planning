@@ -17,16 +17,18 @@
 
 typedef std::vector<search_result<arm_state, action> > arastar_result;
 
-enum planner_status{PLANNING_GRASP,
-                    PLANNING_DROP,
-                    PLANNING_MOVE,
-                    POSTPROCESSING,
-                    EXECUTING,
-                    GRASPING,
-                    WAITING,
-                    PAUSED,
-                    WAITING_INITIAL,
-                    NONE};
+enum planner_status{ PLANNING_GRASP,
+                     PLANNING_DROP,
+                     PLANNING_MOVE,
+                     POSTPROCESSING,
+                     EXECUTING,
+                     GRASPING,
+                     WAITING,
+                     PAUSED,
+                     WAITING_INITIAL,
+                     NONE };
+
+enum plan_type{ MOVE, GRASP, DROP };
 
 class planner_interface
 {
@@ -48,7 +50,7 @@ private:
     static void* search_thread(void* arg);
     void search_complete();
     void set_grasp_target(double dim[], double xyzrpy[]);
-    std::vector<action> plan_grasp(pose start, bool is_drop);
+    std::vector<action> plan_grasp(pose start);
 
     bool planning() {return (task == PLANNING_GRASP ||
                              task == PLANNING_DROP ||
@@ -82,8 +84,7 @@ private:
     arastar_result latest_search;
     search_request<arm_state, action> latest_request;
     std::vector<action> current_plan;
-    bool add_grasp;
-    bool add_drop;
+    plan_type current_plan_type;
 
     static float PRIMITIVE_SIZE_MIN, PRIMITIVE_SIZE_MAX;
     static float MIN_PROP_SPEED;
