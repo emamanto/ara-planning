@@ -10,6 +10,9 @@ float planner_interface::PRIMITIVE_SIZE_MIN = 2.f;
 float planner_interface::PRIMITIVE_SIZE_MAX = 20.f;
 float planner_interface::MIN_PROP_SPEED = 0.2f;
 
+float planner_interface::GRASP_TOP_OFFSET = 0.05;
+float planner_interface::GRASP_INTO_OBJ_OFFSET = 0.03;
+
 planner_interface::planner_interface() :
     arm_status(probcog_arm::get_num_joints(), 0),
     search_cmd_id(-1),
@@ -74,51 +77,54 @@ void planner_interface::set_grasp_target(double dim[], double xyzrpy[])
         arm_state::target_pitch = -M_PI/2.f;
         arm_state::target[0] = xyzrpy[0];
         arm_state::target[1] = xyzrpy[1];
-        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.04;
+        arm_state::target[2] = (xyzrpy[2] + dim[2]/2.f +
+                                GRASP_TOP_OFFSET);
     }
-    else if (xyzrpy[2] < 0.2)
+    else// if (xyzrpy[2] < 0.2)
     {
         arm_state::target_pitch = -M_PI/2.f;
         arm_state::target[0] = xyzrpy[0];
         arm_state::target[1] = xyzrpy[1];
-        arm_state::target[2] = xyzrpy[2] + dim[2]/2.f + 0.04;
+        arm_state::target[2] = (xyzrpy[2] + dim[2]/2.f +
+                                GRASP_TOP_OFFSET);
     }
-    else
-    {
-        arm_state::target_pitch = 0.f;
-        arm_state::target[2] = xyzrpy[2];
+    // IGNORE SIDE GRABS UGH
+    // else
+    // {
+    //     arm_state::target_pitch = 0.f;
+    //     arm_state::target[2] = xyzrpy[2];
 
-        if (fabs(xyzrpy[0]) < 0.01)
-        {
-            arm_state::target[0] = 0;
-            float offset = dim[1]/2.f + 0.04;
-            if (xyzrpy[1] < 0) offset *= -1;
-            arm_state::target[1] = xyzrpy[1] - offset;
-        }
-        else if (fabs(xyzrpy[1]) < 0.01)
-        {
-            arm_state::target[1] = 0;
-            float offset = dim[0]/2.f + 0.04;
-            if (xyzrpy[0] < 0) offset *= -1;
-            arm_state::target[0] = xyzrpy[0] - offset;
-        }
-        else if (fabs(xyzrpy[0]) > fabs(xyzrpy[1]))
-        {
-            float offset = dim[0]/2.f + 0.04;
-            if (xyzrpy[0] < 0) offset *= -1;
-            arm_state::target[0] = xyzrpy[0] - offset;
-            arm_state::target[1] = (arm_state::target[0] *
-                                    xyzrpy[1]) / xyzrpy[0];
-        }
-        else
-        {
-            float offset = dim[1]/2.f + 0.04;
-            if (xyzrpy[1] < 0) offset *= -1;
-            arm_state::target[1] = xyzrpy[1] - offset;
-            arm_state::target[0] = (arm_state::target[1] *
-                                    xyzrpy[0]) / xyzrpy[1];
-        }
-    }
+    //     if (fabs(xyzrpy[0]) < 0.01)
+    //     {
+    //         arm_state::target[0] = 0;
+    //         float offset = dim[1]/2.f + 0.04;
+    //         if (xyzrpy[1] < 0) offset *= -1;
+    //         arm_state::target[1] = xyzrpy[1] - offset;
+    //     }
+    //     else if (fabs(xyzrpy[1]) < 0.01)
+    //     {
+    //         arm_state::target[1] = 0;
+    //         float offset = dim[0]/2.f + 0.04;
+    //         if (xyzrpy[0] < 0) offset *= -1;
+    //         arm_state::target[0] = xyzrpy[0] - offset;
+    //     }
+    //     else if (fabs(xyzrpy[0]) > fabs(xyzrpy[1]))
+    //     {
+    //         float offset = dim[0]/2.f + 0.04;
+    //         if (xyzrpy[0] < 0) offset *= -1;
+    //         arm_state::target[0] = xyzrpy[0] - offset;
+    //         arm_state::target[1] = (arm_state::target[0] *
+    //                                 xyzrpy[1]) / xyzrpy[0];
+    //     }
+    //     else
+    //     {
+    //         float offset = dim[1]/2.f + 0.04;
+    //         if (xyzrpy[1] < 0) offset *= -1;
+    //         arm_state::target[1] = xyzrpy[1] - offset;
+    //         arm_state::target[0] = (arm_state::target[1] *
+    //                                 xyzrpy[0]) / xyzrpy[1];
+    //     }
+    // }
 }
 
 std::vector<action> planner_interface::plan_grasp(pose start)
@@ -150,7 +156,8 @@ std::vector<action> planner_interface::plan_grasp(pose start)
 
         // 3. Down onto obj
         point_3d end = probcog_arm::ee_xyz(start);
-        end.at(2) = end.at(2) - 0.05;
+        end.at(2) = end.at(2) - (GRASP_TOP_OFFSET +
+                                 GRASP_INTO_OBJ_OFFSET);
         action down = probcog_arm::solve_ik(start, end);
         plan.push_back(down);
 
@@ -189,7 +196,8 @@ std::vector<action> planner_interface::plan_drop(pose start)
     {
         // 1. Down for gentler drop
         point_3d end = probcog_arm::ee_xyz(start);
-        end.at(2) = end.at(2) - 0.05;
+        end.at(2) = end.at(2) - (GRASP_TOP_OFFSET +
+                                 GRASP_INTO_OBJ_OFFSET);;
         action down = probcog_arm::solve_ik(start, end);
         plan.push_back(down);
 

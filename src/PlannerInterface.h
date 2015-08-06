@@ -91,4 +91,5 @@ private:
 
     static float PRIMITIVE_SIZE_MIN, PRIMITIVE_SIZE_MAX;
     static float MIN_PROP_SPEED;
+    static float GRASP_TOP_OFFSET, GRASP_INTO_OBJ_OFFSET;
 };
