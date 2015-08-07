@@ -290,7 +290,8 @@ void planner_interface::handle_command_message(
         latest_request =
             search_request<arm_state, action>(arm_state(latest_start_pose),
                                               probcog_arm::big_primitives(),
-                                              probcog_arm::small_primitives());
+                                              probcog_arm::small_primitives(),
+                                              8.f, true);
         last_id_handled = comm->command_id;
         search_cmd_id = comm->command_id;
         pthread_create(&thrd, NULL, &search_thread, this);

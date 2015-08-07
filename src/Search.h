@@ -10,7 +10,7 @@
 #include <ctime>
 #include <boost/thread.hpp>
 
-#define FIRST_SOL
+//#define FIRST_SOL
 // #define MAZE_FIGURE
 // #ifdef MAZE_FIGURE
 // #undef FIRST_SOL
@@ -50,13 +50,20 @@ public:
     search_request(S start_pose,
                    std::vector<P> big,
                    std::vector<P> small,
-                   float eps = 10.f) : killed(false),
-                                       paused(false),
-                                       pause_waiting(false),
-                                       start(start_pose),
-                                       big_prs(big),
-                                       s_prs(small),
-                                       epsilon(eps) {};
+                   float time_lim = -1,
+                   bool hard_lim = false,
+                   float eps = 10.f) :
+        killed(false),
+        paused(false),
+        pause_waiting(false),
+        time_limit(time_lim),
+        start_time(0),
+        hard_limit(hard_lim),
+        start(start_pose),
+        big_prs(big),
+        s_prs(small),
+        epsilon(eps) {};
+
     search_request() {};
 
     // Should really only call this when the search is no longer
@@ -70,12 +77,22 @@ public:
         paused = false;
         solutions.clear();
 
+        time_limit = other.time_limit;
+        start_time = other.start_time;
+        hard_limit = other.hard_limit;
         start = other.start;
         big_prs = other.big_prs;
         s_prs = other.s_prs;
         epsilon = other.epsilon;
 
         return *this;
+    }
+
+    void go()
+    {
+        boost::lock_guard<boost::mutex> guard1(kill_mtx);
+        boost::lock_guard<boost::mutex> guard2(pause_mtx);
+        start_time = std::clock();
     }
 
     S begin() const
@@ -92,6 +109,14 @@ public:
     bool check_killed()
     {
         boost::lock_guard<boost::mutex> guard(kill_mtx);
+        if (!killed && hard_limit && time_limit > 0)
+        {
+            if ((((float)(std::clock() - start_time)) /
+                 CLOCKS_PER_SEC) > time_limit)
+            {
+                killed = true;
+            }
+        }
         return killed;
     }
 
@@ -128,6 +153,14 @@ public:
     bool check_paused()
     {
         boost::lock_guard<boost::mutex> guard(pause_mtx);
+        if (!paused && !hard_limit && time_limit > 0)
+        {
+            if ((((float)(std::clock() - start_time)) /
+                 CLOCKS_PER_SEC) > time_limit)
+            {
+                paused = true;
+            }
+        }
         return paused;
     }
 
@@ -178,6 +211,9 @@ private:
     bool killed;
     bool paused;
     bool pause_waiting;
+    float time_limit;
+    std::clock_t start_time;
+    bool hard_limit;
     S start;
     std::vector<P> big_prs;
     std::vector<P> s_prs;
@@ -377,6 +413,7 @@ void arastar(search_request<S, P>& request)
 {
     std::clock_t t;
     t = std::clock();
+    request.go();
 
     search_progress_info<S, P> progress;
     progress.OPEN = std::priority_queue<search_node<S, P> >();
@@ -396,7 +433,6 @@ void arastar(search_request<S, P>& request)
 
     bool killed = false;
     progress.goal_found = improve_path<S, P>(request, progress);
-    if (request.check_killed()) return;
     if (progress.OPEN.empty()) return;
     //best_path = solutions->at(0).path;
 
@@ -412,6 +448,8 @@ void arastar(search_request<S, P>& request)
     std::cout << request.copy_solutions().at(0).expanded.size()
               << " expansions, ";
     std::cout << ((float)t) / CLOCKS_PER_SEC << " s"  << std::endl;
+    if (request.check_killed()) return;
+
 #ifdef FIRST_SOL
     return;
 #endif
