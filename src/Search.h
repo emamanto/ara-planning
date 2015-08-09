@@ -114,6 +114,8 @@ public:
             if ((((float)(std::clock() - start_time)) /
                  CLOCKS_PER_SEC) > time_limit)
             {
+                std::cout << "[SEARCH] Time limit reached, stopped."
+                          << std::endl;
                 killed = true;
             }
         }
@@ -158,6 +160,8 @@ public:
             if ((((float)(std::clock() - start_time)) /
                  CLOCKS_PER_SEC) > time_limit)
             {
+                std::cout << "[SEARCH] Time limit reached, paused."
+                          << std::endl;;
                 paused = true;
             }
         }
@@ -281,7 +285,7 @@ bool improve_path(search_request<S, P>& request,
         {
             result.path.clear();
             request.add_solution(result);
-            std::cout << "No solution found by improve_path"
+            std::cout << "[SEARCH] No solution found by improve_path."
                       << std::endl;
             return false;
         }
@@ -443,7 +447,7 @@ void arastar(search_request<S, P>& request)
 
     float e_prime = request.check_epsilon();
     if (alt < e_prime) e_prime = alt;
-    std::cout << "The first solution is suboptimal by: " <<
+    std::cout << "[SEARCH] The first solution is suboptimal by: " <<
         e_prime << ", ";
     std::cout << request.copy_solutions().at(0).expanded.size()
               << " expansions, ";
@@ -507,8 +511,10 @@ void arastar(search_request<S, P>& request)
 
         e_prime = request.check_epsilon();
         if (alt < e_prime) e_prime = alt;
-        std::cout << "Epsilon is: " << request.check_epsilon() <<
-            ", Solution is suboptimal by: " << e_prime << ", ";
+        std::cout << "[SEARCH] Epsilon is: "
+                  << request.check_epsilon()
+                  << ", Solution is suboptimal by: " << e_prime
+                  << ", ";
         std::cout << request.copy_solutions().at(request.num_solutions()-1).expanded.size()
                   << " expansions" << std::endl;
 
