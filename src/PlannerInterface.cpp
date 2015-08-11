@@ -38,7 +38,16 @@ void planner_interface::search_complete()
 {
     lcm::LCM lcm;
     planner_response_t resp;
-    resp.response_type = "PLAN";
+
+    if (latest_request.check_killed())
+    {
+        resp.response_type = "STOP";
+    }
+    else
+    {
+        resp.response_type = "PLAN";
+    }
+
     resp.finished = true;
     resp.response_id = search_cmd_id;
     latest_search = latest_request.copy_solutions();
@@ -287,11 +296,25 @@ void planner_interface::handle_command_message(
         latest_start_pose = arm_status;
 
         latest_search.clear();
+        if (comm->time_limit < 0)
+        {
+            std::cout << "[PLANNER] Setting no time limit."
+                      << std::endl;
+        }
+        else {
+            std::cout << "[PLANNER] Setting a ";
+            if (comm->hard_limit) std::cout << "hard";
+            else std::cout << "soft";
+            std::cout << " time limit of "
+                      << comm->time_limit <<  "." << std::endl;
+        }
+
         latest_request =
             search_request<arm_state, action>(arm_state(latest_start_pose),
                                               probcog_arm::big_primitives(),
                                               probcog_arm::small_primitives(),
-                                              8.f, true);
+                                              comm->time_limit,
+                                              comm->hard_limit);
         last_id_handled = comm->command_id;
         search_cmd_id = comm->command_id;
         pthread_create(&thrd, NULL, &search_thread, this);
