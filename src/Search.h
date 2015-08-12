@@ -57,6 +57,7 @@ public:
         paused(false),
         pause_waiting(false),
         time_limit(time_lim),
+        time_used(0),
         start_time(0),
         hard_limit(hard_lim),
         start(start_pose),
@@ -78,6 +79,7 @@ public:
         solutions.clear();
 
         time_limit = other.time_limit;
+        time_used = other.time_used;
         start_time = other.start_time;
         hard_limit = other.hard_limit;
         start = other.start;
@@ -98,6 +100,11 @@ public:
     S begin() const
     {
         return start;
+    }
+
+    bool has_hard_limit() const
+    {
+        return hard_limit;
     }
 
     void kill()
@@ -127,6 +134,7 @@ public:
         pause_mtx.lock();
         paused = true;
         pause_mtx.unlock();
+        time_used = (float)(std::clock() - start_time);
         set_pause_waiting(true);
         while(check_pause_waiting())
         {
@@ -146,9 +154,21 @@ public:
         return pause_waiting;
     }
 
+    void extend_time(float additional_time)
+    {
+        boost::lock_guard<boost::mutex> guard(pause_mtx);
+        boost::lock_guard<boost::mutex> guard1(kill_mtx);
+
+        time_limit += additional_time;
+    }
+
     void unpause()
     {
         boost::lock_guard<boost::mutex> guard(pause_mtx);
+        boost::lock_guard<boost::mutex> guard1(kill_mtx);
+
+        start_time = std::clock();
+        time_limit -= time_used;
         paused = false;
     }
 
@@ -216,6 +236,7 @@ private:
     bool paused;
     bool pause_waiting;
     float time_limit;
+    float time_used;
     std::clock_t start_time;
     bool hard_limit;
     S start;

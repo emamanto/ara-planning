@@ -57,7 +57,8 @@ private:
 
     bool planning() {return (task == PLANNING_GRASP ||
                              task == PLANNING_DROP ||
-                             task == PLANNING_MOVE); }
+                             task == PLANNING_MOVE ||
+                             task == PAUSED); }
 
     static pthread_t thrd;
     planner_status task;

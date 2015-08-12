@@ -251,6 +251,38 @@ void planner_interface::handle_command_message(
     }
 
     if (comm->command_type.compare("PLAN") == 0 &&
+        comm->command_id == last_id_handled)
+    {
+        if (latest_request.has_hard_limit() == false &&
+            latest_request.check_paused())
+        {
+            paused_task = task;
+            task = PAUSED;
+            lcm::LCM lcm;
+            planner_response_t resp;
+            resp.response_type = "PAUSE";
+            resp.response_id = comm->command_id;
+            resp.finished = false;
+
+            latest_search = latest_request.copy_solutions();
+            if (latest_search.size() > 0)
+            {
+                current_plan = latest_search.at(latest_search.size()-1).path;
+                resp.plan_size = current_plan.size();
+            }
+            else
+            {
+                resp.plan_size = 0;
+            }
+
+            resp.success = (resp.plan_size > 0);
+
+            lcm.publish("PLANNER_RESPONSES", &resp);
+            last_response = resp;
+        }
+    }
+
+    if (comm->command_type.compare("PLAN") == 0 &&
         comm->command_id > last_id_handled)
     {
         if (comm->plan_type.compare("GRASP") == 0)
@@ -361,6 +393,8 @@ void planner_interface::handle_command_message(
              comm->command_id > last_id_handled)
     {
         std::cout << "[PLANNER] Resuming the search." << std::endl;
+        // XXX comm->time_limit
+        latest_request.extend_time(3.f);
         latest_request.unpause();
         last_id_handled = comm->command_id;
         task = paused_task;
