@@ -393,8 +393,8 @@ void planner_interface::handle_command_message(
              comm->command_id > last_id_handled)
     {
         std::cout << "[PLANNER] Resuming the search." << std::endl;
-        // XXX comm->time_limit
-        latest_request.extend_time(3.f);
+        latest_request.extend_time(comm->time_limit);
+        latest_request.set_hard_limit(comm->hard_limit);
         latest_request.unpause();
         last_id_handled = comm->command_id;
         task = paused_task;

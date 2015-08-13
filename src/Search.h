@@ -102,6 +102,13 @@ public:
         return start;
     }
 
+    void set_hard_limit(bool on)
+    {
+        boost::lock_guard<boost::mutex> guard1(kill_mtx);
+        boost::lock_guard<boost::mutex> guard2(pause_mtx);
+        hard_limit = on;
+    }
+
     bool has_hard_limit() const
     {
         return hard_limit;
