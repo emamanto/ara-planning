@@ -134,7 +134,8 @@ public:
         pause_mtx.lock();
         paused = true;
         pause_mtx.unlock();
-        time_used = (float)(std::clock() - start_time);
+        time_used = ((float)(std::clock() - start_time)  /
+                     CLOCKS_PER_SEC);
         set_pause_waiting(true);
         while(check_pause_waiting())
         {
@@ -182,6 +183,8 @@ public:
             {
                 std::cout << "[SEARCH] Time limit reached, paused."
                           << std::endl;;
+                time_used = ((float)(std::clock() - start_time) /
+                             CLOCKS_PER_SEC);
                 paused = true;
             }
         }
