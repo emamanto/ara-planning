@@ -250,8 +250,7 @@ void planner_interface::handle_command_message(
         lcm.publish("PLANNER_RESPONSES", &last_response);
     }
 
-    if (comm->command_type.compare("PLAN") == 0 &&
-        comm->command_id == last_id_handled)
+    if (comm->command_type.compare("PLAN") == 0)
     {
         if (latest_request.has_hard_limit() == false &&
             latest_request.check_paused())
@@ -260,8 +259,9 @@ void planner_interface::handle_command_message(
             task = PAUSED;
             lcm::LCM lcm;
             planner_response_t resp;
+
             resp.response_type = "PAUSE";
-            resp.response_id = comm->command_id;
+            resp.response_id = search_cmd_id;
             resp.finished = false;
 
             latest_search = latest_request.copy_solutions();
@@ -402,7 +402,7 @@ void planner_interface::handle_command_message(
 
         lcm::LCM lcm;
         planner_response_t resp;
-        resp.response_type = "PAUSE";
+        resp.response_type = "CONTINUE";
         resp.response_id = comm->command_id;
         resp.finished = true;
         resp.success = true;
