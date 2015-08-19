@@ -135,8 +135,6 @@ std::vector<pose> plan(pose b, pose e)
         }
         plan.push_back(p);
     }
-
-    std::cout << plan.size() << std::endl;
     return plan;
 }
 }

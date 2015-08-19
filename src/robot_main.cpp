@@ -16,6 +16,7 @@
 #include "observations_t.hpp"
 
 #define PUBLISH_COLLISION_MODEL
+//#define USE_RRTSTAR
 //#define SLOW_SPEED
 
 class lcm_handler
@@ -65,12 +66,15 @@ public:
             current_command_index < current_plan.size()-1)
         {
             current_command_index++;
+#ifdef USE_RRTSTAR
             current_command = current_plan.at(current_command_index);
-            // for (int i = 0; i < probcog_arm::get_num_joints(); i++)
-            // {
-            //     current_command.at(i) +=
-            //         current_plan.at(current_command_index).at(i);
-            // }
+#else
+            for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            {
+                current_command.at(i) +=
+                    current_plan.at(current_command_index).at(i);
+            }
+#endif
         }
 
         dynamixel_command_list_t command;
@@ -136,23 +140,7 @@ public:
 
         //////////////////////////
         std::cout << "About to search" << std::endl;
-        // arm_state::target = goal;
-        // arm_state::pitch_matters = false;
-        // std::vector<search_result<arm_state, action> > latest_search;
-
-        // search_request<arm_state, action> req(arm_state(status),
-        //                                       probcog_arm::big_primitives(),
-        //                                       probcog_arm::small_primitives());
-
-
-        // arastar<arm_state, action>(req);
-        // latest_search = req.copy_solutions();
-        // current_plan = latest_search.at(latest_search.size()-1).path;
-        // current_plan = shortcut<arm_state, action>(current_plan,
-        //                                            arm_state(status));
-        // std::cout << "Shortcutted to " << current_plan.size()
-        //           << std::endl;
-
+#ifdef USE_RRTSTAR
         bool valid_sol = false;
         pose end_pose;
         pose ik_start = status;
@@ -219,14 +207,37 @@ public:
                   << " " << ep.at(1) << " " << ep.at(2) << std::endl;
         current_plan = rrtstar::plan(status, end_pose);
         current_plan.push_back(end_pose);
+
+#else
+        arm_state::target = goal;
+        arm_state::pitch_matters = false;
+        std::vector<search_result<arm_state, action> > latest_search;
+
+        search_request<arm_state, action> req(arm_state(status),
+                                              probcog_arm::big_primitives(),
+                                              probcog_arm::small_primitives());
+
+
+        arastar<arm_state, action>(req);
+        latest_search = req.copy_solutions();
+        current_plan = latest_search.at(latest_search.size()-1).path;
+        current_plan = shortcut<arm_state, action>(current_plan,
+                                                   arm_state(status));
+        std::cout << "Shortcutted to " << current_plan.size()
+                  << std::endl;
+#endif
         ///////////////////////////
 
-        //current_command = status;
-        // for (int i = 0; i < probcog_arm::get_num_joints(); i++)
-        // {
-        //     current_command.at(i) += current_plan.at(0).at(i);
-        // }
+#ifdef USE_RRTSTAR
         current_command = current_plan.at(0);
+#else
+        current_command = status;
+        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        {
+            current_command.at(i) += current_plan.at(0).at(i);
+        }
+#endif
+
         current_command_index = 0;
         searching = false;
     }
