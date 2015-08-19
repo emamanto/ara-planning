@@ -108,7 +108,7 @@ void arm_state::print() const
     for (int i = 0; i < position.size(); i++)
     {
         std::cout << "joint " << i << " at " << position.at(i)
-                  << " degrees ";
+                  << " rad  ";
     }
     std::cout << std::endl;
 }

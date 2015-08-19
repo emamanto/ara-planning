@@ -1,13 +1,14 @@
 #include <lcm/lcm-cpp.hpp>
 #include <iostream>
 #include <unistd.h>
+#include <stdlib.h>
 #include <math.h>
 
 #include "ProbCogSearchStates.h"
 #include "Search.h"
 #include "ProbCogArmCollision.h"
 #include "Shortcut.h"
-//#include "RRTStarPlanner.h"
+#include "RRTStarPlanner.h"
 #include "dynamixel_status_list_t.hpp"
 #include "dynamixel_command_list_t.hpp"
 #include "arm_collision_boxes_t.hpp"
@@ -64,11 +65,12 @@ public:
             current_command_index < current_plan.size()-1)
         {
             current_command_index++;
-            for (int i = 0; i < probcog_arm::get_num_joints(); i++)
-            {
-                current_command.at(i) +=
-                    current_plan.at(current_command_index).at(i);
-            }
+            current_command = current_plan.at(current_command_index);
+            // for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            // {
+            //     current_command.at(i) +=
+            //         current_plan.at(current_command_index).at(i);
+            // }
         }
 
         dynamixel_command_list_t command;
@@ -132,29 +134,99 @@ public:
             goal.push_back(targ->target[i]);
         }
 
+        //////////////////////////
         std::cout << "About to search" << std::endl;
-        arm_state::target = goal;
-        arm_state::pitch_matters = false;
-        std::vector<search_result<arm_state, action> > latest_search;
+        // arm_state::target = goal;
+        // arm_state::pitch_matters = false;
+        // std::vector<search_result<arm_state, action> > latest_search;
 
-        search_request<arm_state, action> req(arm_state(status),
-                                              probcog_arm::big_primitives(),
-                                              probcog_arm::small_primitives());
+        // search_request<arm_state, action> req(arm_state(status),
+        //                                       probcog_arm::big_primitives(),
+        //                                       probcog_arm::small_primitives());
 
 
-        arastar<arm_state, action>(req);
-        latest_search = req.copy_solutions();
-        current_plan = latest_search.at(latest_search.size()-1).path;
-        current_plan = shortcut<arm_state, action>(current_plan,
-                                                   arm_state(status));
-        std::cout << "Shortcutted to " << current_plan.size()
-                  << std::endl;
+        // arastar<arm_state, action>(req);
+        // latest_search = req.copy_solutions();
+        // current_plan = latest_search.at(latest_search.size()-1).path;
+        // current_plan = shortcut<arm_state, action>(current_plan,
+        //                                            arm_state(status));
+        // std::cout << "Shortcutted to " << current_plan.size()
+        //           << std::endl;
 
-        current_command = status;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        bool valid_sol = false;
+        pose end_pose;
+        pose ik_start = status;
+        int iterations = 0;
+
+        while (!valid_sol)
         {
-            current_command.at(i) += current_plan.at(0).at(i);
+            iterations++;
+            arm_state(ik_start).print();
+            std::cout << "Trying to IK solve to " << goal.at(0)
+                      << " " << goal.at(1) << " "
+                      << goal.at(2) << std::endl;
+
+            action ik_sol = probcog_arm::solve_ik(ik_start, goal);
+            for (action::iterator i = ik_sol.begin();
+                 i != ik_sol.end(); i++)
+            {
+                if (*i != 0)
+                {
+                    valid_sol = true;
+                    break;
+                }
+            }
+            end_pose = probcog_arm::apply(ik_start, ik_sol);
+
+            if (valid_sol)
+            {
+                valid_sol = arm_state(end_pose).valid();
+                if (!valid_sol)
+                {
+                    std::cout << "End pose found but collision, ";
+                    point_3d ep = probcog_arm::ee_xyz(end_pose);
+                    std::cout << "XYZ of invalid end pose is  " << ep.at(0)
+                              << " " << ep.at(1) << " " << ep.at(2) << std::endl;
+
+                }
+            }
+            if (valid_sol)
+            {
+                std::cout << "Got an end pose on it "
+                          << iterations << std::endl;
+                break;
+            }
+
+            std::cout << "Making a new random start pose" << std::endl;
+            for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            {
+                float prop = (((float)rand())/((float)RAND_MAX));
+                ik_start.at(i) = (prop*(probcog_arm::get_joint_max(i) -
+                                        probcog_arm::get_joint_min(i)))
+                    + probcog_arm::get_joint_min(i);
+            }
         }
+
+        if (!valid_sol)
+        {
+            std::cout << "FAILURE TO FIND END POSE" << std::endl;
+            searching = false;
+            return;
+        }
+
+        point_3d ep = probcog_arm::ee_xyz(end_pose);
+        std::cout << "XYZ of the end pose should be " << ep.at(0)
+                  << " " << ep.at(1) << " " << ep.at(2) << std::endl;
+        current_plan = rrtstar::plan(status, end_pose);
+        current_plan.push_back(end_pose);
+        ///////////////////////////
+
+        //current_command = status;
+        // for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        // {
+        //     current_command.at(i) += current_plan.at(0).at(i);
+        // }
+        current_command = current_plan.at(0);
         current_command_index = 0;
         searching = false;
     }
@@ -164,7 +236,7 @@ public:
     int current_command_index;
     bool searching;
     std::vector<object_data_t> latest_objects;
-    std::vector<action> current_plan;
+    std::vector<pose> current_plan;
 };
 
 int main(int argc, char* argv[])

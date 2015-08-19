@@ -36,7 +36,8 @@ set( robot_srcs robot_main.cpp
   ProbCogArm.cpp
   ProbCogSearchStates.cpp
   3DCollisionWorld.cpp
-  ProbCogArmCollision.cpp )
+  ProbCogArmCollision.cpp
+  RRTStarPlanner.cpp )
 
 set( rosie_srcs rosie_main.cpp
   PlannerInterface.cpp
@@ -98,6 +99,7 @@ target_link_libraries(
   robot_ara
   lcm
   fcl
+  ompl
   ${Boost_LIBRARIES}
 )
 

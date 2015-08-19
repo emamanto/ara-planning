@@ -60,7 +60,7 @@ bool isStateValid(const ob::State *state)
     {
         p.push_back((*vecstate)[i]);
     }
-    return probcog_arm::is_valid(p);
+    return arm_state(p).valid();
 }
 
 std::vector<pose> plan(pose b, pose e)
