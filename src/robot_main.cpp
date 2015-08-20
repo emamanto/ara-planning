@@ -139,7 +139,7 @@ public:
         }
 
         //////////////////////////
-        std::cout << "About to search" << std::endl;
+        std::cout << "=== STARTING SEARCH ===" << std::endl;
 #ifdef USE_RRTSTAR
         bool valid_sol = false;
         pose end_pose;
@@ -149,11 +149,7 @@ public:
         while (!valid_sol)
         {
             iterations++;
-            arm_state(ik_start).print();
-            std::cout << "Trying to IK solve to " << goal.at(0)
-                      << " " << goal.at(1) << " "
-                      << goal.at(2) << std::endl;
-
+            if (iterations > 500) break;
             action ik_sol = probcog_arm::solve_ik(ik_start, goal);
             for (action::iterator i = ik_sol.begin();
                  i != ik_sol.end(); i++)
@@ -164,28 +160,33 @@ public:
                     break;
                 }
             }
+
             end_pose = probcog_arm::apply(ik_start, ik_sol);
-
-            if (valid_sol)
+            end_pose.at(probcog_arm::get_num_joints() - 1) = 0;
+            action grip_sol = probcog_arm::solve_gripper(end_pose, -M_PI/2.f);
+            valid_sol = false;
+            for (action::iterator i = grip_sol.begin();
+                 i != grip_sol.end(); i++)
             {
-                valid_sol = arm_state(end_pose).valid();
-                if (!valid_sol)
+                if (*i != 0)
                 {
-                    std::cout << "End pose found but collision, ";
-                    point_3d ep = probcog_arm::ee_xyz(end_pose);
-                    std::cout << "XYZ of invalid end pose is  " << ep.at(0)
-                              << " " << ep.at(1) << " " << ep.at(2) << std::endl;
-
+                    valid_sol = true;
+                    break;
                 }
             }
+            end_pose = probcog_arm::apply(end_pose, grip_sol);
+
+            valid_sol = (arm_state(end_pose).valid() &&
+                         (probcog_arm::ee_dist_to(end_pose, goal)
+                          < 0.01));
+
             if (valid_sol)
             {
-                std::cout << "Got an end pose on it "
+                std::cout << "Got an end pose on iteration "
                           << iterations << std::endl;
                 break;
             }
 
-            std::cout << "Making a new random start pose" << std::endl;
             for (int i = 0; i < probcog_arm::get_num_joints(); i++)
             {
                 float prop = (((float)rand())/((float)RAND_MAX));
@@ -197,25 +198,26 @@ public:
 
         if (!valid_sol)
         {
-            std::cout << "FAILURE TO FIND END POSE" << std::endl;
+            std::cout << "TOTAL FAILURE TO FIND END POSE"
+                      << std::endl;
             searching = false;
             return;
         }
 
         point_3d ep = probcog_arm::ee_xyz(end_pose);
-        std::cout << "XYZ of the end pose should be " << ep.at(0)
-                  << " " << ep.at(1) << " " << ep.at(2) << std::endl;
         current_plan = rrtstar::plan(status, end_pose);
         current_plan.push_back(end_pose);
-
 #else
         arm_state::target = goal;
-        arm_state::pitch_matters = false;
+        arm_state::pitch_matters = true;
+        arm_state::target_pitch = -M_PI/2.f;
         std::vector<search_result<arm_state, action> > latest_search;
 
         search_request<arm_state, action> req(arm_state(status),
                                               probcog_arm::big_primitives(),
-                                              probcog_arm::small_primitives());
+                                              probcog_arm::small_primitives(),
+                                              5.0,
+                                              true);
 
 
         arastar<arm_state, action>(req);
