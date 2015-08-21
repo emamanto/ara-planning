@@ -229,6 +229,75 @@ std::vector<action> planner_interface::plan_drop(pose start)
     return plan;
 }
 
+void planner_interface::process_new_plan_command(const planner_command_t* comm)
+{
+    if (comm->plan_type.compare("GRASP") == 0)
+    {
+        task = PLANNING_GRASP;
+        set_grasp_target(target_obj_dim, target_obj_xyzrpy);
+    }
+    else if (comm->plan_type.compare("DROP") == 0)
+    {
+        task = PLANNING_DROP;
+        double drop_point[6];
+        drop_point[0] = comm->target[0];
+        drop_point[1] = comm->target[1];
+        drop_point[2] = comm->target[2] + target_obj_dim[2]/2.f;
+        for (int i = 3; i < 6; i++) drop_point[i] = 0;
+        set_grasp_target(grasped_obj_dim, drop_point);
+    }
+    else
+    {
+        task = PLANNING_MOVE;
+        point_3d goal;
+        for (int i = 0; i < 3; i++)
+        {
+            goal.push_back(comm->target[i]);
+        }
+        arm_state::target = goal;
+        arm_state::pitch_matters = false;
+    }
+
+    float big_prim_size = (comm->primitive_size)*
+        (PRIMITIVE_SIZE_MAX - PRIMITIVE_SIZE_MIN) +
+        PRIMITIVE_SIZE_MIN;
+    std::cout << "[PLANNER] Primitive size is " << big_prim_size
+              << std::endl;
+    probcog_arm::set_primitive_change(big_prim_size);
+
+    std::cout << "[PLANNER] Initiating a search to "
+              << arm_state::target[0] << ", "
+              << arm_state::target[1] << ", "
+              << arm_state::target[2] << ", pitch "
+              << arm_state::target_pitch
+              << std::endl;
+    latest_start_pose = arm_status;
+
+    latest_search.clear();
+    if (comm->time_limit < 0)
+    {
+        std::cout << "[PLANNER] Setting no time limit."
+                  << std::endl;
+    }
+    else {
+        std::cout << "[PLANNER] Setting a ";
+        if (comm->hard_limit) std::cout << "hard";
+        else std::cout << "soft";
+        std::cout << " time limit of "
+                  << comm->time_limit <<  "." << std::endl;
+    }
+
+    latest_request =
+        search_request<arm_state, action>(arm_state(latest_start_pose),
+                                          probcog_arm::big_primitives(),
+                                          probcog_arm::small_primitives(),
+                                          comm->time_limit,
+                                          comm->hard_limit);
+    last_id_handled = comm->command_id;
+    search_cmd_id = comm->command_id;
+    pthread_create(&thrd, NULL, &search_thread, this);
+}
+
 void planner_interface::forward_command()
 {
     for (int i = 0;
@@ -281,75 +350,10 @@ void planner_interface::handle_command_message(
             last_response = resp;
         }
     }
-
     if (comm->command_type.compare("PLAN") == 0 &&
         comm->command_id > last_id_handled)
     {
-        if (comm->plan_type.compare("GRASP") == 0)
-        {
-            task = PLANNING_GRASP;
-            set_grasp_target(target_obj_dim, target_obj_xyzrpy);
-        }
-        else if (comm->plan_type.compare("DROP") == 0)
-        {
-            task = PLANNING_DROP;
-            double drop_point[6];
-            drop_point[0] = comm->target[0];
-            drop_point[1] = comm->target[1];
-            drop_point[2] = comm->target[2] + target_obj_dim[2]/2.f;
-            for (int i = 3; i < 6; i++) drop_point[i] = 0;
-            set_grasp_target(grasped_obj_dim, drop_point);
-        }
-        else
-        {
-            task = PLANNING_MOVE;
-            point_3d goal;
-            for (int i = 0; i < 3; i++)
-            {
-                goal.push_back(comm->target[i]);
-            }
-            arm_state::target = goal;
-            arm_state::pitch_matters = false;
-        }
-
-        float big_prim_size = (comm->primitive_size)*
-            (PRIMITIVE_SIZE_MAX - PRIMITIVE_SIZE_MIN) +
-            PRIMITIVE_SIZE_MIN;
-        std::cout << "[PLANNER] Primitive size is " << big_prim_size
-                  << std::endl;
-        probcog_arm::set_primitive_change(big_prim_size);
-
-        std::cout << "[PLANNER] Initiating a search to "
-                  << arm_state::target[0] << ", "
-                  << arm_state::target[1] << ", "
-                  << arm_state::target[2] << ", pitch "
-                  << arm_state::target_pitch
-                  << std::endl;
-        latest_start_pose = arm_status;
-
-        latest_search.clear();
-        if (comm->time_limit < 0)
-        {
-            std::cout << "[PLANNER] Setting no time limit."
-                      << std::endl;
-        }
-        else {
-            std::cout << "[PLANNER] Setting a ";
-            if (comm->hard_limit) std::cout << "hard";
-            else std::cout << "soft";
-            std::cout << " time limit of "
-                      << comm->time_limit <<  "." << std::endl;
-        }
-
-        latest_request =
-            search_request<arm_state, action>(arm_state(latest_start_pose),
-                                              probcog_arm::big_primitives(),
-                                              probcog_arm::small_primitives(),
-                                              comm->time_limit,
-                                              comm->hard_limit);
-        last_id_handled = comm->command_id;
-        search_cmd_id = comm->command_id;
-        pthread_create(&thrd, NULL, &search_thread, this);
+        process_new_plan_command(comm);
     }
     else if (comm->command_type.compare("STOP") == 0 &&
              comm->command_id > last_id_handled)

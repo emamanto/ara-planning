@@ -208,7 +208,7 @@ action probcog_arm::solve_ik(pose from, point_3d to)
     if (sqrt(pow(to.at(0) - fxyz.at(0), 2) +
              pow(to.at(1) - fxyz.at(1), 2) +
              pow(to.at(2) - fxyz.at(2), 2)) < 0.01) return a;
-    std::cout << "Failed IK" << std::endl;
+    //std::cout << "Failed IK" << std::endl;
     return action(num_joints, 0);
 }
 
