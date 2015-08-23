@@ -44,7 +44,8 @@ set( rosie_srcs rosie_main.cpp
   ProbCogArm.cpp
   ProbCogSearchStates.cpp
   3DCollisionWorld.cpp
-  ProbCogArmCollision.cpp )
+  ProbCogArmCollision.cpp
+  RRTStarPlanner.cpp )
 
 set( headers ArmSim.h
   Visualizer.h
@@ -111,5 +112,6 @@ target_link_libraries(
   rosie_ara
   lcm
   fcl
+  ompl
   ${Boost_LIBRARIES}
 )

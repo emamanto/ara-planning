@@ -6,6 +6,7 @@
 
 #include "ProbCogSearchStates.h"
 #include "Search.h"
+#include "RRTStarPlanner.h"
 #include "ProbCogArmCollision.h"
 #include "Shortcut.h"
 
@@ -50,6 +51,7 @@ private:
     static void* search_thread(void* arg);
     void search_complete();
     void set_grasp_target(double dim[], double xyzrpy[]);
+    pose compute_rrt_target_pose(point_3d xyz, float pitch);
     std::vector<action> plan_grasp(pose start);
     std::vector<action> plan_drop(pose start);
     void process_new_plan_command(const planner_command_t* comm);

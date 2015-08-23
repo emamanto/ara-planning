@@ -23,6 +23,8 @@ typedef std::vector<float> point_3d;
 typedef std::vector<float> orientation;
 typedef std::vector<float> action;
 
+pose subtract(pose from, pose minus);
+
 class probcog_arm
 {
 public:

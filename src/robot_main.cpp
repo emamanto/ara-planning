@@ -204,7 +204,6 @@ public:
             return;
         }
 
-        point_3d ep = probcog_arm::ee_xyz(end_pose);
         current_plan = rrtstar::plan(status, end_pose);
         current_plan.push_back(end_pose);
 #else

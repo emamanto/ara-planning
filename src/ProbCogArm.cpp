@@ -10,6 +10,16 @@ std::vector<joint> probcog_arm::configuration = std::vector<joint>();
 std::vector<action> probcog_arm::big_prims = std::vector<action>();
 std::vector<action> probcog_arm::small_prims = std::vector<action>();
 
+pose subtract(pose from, pose minus)
+{
+    pose result;
+    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+    {
+        result.push_back(from.at(i) - minus.at(i));
+    }
+    return result;
+}
+
 // This is a hard-coded mess but it describes the big probcog arm
 void probcog_arm::INIT()
 {
