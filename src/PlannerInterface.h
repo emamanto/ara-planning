@@ -92,6 +92,7 @@ private:
     search_request<arm_state, action> latest_request;
     std::vector<action> current_plan;
     plan_type current_plan_type;
+    bool current_plan_is_rrt;
 
     static float PRIMITIVE_SIZE_MIN, PRIMITIVE_SIZE_MAX;
     static float MIN_PROP_SPEED;

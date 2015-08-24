@@ -6,6 +6,7 @@ struct planner_command_t
 
     // Plan stuff
     string plan_type;
+    string planning_algorithm;
     int32_t target_object_id;
     double target[3];
     double primitive_size;

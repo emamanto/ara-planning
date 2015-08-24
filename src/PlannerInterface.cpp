@@ -21,7 +21,8 @@ planner_interface::planner_interface() :
     current_command_index(0),
     requested_speed(1),
     last_id_handled(-1),
-    current_plan_type(MOVE)
+    current_plan_type(MOVE),
+    current_plan_is_rrt(false)
 {
 }
 
@@ -325,74 +326,87 @@ void planner_interface::process_new_plan_command(const planner_command_t* comm)
         arm_state::pitch_matters = false;
     }
 
-    // float big_prim_size = (comm->primitive_size)*
-    //     (PRIMITIVE_SIZE_MAX - PRIMITIVE_SIZE_MIN) +
-    //     PRIMITIVE_SIZE_MIN;
-    // std::cout << "[PLANNER] Primitive size is " << big_prim_size
-    //           << std::endl;
-    // probcog_arm::set_primitive_change(big_prim_size);
+    last_id_handled = comm->command_id;
+    search_cmd_id = comm->command_id;
 
-    // std::cout << "[PLANNER] Initiating a search to "
-    //           << arm_state::target[0] << ", "
-    //           << arm_state::target[1] << ", "
-    //           << arm_state::target[2] << ", pitch "
-    //           << arm_state::target_pitch
-    //           << std::endl;
-    // latest_start_pose = arm_status;
-
-    // latest_search.clear();
-    // if (comm->time_limit < 0)
-    // {
-    //     std::cout << "[PLANNER] Setting no time limit."
-    //               << std::endl;
-    // }
-    // else {
-    //     std::cout << "[PLANNER] Setting a ";
-    //     if (comm->hard_limit) std::cout << "hard";
-    //     else std::cout << "soft";
-    //     std::cout << " time limit of "
-    //               << comm->time_limit <<  "." << std::endl;
-    // }
-
-    // latest_request =
-    //     search_request<arm_state, action>(arm_state(latest_start_pose),
-    //                                       probcog_arm::big_primitives(),
-    //                                       probcog_arm::small_primitives(),
-    //                                       comm->time_limit,
-    //                                       comm->hard_limit);
-    // pthread_create(&thrd, NULL, &search_thread, this);
-    pose end_pose = compute_rrt_target_pose(arm_state::target,
-                                            arm_state::target_pitch);
-    std::vector<pose> pose_plan = rrtstar::plan(arm_status,
-                                                end_pose);
-    pose prev;
-    current_plan.clear();
-
-    for (std::vector<pose>::iterator i = pose_plan.begin();
-         i != pose_plan.end(); i++)
+    if (comm->planning_algorithm.compare("ARA") == 0)
     {
-        if (i == pose_plan.begin())
+        float big_prim_size = (comm->primitive_size)*
+            (PRIMITIVE_SIZE_MAX - PRIMITIVE_SIZE_MIN) +
+            PRIMITIVE_SIZE_MIN;
+        std::cout << "[PLANNER] Primitive size is " << big_prim_size
+                  << std::endl;
+        probcog_arm::set_primitive_change(big_prim_size);
+
+        std::cout << "[PLANNER] Initiating a search to "
+                  << arm_state::target[0] << ", "
+                  << arm_state::target[1] << ", "
+                  << arm_state::target[2] << ", pitch "
+                  << arm_state::target_pitch
+                  << std::endl;
+        latest_start_pose = arm_status;
+
+        latest_search.clear();
+        if (comm->time_limit < 0)
         {
-            prev = *i;
-            continue;
+            std::cout << "[PLANNER] Setting no time limit."
+                      << std::endl;
+        }
+        else {
+            std::cout << "[PLANNER] Setting a ";
+            if (comm->hard_limit) std::cout << "hard";
+            else std::cout << "soft";
+            std::cout << " time limit of "
+                      << comm->time_limit <<  "." << std::endl;
         }
 
-        current_plan.push_back(subtract(*i, prev));
-        prev = *i;
+        latest_request =
+            search_request<arm_state, action>(arm_state(latest_start_pose),
+                                              probcog_arm::big_primitives(),
+                                              probcog_arm::small_primitives(),
+                                              comm->time_limit,
+                                              comm->hard_limit);
+        current_plan_is_rrt = false;
+        pthread_create(&thrd, NULL, &search_thread, this);
     }
+    else if (comm->planning_algorithm.compare("RRT") == 0)
+    {
+        pose end_pose = compute_rrt_target_pose(arm_state::target,
+                                                arm_state::target_pitch);
+        std::vector<pose> pose_plan = rrtstar::plan(arm_status,
+                                                    end_pose);
+        pose prev;
+        current_plan.clear();
 
-    current_plan.push_back(subtract(end_pose, prev));
+        for (std::vector<pose>::iterator i = pose_plan.begin();
+             i != pose_plan.end(); i++)
+        {
+            if (i == pose_plan.begin())
+            {
+                prev = *i;
+                continue;
+            }
 
-    std::cout << "Sending response!" << std::endl;
-    lcm::LCM lcm;
-    planner_response_t resp;
-    resp.response_type = "PLAN";
+            current_plan.push_back(subtract(*i, prev));
+            prev = *i;
+        }
 
-    resp.finished = true;
-    resp.response_id = comm->command_id;
-    resp.success = true;
+        current_plan.push_back(subtract(end_pose, prev));
+        current_plan_is_rrt = true;
 
-    resp.plan_size = current_plan.size();
+        lcm::LCM lcm;
+        planner_response_t resp;
+        resp.response_type = "PLAN";
+
+        resp.finished = true;
+        resp.response_id = comm->command_id;
+        resp.success = true;
+
+        resp.plan_size = current_plan.size();
+
+        lcm.publish("PLANNER_RESPONSES", &resp);
+        last_response = resp;
+    }
 
     // Keep track of what kind of plan we just made because we
     // can't add the grasp/drop plan onto it yet (shortcutting)
@@ -400,12 +414,7 @@ void planner_interface::process_new_plan_command(const planner_command_t* comm)
     else if (task == PLANNING_DROP) current_plan_type = DROP;
     else current_plan_type = MOVE;
 
-    task = WAITING;
-    lcm.publish("PLANNER_RESPONSES", &resp);
-    last_response = resp;
-
-    last_id_handled = comm->command_id;
-    search_cmd_id = comm->command_id;
+    if (current_plan_is_rrt) task = WAITING;
 }
 
 void planner_interface::forward_command()
@@ -530,12 +539,15 @@ void planner_interface::handle_command_message(
     {
         task = POSTPROCESSING;
         // SHORTCUT **Add actually using the parameter in the msg
-        // int original = current_plan.size();
-        // std::cout << "[PLANNER] Smoothing a path of " << original;
-        // current_plan =
-        //     shortcut<arm_state, action>(current_plan,
-        //                                 arm_state(latest_start_pose));
-        // std::cout << " to " << current_plan.size() << std::endl;
+        if (!current_plan_is_rrt)
+        {
+            int original = current_plan.size();
+            std::cout << "[PLANNER] Smoothing a path of " << original;
+            current_plan =
+                shortcut<arm_state, action>(current_plan,
+                                            arm_state(latest_start_pose));
+            std::cout << " to " << current_plan.size() << std::endl;
+        }
         last_id_handled = comm->command_id;
 
         lcm::LCM lcm;
@@ -543,7 +555,8 @@ void planner_interface::handle_command_message(
         resp.response_type = "POSTPROCESS";
         resp.response_id = comm->command_id;
         resp.finished = true;
-        resp.success = true;//(current_plan.size() < original);
+        // XXX This isn't quite right.
+        resp.success = true;
         resp.plan_size = current_plan.size();
 
         lcm.publish("PLANNER_RESPONSES", &resp);
