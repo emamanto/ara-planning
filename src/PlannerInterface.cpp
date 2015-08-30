@@ -302,6 +302,17 @@ void planner_interface::process_new_plan_command(const planner_command_t* comm)
     if (comm->plan_type.compare("GRASP") == 0)
     {
         task = PLANNING_GRASP;
+        for (std::vector<object_data_t>::iterator i = latest_objects.begin();
+             i != latest_objects.end(); i++)
+        {
+            if (comm->target_object_id == i->id)
+            {
+                target_obj_dim = i->bbox_dim;
+                target_obj_xyzrpy = i->bbox_xyzrpy;
+                break;
+            }
+        }
+
         set_grasp_target(target_obj_dim, target_obj_xyzrpy);
     }
     else if (comm->plan_type.compare("DROP") == 0)
@@ -781,17 +792,10 @@ void planner_interface::handle_observations_message(
 
     latest_objects = obs->observations;
     collision_world::clear();
-    float height = 10;
     for (std::vector<object_data_t>::iterator i =
              latest_objects.begin();
          i != latest_objects.end(); i++)
     {
         collision_world::add_object(i->bbox_dim, i->bbox_xyzrpy);
-        if (i->bbox_dim[2] < height)
-        {
-            height = i->bbox_dim[2];
-            target_obj_dim = i->bbox_dim;
-            target_obj_xyzrpy = i->bbox_xyzrpy;
-        }
     }
 }
