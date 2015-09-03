@@ -20,6 +20,7 @@ planner_interface::planner_interface() :
     task(WAITING_INITIAL),
     current_command_index(0),
     requested_speed(1),
+    in_collision(false),
     last_id_handled(-1),
     current_plan_type(MOVE),
     current_plan_is_rrt(false)
@@ -98,6 +99,8 @@ void planner_interface::set_grasp_target(double dim[], double xyzrpy[])
         arm_state::target[2] = (xyzrpy[2] + dim[2]/2.f +
                                 GRASP_TOP_OFFSET);
     }
+    if (arm_state::target[2] > 0.15) arm_state::target[2] = 0.15;
+
     // IGNORE SIDE GRABS UGH
     // else
     // {
@@ -345,7 +348,8 @@ void planner_interface::process_new_plan_command(const planner_command_t* comm)
         float big_prim_size = (comm->primitive_size)*
             (PRIMITIVE_SIZE_MAX - PRIMITIVE_SIZE_MIN) +
             PRIMITIVE_SIZE_MIN;
-        std::cout << "[PLANNER] Primitive size is " << big_prim_size
+        std::cout << std::endl
+                  << "[PLANNER] Primitive size is " << big_prim_size
                   << std::endl;
         probcog_arm::set_primitive_change(big_prim_size);
 
@@ -601,7 +605,7 @@ void planner_interface::handle_command_message(
 
         task = EXECUTING;
         std::cout << "[PLANNER] Starting execution."
-                  << std::endl << std::endl;
+                  << std::endl;
     }
 }
 
@@ -620,13 +624,26 @@ void planner_interface::handle_status_message(
     if (np != arm_status) arm_status = np;
 
     lcm::LCM lcm;
-#ifdef PUBLISH_COLLISION_MODEL
+
     if (!planning())
     {
+#ifdef PUBLISH_COLLISION_MODEL
         arm_collision_boxes_t arm_msg = collision_world::arm_boxes(arm_status);
         lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
-    }
 #endif
+
+        if (collision_world::collision(arm_status) && !in_collision)
+        {
+            std::cout << "[CONTROLLER] Collision with ?"
+                      << std::endl;
+            in_collision = true;
+        }
+        else if (in_collision && !collision_world::collision(arm_status))
+        {
+            in_collision = false;
+        }
+    }
+
 
     if (task == WAITING_INITIAL)
     {

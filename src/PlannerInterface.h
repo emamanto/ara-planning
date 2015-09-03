@@ -79,6 +79,7 @@ private:
     pose current_command;
     float current_hand_command;
     float requested_speed;
+    bool in_collision;
 
     // LCM
     planner_response_t last_response;
