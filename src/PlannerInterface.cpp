@@ -321,7 +321,7 @@ void planner_interface::process_new_plan_command(const planner_command_t* comm)
         double drop_point[6];
         drop_point[0] = comm->target[0];
         drop_point[1] = comm->target[1];
-        drop_point[2] = comm->target[2] + target_obj_dim[2]/2.f;
+        drop_point[2] = comm->target[2];
         for (int i = 3; i < 6; i++) drop_point[i] = 0;
         set_grasp_target(grasped_obj_dim, drop_point);
     }
