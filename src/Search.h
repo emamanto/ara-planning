@@ -59,6 +59,7 @@ public:
         time_limit(time_lim),
         time_used(0),
         start_time(0),
+        total_time(0),
         hard_limit(hard_lim),
         start(start_pose),
         big_prs(big),
@@ -81,6 +82,7 @@ public:
         time_limit = other.time_limit;
         time_used = other.time_used;
         start_time = other.start_time;
+        total_time = other.total_time;
         hard_limit = other.hard_limit;
         start = other.start;
         big_prs = other.big_prs;
@@ -95,6 +97,21 @@ public:
         boost::lock_guard<boost::mutex> guard1(kill_mtx);
         boost::lock_guard<boost::mutex> guard2(pause_mtx);
         start_time = std::clock();
+    }
+
+    void finished()
+    {
+        boost::lock_guard<boost::mutex> guard1(kill_mtx);
+        boost::lock_guard<boost::mutex> guard2(pause_mtx);
+        total_time += (((float)(std::clock() - start_time)) /
+                       CLOCKS_PER_SEC);
+    }
+
+    float total_search_time()
+    {
+        boost::lock_guard<boost::mutex> guard1(kill_mtx);
+        boost::lock_guard<boost::mutex> guard2(pause_mtx);
+        return total_time;
     }
 
     S begin() const
@@ -125,11 +142,13 @@ public:
         boost::lock_guard<boost::mutex> guard(kill_mtx);
         if (!killed && hard_limit && time_limit > 0)
         {
-            if ((((float)(std::clock() - start_time)) /
-                 CLOCKS_PER_SEC) > time_limit)
+            float cur_time = (((float)(std::clock() - start_time)) /
+                              CLOCKS_PER_SEC);
+            if (cur_time > time_limit)
             {
                 std::cout << "[SEARCH] Time limit reached, stopped."
                           << std::endl;
+                total_time += cur_time;
                 killed = true;
             }
         }
@@ -185,13 +204,14 @@ public:
         boost::lock_guard<boost::mutex> guard(pause_mtx);
         if (!paused && !hard_limit && time_limit > 0)
         {
-            if ((((float)(std::clock() - start_time)) /
-                 CLOCKS_PER_SEC) > time_limit)
+            float cur_time = (((float)(std::clock() - start_time)) /
+                              CLOCKS_PER_SEC);
+            if (cur_time > time_limit)
             {
                 std::cout << "[SEARCH] Time limit reached, paused."
                           << std::endl;;
-                time_used = ((float)(std::clock() - start_time) /
-                             CLOCKS_PER_SEC);
+                time_used = cur_time;
+                total_time += cur_time;
                 paused = true;
             }
         }
@@ -248,6 +268,7 @@ private:
     float time_limit;
     float time_used;
     std::clock_t start_time;
+    float total_time;
     bool hard_limit;
     S start;
     std::vector<P> big_prs;
@@ -468,7 +489,14 @@ void arastar(search_request<S, P>& request)
 
     bool killed = false;
     progress.goal_found = improve_path<S, P>(request, progress);
-    if (progress.OPEN.empty()) return;
+    if (progress.OPEN.empty())
+    {
+        request.finished();
+        std::cout << "[SEARCH] No solution found after "
+                  << request.total_search_time() << " s."
+                  << std::endl;
+        return;
+    }
     //best_path = solutions->at(0).path;
 
     // g(goal)/min{s E OPEN U INCONS} (g+h)
@@ -478,12 +506,20 @@ void arastar(search_request<S, P>& request)
 
     float e_prime = request.check_epsilon();
     if (alt < e_prime) e_prime = alt;
-    std::cout << "[SEARCH] The first solution is suboptimal by: " <<
-        e_prime << ", ";
-    std::cout << request.copy_solutions().at(0).expanded.size()
-              << " expansions, ";
-    std::cout << ((float)t) / CLOCKS_PER_SEC << " s"  << std::endl;
-    if (request.check_killed()) return;
+    // std::cout << "[SEARCH] The first solution is suboptimal by: " <<
+    //     e_prime << ", ";
+    // std::cout << request.copy_solutions().at(0).expanded.size()
+    //           << " expansions, ";
+    //std::cout << ((float)t) / CLOCKS_PER_SEC << " s"  << std::endl;
+    if (request.check_killed())
+    {
+        std::cout << "[SEARCH] Search killed after "
+                  << request.total_search_time() << " s. "
+                  << "Final epsilon was "
+                  << request.check_epsilon() << "."
+                  << std::endl;
+        return;
+    }
 
 #ifdef FIRST_SOL
     return;
@@ -534,22 +570,43 @@ void arastar(search_request<S, P>& request)
         }
 
         progress.goal_found = improve_path<S,P>(request, progress);
-        if (request.check_killed()) return;
-        if (progress.OPEN.empty()) return;
+        if (request.check_killed())
+        {
+            std::cout << "[SEARCH] Search killed after "
+                      << request.total_search_time() << " s. "
+                      << "Final epsilon was "
+                      << request.check_epsilon() << "."
+                      << std::endl;
+            return;
+        }
+        if (progress.OPEN.empty())
+        {
+            request.finished();
+            std::cout << "[SEARCH] Search failed after "
+                      << request.total_search_time() << " s."
+                      << std::endl;
+            return;
+        }
 
         // g(goal)/min{s E OPEN U INCONS} (g+h)
         float alt = progress.costs[progress.goal] / min_gh<S,P>(progress);
 
         e_prime = request.check_epsilon();
         if (alt < e_prime) e_prime = alt;
-        std::cout << "[SEARCH] Epsilon is: "
-                  << request.check_epsilon()
-                  << ", Solution is suboptimal by: " << e_prime
-                  << ", ";
-        std::cout << request.copy_solutions().at(request.num_solutions()-1).expanded.size()
-                  << " expansions" << std::endl;
-
+        // std::cout << "[SEARCH] Epsilon is: "
+        //           << request.check_epsilon()
+        //           << ", Solution is suboptimal by: " << e_prime
+        //           << ", ";
+        // std::cout << request.copy_solutions().at(request.num_solutions()-1).expanded.size()
+        //           << " expansions" << std::endl;
     }
+
+    request.finished();
+    std::cout << "[SEARCH] Search FINISHED after "
+              << request.total_search_time() << " s. "
+              << "Final epsilon was "
+              << request.check_epsilon() << "."
+              << std::endl;
 }
 
 template <class S, typename P>
