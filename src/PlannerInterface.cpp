@@ -642,8 +642,10 @@ void planner_interface::handle_status_message(
                      i < collision_world::num_collisions(); i++)
                 {
                     collision_pair pr = collision_world::get_collision_pair(i);
-                    std::cout << pr.first.type << " + "
-                              << pr.second.type << " ";
+                    std::cout << pr.first.type << ", "
+                              << pr.first.color << " + "
+                              << pr.second.type << ", "
+                              << pr.second.color << " ";
                 }
             std::cout << std::endl;
             in_collision = true;
@@ -826,7 +828,34 @@ void planner_interface::handle_observations_message(
         object_data od;
         od.id = i->id;
         od.type = "block";
-        od.color = "not sure yet";
+        for (int j = 0; j < i->num_cat; j++)
+        {
+            if (i->cat_dat[j].cat.cat == 1)
+            {
+                od.color = "not sure yet";
+                for (int k = 0; k < i->cat_dat[j].len; k++)
+                {
+                    if (i->cat_dat[j].label[k].compare("red") == 0 &&
+                        i->cat_dat[j].confidence[k] > 0.9)
+                    {
+                        od.color = "red";
+                        break;
+                    }
+                    else if (i->cat_dat[j].label[k].compare("green") == 0 &&
+                             i->cat_dat[j].confidence[k] > 0.9)
+                    {
+                        od.color = "green";
+                        break;
+                    }
+                    else if (i->cat_dat[j].label[k].compare("blue") == 0 &&
+                             i->cat_dat[j].confidence[k] > 0.4)
+                    {
+                        od.color = "blue";
+                        break;
+                    }
+                }
+            }
+        }
         collision_world::add_object(i->bbox_dim, i->bbox_xyzrpy, od);
     }
 }
