@@ -632,10 +632,20 @@ void planner_interface::handle_status_message(
         lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
 #endif
 
-        if (collision_world::collision(arm_status) && !in_collision)
+        if (collision_world::collision(arm_status, true) &&
+            !in_collision)
         {
-            std::cout << "[CONTROLLER] Collision with ?"
-                      << std::endl;
+            std::cout << "[CONTROLLER] "
+                      << (collision_world::num_collisions())
+                      << " collisions: ";
+                for (int i = 0;
+                     i < collision_world::num_collisions(); i++)
+                {
+                    collision_pair pr = collision_world::get_collision_pair(i);
+                    std::cout << pr.first.type << " + "
+                              << pr.second.type << " ";
+                }
+            std::cout << std::endl;
             in_collision = true;
         }
         else if (in_collision && !collision_world::collision(arm_status))
@@ -813,6 +823,10 @@ void planner_interface::handle_observations_message(
              latest_objects.begin();
          i != latest_objects.end(); i++)
     {
-        collision_world::add_object(i->bbox_dim, i->bbox_xyzrpy);
+        object_data od;
+        od.id = i->id;
+        od.type = "block";
+        od.color = "not sure yet";
+        collision_world::add_object(i->bbox_dim, i->bbox_xyzrpy, od);
     }
 }

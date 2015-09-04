@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include "fcl/collision.h"
 #include "fcl/broadphase/broadphase.h"
@@ -23,18 +24,31 @@ struct collision_data
     bool done;
 };
 
+struct object_data
+{
+    int id;
+    std::string type;
+    std::string color;
+};
+
+typedef std::pair<object_data, object_data> collision_pair;
 
 class collision_world
 {
 public:
     static void add_object(std::vector<float> dim,
-                           std::vector<float> xyzrpy);
+                           std::vector<float> xyzrpy,
+                           object_data obj_info);
     static void add_object(double dim[],
-                           double xyzrpy[]);
+                           double xyzrpy[],
+                           object_data obj_info);
 
     static void clear();
 
-    static bool collision(pose arm_position);
+    static bool collision(pose arm_position, bool details = false);
+    static int num_collisions() {return colliding.size();}
+    static collision_pair& get_collision_pair(int i)
+    {return colliding.at(i);}
 
     static void set_held_object(double dims[]);
     static void clear_held_object();
@@ -52,4 +66,6 @@ private:
     static fcl::BroadPhaseCollisionManager* base_objects_m;
     static bool has_held_object;
     static std::vector<float> held_object_dims;
+    static std::vector<object_data> world_objects_info;
+    static std::vector<collision_pair> colliding;
 };

@@ -25,9 +25,12 @@ fcl::BroadPhaseCollisionManager* collision_world::hand_objects_m = 0;
 fcl::BroadPhaseCollisionManager* collision_world::base_objects_m = 0;
 bool collision_world::has_held_object = false;
 std::vector<float> collision_world::held_object_dims = std::vector<float>(3, 0);
+std::vector<object_data> collision_world::world_objects_info = std::vector<object_data>();
+std::vector<collision_pair> collision_world::colliding = std::vector<collision_pair>();
 
 void collision_world::add_object(std::vector<float> dim,
-                                 std::vector<float> xyzrpy)
+                                 std::vector<float> xyzrpy,
+                                 object_data obj_info)
 {
     fcl::Box* box = new fcl::Box(dim[0], dim[1], dim[2]);
 
@@ -54,12 +57,18 @@ void collision_world::add_object(std::vector<float> dim,
         world_objects_m = new fcl::DynamicAABBTreeCollisionManager();
     }
 
-    world_objects_m->registerObject(
-        new fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(box),
-                                 p));
+    world_objects_info.push_back(obj_info);
+    boost::shared_ptr<fcl::CollisionGeometry> cg =
+        boost::shared_ptr<fcl::CollisionGeometry>(box);
+    cg->setUserData((void*)(&world_objects_info[world_objects_info.size()-1]));
+
+    world_objects_m->registerObject(new fcl::CollisionObject(cg,
+                                                         p));
 }
 
-void collision_world::add_object(double dim[], double xyzrpy[])
+void collision_world::add_object(double dim[],
+                                 double xyzrpy[],
+                                 object_data obj_info)
 {
     std::vector<float> dim_vec;
     for (int i = 0; i < 3; i++)
@@ -72,7 +81,7 @@ void collision_world::add_object(double dim[], double xyzrpy[])
         pos_vec.push_back(xyzrpy[i]);
     }
 
-    add_object(dim_vec, pos_vec);
+    add_object(dim_vec, pos_vec, obj_info);
 }
 
 void collision_world::clear()
@@ -80,6 +89,8 @@ void collision_world::clear()
     if (world_objects_m)
     {
         world_objects_m->clear();
+        world_objects_info.clear();
+        colliding.clear();
     }
     else
     {
@@ -95,10 +106,15 @@ void collision_world::clear()
     std::vector<float> pos;
     for (int i = 0; i < 6; i++) pos.push_back(0);
 
-    add_object(dims, pos);
+    object_data od;
+    od.id = 0;
+    od.type = "table";
+    od.color = "none";
+
+    add_object(dims, pos, od);
 }
 
-bool collision_world::collision(pose arm_position)
+bool collision_world::collision(pose arm_position, bool details)
 {
     if (!arm_objects_m)
     {
@@ -140,8 +156,15 @@ bool collision_world::collision(pose arm_position)
         fcl::Vec3f trans(trmat(0, 3), trmat(1, 3), trmat(2, 3));
         fcl::Transform3f p = fcl::Transform3f(rot, trans);
 
-        fcl::CollisionObject* obj = new fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(box),
-                                                             p);
+        object_data* od = new object_data();
+        od->id = -1;
+        od->type = "arm";
+        od->color = "none";
+        boost::shared_ptr<fcl::CollisionGeometry> cg =
+            boost::shared_ptr<fcl::CollisionGeometry>(box);
+        cg->setUserData((void*)od);
+
+        fcl::CollisionObject* obj = new fcl::CollisionObject(cg, p);
         arm_objects_m->registerObject(obj);
 
         if (i < 2) base_objects_m->registerObject(obj);
@@ -184,7 +207,16 @@ bool collision_world::collision(pose arm_position)
     fcl::Vec3f trans(trmat(0, 3), trmat(1, 3), trmat(2, 3));
     fcl::Transform3f p = fcl::Transform3f(rot, trans);
 
-    fcl::CollisionObject* hobj = new fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(box), p);
+
+    object_data* od = new object_data();
+    od->id = -2;
+    od->type = "hand";
+    od->color = "none";
+    boost::shared_ptr<fcl::CollisionGeometry> cg =
+        boost::shared_ptr<fcl::CollisionGeometry>(box);
+    cg->setUserData((void*)od);
+
+    fcl::CollisionObject* hobj = new fcl::CollisionObject(cg, p);
 
     arm_objects_m->registerObject(hobj);
     hand_objects_m->registerObject(hobj);
@@ -200,8 +232,17 @@ bool collision_world::collision(pose arm_position)
     fcl::Vec3f btrans(0, 0, probcog_arm::base_height/2 + 0.011);
     fcl::Transform3f q = fcl::Transform3f(brot, btrans);
 
+    object_data* od2 = new object_data();
+    od2->id = -1;
+    od2->type = "base";
+    od2->color = "none";
+    boost::shared_ptr<fcl::CollisionGeometry> cg2 =
+        boost::shared_ptr<fcl::CollisionGeometry>(base_box);
+    cg2->setUserData((void*)od);
+
     fcl::CollisionObject* bobj = new
-        fcl::CollisionObject(boost::shared_ptr<fcl::CollisionGeometry>(base_box), q);
+        fcl::CollisionObject(cg2, q);
+
     base_objects_m->registerObject(bobj);
     arm_objects_m->registerObject(bobj);
 
@@ -234,6 +275,19 @@ bool collision_world::collision(pose arm_position)
     arm_objects_m->collide(world_objects_m, &data,
                            collision_function);
 
+    if (details)
+    {
+        for (int i = 0; i < data.result.numContacts(); i++)
+        {
+            object_data* obj1 =
+                (object_data*)(data.result.getContact(i).o1->getUserData());
+        object_data* obj2 =
+            (object_data*)(data.result.getContact(i).o2->getUserData());
+
+        collision_pair pr = std::make_pair<object_data, object_data>(*obj1, *obj2);
+        colliding.push_back(pr);
+        }
+    }
     return data.result.isCollision();
 }
 
