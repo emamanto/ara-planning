@@ -99,7 +99,8 @@ void planner_interface::set_grasp_target(double dim[], double xyzrpy[])
         arm_state::target[2] = (xyzrpy[2] + dim[2]/2.f +
                                 GRASP_TOP_OFFSET);
     }
-    if (arm_state::target[2] > 0.15) arm_state::target[2] = 0.15;
+    if (arm_state::target[2] > 0.12) arm_state::target[2] = 0.12;
+    if (arm_state::target[2] < 0.07) arm_state::target[2] = 0.07;
 
     // IGNORE SIDE GRABS UGH
     // else
@@ -585,7 +586,7 @@ void planner_interface::handle_command_message(
         task = EXECUTING;
         last_id_handled = comm->command_id;
         execute_cmd_id = comm->command_id;
-        std::cout << "[PLANNER] Resetting the arm."
+        std::cout << "[CONTROLLER] Resetting the arm."
                   << std::endl << std::endl;
         current_command = pose(probcog_arm::get_num_joints(), 0);
         current_plan.clear();
@@ -604,7 +605,8 @@ void planner_interface::handle_command_message(
         requested_speed = comm->speed;
 
         task = EXECUTING;
-        std::cout << "[PLANNER] Starting execution."
+        execution_timer.start();
+        std::cout << "[CONTROLLER] Starting execution."
                   << std::endl;
     }
 }
@@ -738,6 +740,10 @@ void planner_interface::handle_status_message(
                 std::cout << "Execution switching to GRASPING"
                           << std::endl;
 #endif
+                std::cout << "[CONTROLLER] Non-grasp execution time was "
+                          << (execution_timer.elapsed().wall / 1e9)
+                          << " s." <<std::endl;
+
                 current_plan = plan_grasp(arm_status);
                 current_command_index = 0;
                 forward_command();
@@ -751,6 +757,10 @@ void planner_interface::handle_status_message(
                 std::cout << "Execution switching to DROPPING"
                           << std::endl;
 #endif
+                std::cout << "[CONTROLLER] Non-drop execution time was "
+                          << (execution_timer.elapsed().wall / 1e9)
+                          << " s." << std::endl;
+
                 current_plan = plan_drop(arm_status);
                 current_command_index = 0;
                 forward_command();
@@ -764,7 +774,9 @@ void planner_interface::handle_status_message(
                           << current_command_index
                           << " so the plan is done." << std::endl;
 #endif
-
+                std::cout << "[CONTROLLER] Total execution time was "
+                          << (execution_timer.elapsed().wall / 1e9)
+                          << " s." << std::endl;
                 current_command_index++;
                 task = WAITING;
                 lcm::LCM lcm;

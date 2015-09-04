@@ -2,6 +2,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <iostream>
+#include <boost/timer/timer.hpp>
 #include <pthread.h>
 
 #include "ProbCogSearchStates.h"
@@ -80,6 +81,7 @@ private:
     float current_hand_command;
     float requested_speed;
     bool in_collision;
+    boost::timer::cpu_timer execution_timer;
 
     // LCM
     planner_response_t last_response;
