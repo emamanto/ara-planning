@@ -1,7 +1,7 @@
 #include "ProbCogSearchStates.h"
 #include <iostream>
-#define D_SMALL 0.1
-#define D_IK 0.05
+#define D_SMALL 0.15
+#define D_IK 0.1
 
 point_3d arm_state::target = point_3d(3, 0);
 float arm_state::target_pitch = 0.f;
