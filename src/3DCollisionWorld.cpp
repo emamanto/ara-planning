@@ -293,20 +293,24 @@ bool collision_world::collision(pose arm_position, bool details)
 
 void collision_world::set_held_object(double dims[])
 {
-    has_held_object = true;
-    //std::cout << "Held object is in collision map." << std::endl;
-    held_object_dims.clear();
-    for (int i = 0; i < 3; i++)
-    {
-        held_object_dims.push_back(dims[i]);
-    }
+    return;
+    /// BROKE
+    // has_held_object = true;
+    // //std::cout << "Held object is in collision map." << std::endl;
+    // held_object_dims.clear();
+    // for (int i = 0; i < 3; i++)
+    // {
+    //     held_object_dims.push_back(dims[i]);
+    // }
 }
 
 void collision_world::clear_held_object()
 {
-    has_held_object = false;
-    //std::cout << "No held object in collision map." << std::endl;
-    held_object_dims = std::vector<float>(3, 0);
+    return;
+    /// BROKE
+    // has_held_object = false;
+    // //std::cout << "No held object in collision map." << std::endl;
+    // held_object_dims = std::vector<float>(3, 0);
 }
 
 arm_collision_boxes_t collision_world::arm_boxes(pose arm_position)

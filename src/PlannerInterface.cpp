@@ -10,7 +10,7 @@ float planner_interface::PRIMITIVE_SIZE_MIN = 2.f;
 float planner_interface::PRIMITIVE_SIZE_MAX = 20.f;
 float planner_interface::MIN_PROP_SPEED = 0.2f;
 
-float planner_interface::GRASP_TOP_OFFSET = 0.05;
+float planner_interface::GRASP_TOP_OFFSET = 0.08;
 float planner_interface::GRASP_INTO_OBJ_OFFSET = 0.03;
 
 planner_interface::planner_interface() :
@@ -99,8 +99,8 @@ void planner_interface::set_grasp_target(double dim[], double xyzrpy[])
         arm_state::target[2] = (xyzrpy[2] + dim[2]/2.f +
                                 GRASP_TOP_OFFSET);
     }
-    if (arm_state::target[2] > 0.12) arm_state::target[2] = 0.12;
-    if (arm_state::target[2] < 0.07) arm_state::target[2] = 0.07;
+    if (arm_state::target[2] > 0.15) arm_state::target[2] = 0.15;
+    if (arm_state::target[2] < 0.13) arm_state::target[2] = 0.13;
 
     // IGNORE SIDE GRABS UGH
     // else
