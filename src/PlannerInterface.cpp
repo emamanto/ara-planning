@@ -389,8 +389,20 @@ void planner_interface::process_new_plan_command(const planner_command_t* comm)
     {
         pose end_pose = compute_rrt_target_pose(arm_state::target,
                                                 arm_state::target_pitch);
-        std::vector<pose> pose_plan = rrtstar::plan(arm_status,
-                                                    end_pose);
+
+        std::vector<pose> pose_plan;
+        if (comm->time_limit <= 0)
+        {
+            pose_plan = rrtstar::plan(arm_status,
+                                      end_pose);
+        }
+        else
+        {
+            pose_plan = rrtstar::plan(arm_status,
+                                      end_pose,
+                                      comm->time_limit);
+        }
+
         pose prev;
         current_plan.clear();
 

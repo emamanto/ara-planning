@@ -63,7 +63,7 @@ bool isStateValid(const ob::State *state)
     return arm_state(p).valid();
 }
 
-std::vector<pose> plan(pose b, pose e)
+std::vector<pose> plan(pose b, pose e, float time_limit)
 {
     // construct the state space we are planning in
     ob::StateSpacePtr space(new ob::RealVectorStateSpace(probcog_arm::get_num_joints()));
@@ -111,8 +111,8 @@ std::vector<pose> plan(pose b, pose e)
 
     rrt_planner->setProblemDefinition(ss.getProblemDefinition());
 
-    // attempt to solve the problem within one second of planning time
-    ob::PlannerStatus solved = ss.solve(0.01);
+    // attempt to solve the problem within time limit
+    ob::PlannerStatus solved = ss.solve(time_limit);
 
     if (solved)
     {
