@@ -11,10 +11,10 @@ bool subdivision_collision_check<arm_state, action>(arm_state start,
     std::vector<float> joint_mvmt_times;
     float max_time = 0;
     int max_joint = 0;
-    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
         joint_mvmt_times.push_back(fabs(action.at(i))/
-                                   probcog_arm::get_default_speed(i));
+                                   fetch_arm::get_default_speed(i));
         if (joint_mvmt_times.at(i) > max_time)
         {
             max_time = joint_mvmt_times.at(i);
@@ -23,20 +23,20 @@ bool subdivision_collision_check<arm_state, action>(arm_state start,
     }
 
     std::vector<float> chgs_per_step;
-    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
         chgs_per_step.push_back(TIME_PER_STEP*
-                                probcog_arm::get_default_speed(i));
+                                fetch_arm::get_default_speed(i));
     }
 
     // END point of the motion
-    pose chkpoint = probcog_arm::apply(start.position, action);
+    pose chkpoint = fetch_arm::apply(start.position, action);
     float time = max_time;
 
     while(time > TIME_PER_STEP)
     {
         time -= TIME_PER_STEP;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
             if (time > joint_mvmt_times.at(i)) continue;
 

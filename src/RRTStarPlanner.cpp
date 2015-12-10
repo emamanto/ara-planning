@@ -56,7 +56,7 @@ bool isStateValid(const ob::State *state)
         state->as<ob::RealVectorStateSpace::StateType>();
 
     pose p;
-    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
         p.push_back((*vecstate)[i]);
     }
@@ -66,7 +66,7 @@ bool isStateValid(const ob::State *state)
 std::vector<pose> plan(pose b, pose e, float time_limit)
 {
     // construct the state space we are planning in
-    ob::StateSpacePtr space(new ob::RealVectorStateSpace(probcog_arm::get_num_joints()));
+    ob::StateSpacePtr space(new ob::RealVectorStateSpace(fetch_arm::get_num_joints()));
 
     // construct an instance of  space information from this state space
     ob::SpaceInformationPtr si(new ob::SpaceInformation(space));
@@ -75,12 +75,12 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
     ob::PlannerPtr rrt_planner(rrts);
 
     // set the bounds for state space
-    ob::RealVectorBounds bounds(probcog_arm::get_num_joints());
+    ob::RealVectorBounds bounds(fetch_arm::get_num_joints());
 
-    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
-        bounds.setLow(i, probcog_arm::get_joint_min(i));
-        bounds.setHigh(i, probcog_arm::get_joint_max(i));
+        bounds.setLow(i, fetch_arm::get_joint_min(i));
+        bounds.setHigh(i, fetch_arm::get_joint_max(i));
     }
 
     space->as<ob::RealVectorStateSpace>()->setBounds(bounds);
@@ -95,7 +95,7 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
     ob::ScopedState<> start(space);
     ob::ScopedState<> goal(space);
 
-    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
 
         start[i] = b[i];
@@ -129,7 +129,7 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
         const ob::RealVectorStateSpace::StateType* s =
             ss.getSolutionPath().getState(i)->as<ob::RealVectorStateSpace::StateType>();
         pose p;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
             p.push_back((*s)[i]);
         }

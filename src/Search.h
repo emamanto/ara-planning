@@ -10,7 +10,7 @@
 #include <ctime>
 #include <boost/thread.hpp>
 
-//#define FIRST_SOL
+#define FIRST_SOL
 // #define MAZE_FIGURE
 // #ifdef MAZE_FIGURE
 // #undef FIRST_SOL
@@ -506,11 +506,11 @@ void arastar(search_request<S, P>& request)
 
     float e_prime = request.check_epsilon();
     if (alt < e_prime) e_prime = alt;
-    // std::cout << "[SEARCH] The first solution is suboptimal by: " <<
-    //     e_prime << ", ";
-    // std::cout << request.copy_solutions().at(0).expanded.size()
-    //           << " expansions, ";
-    //std::cout << ((float)t) / CLOCKS_PER_SEC << " s"  << std::endl;
+    std::cout << "[SEARCH] The first solution is suboptimal by: " <<
+        e_prime << ", ";
+    std::cout << request.copy_solutions().at(0).expanded.size()
+              << " expansions, ";
+    std::cout << ((float)t) / CLOCKS_PER_SEC << " s"  << std::endl;
     if (request.check_killed())
     {
         std::cout << "[SEARCH] Search killed after "
@@ -593,12 +593,12 @@ void arastar(search_request<S, P>& request)
 
         e_prime = request.check_epsilon();
         if (alt < e_prime) e_prime = alt;
-        // std::cout << "[SEARCH] Epsilon is: "
-        //           << request.check_epsilon()
-        //           << ", Solution is suboptimal by: " << e_prime
-        //           << ", ";
-        // std::cout << request.copy_solutions().at(request.num_solutions()-1).expanded.size()
-        //           << " expansions" << std::endl;
+        std::cout << "[SEARCH] Epsilon is: "
+                  << request.check_epsilon()
+                  << ", Solution is suboptimal by: " << e_prime
+                  << ", ";
+        std::cout << request.copy_solutions().at(request.num_solutions()-1).expanded.size()
+                  << " expansions" << std::endl;
     }
 
     request.finished();

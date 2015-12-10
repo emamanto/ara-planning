@@ -8,7 +8,7 @@ float arm_state::target_pitch = 0.f;
 bool arm_state::pitch_matters = true;
 
 arm_state::arm_state() :
-    position(probcog_arm::get_num_joints(), 0)
+    position(fetch_arm::get_num_joints(), 0)
 {
 }
 
@@ -33,20 +33,20 @@ bool arm_state::operator > (const arm_state& other) const
 
 arm_state arm_state::apply(action a)
 {
-    pose child = probcog_arm::apply(position, a);
+    pose child = fetch_arm::apply(position, a);
     return arm_state(child);
 }
 
 float arm_state::cost(action a)
 {
-    pose next = probcog_arm::apply(position, a);
-    return probcog_arm::ee_dist_to(position, probcog_arm::ee_xyz(next));
+    pose next = fetch_arm::apply(position, a);
+    return fetch_arm::ee_dist_to(position, fetch_arm::ee_xyz(next));
 }
 
 bool arm_state::valid() const
 {
-    if(!probcog_arm::is_valid(position)) return false;
-    if(collision_world::collision(position)) return false;
+    if(!fetch_arm::is_valid(position)) return false;
+    //if(collision_world::collision(position)) return false;
     return true;
 }
 
@@ -64,30 +64,31 @@ bool arm_state::use_finisher() const
 
 action arm_state::compute_finisher() const
 {
-    action xyz = probcog_arm::solve_ik(position, target);
-    if (!pitch_matters) return xyz;
+    action xyz = fetch_arm::solve_ik(position, target);
+    //if (!pitch_matters)
+    return xyz;
 
-    action pitch = probcog_arm::solve_gripper(position, target_pitch);
+    //action pitch = fetch_arm::solve_gripper(position, target_pitch);
 
-    action total;
-    bool invalid = true;
-    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
-    {
-        total.push_back(xyz.at(i) + pitch.at(i));
-        if (pitch.at(i) != 0) invalid = false;
-    }
-    invalid = (invalid ||
-               probcog_arm::ee_dist_to(probcog_arm::apply(position, total),
-                                       target) > 0.01);
-    if (invalid) return pitch;
-    return total;
+    // action total;
+    // bool invalid = true;
+    // for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+    // {
+    //     total.push_back(xyz.at(i) + pitch.at(i));
+    //     if (pitch.at(i) != 0) invalid = false;
+    // }
+    // invalid = (invalid ||
+    //            fetch_arm::ee_dist_to(fetch_arm::apply(position, total),
+    //                                    target) > 0.01);
+    // if (invalid) return pitch;
+    // return total;
 }
 
 bool arm_state::is_goal() const
 {
     if (target_distance() > 0.01) return false;
-    if (fabs(probcog_arm::ee_pitch(position) - target_pitch) > 0.01
-        && pitch_matters) return false;
+    // if (fabs(fetch_arm::ee_pitch(position) - target_pitch) > 0.01
+    //     && pitch_matters) return false;
     else return true;
 }
 
@@ -99,7 +100,7 @@ float arm_state::heuristic() const
 
 float arm_state::target_distance() const
 {
-    return probcog_arm::ee_dist_to(position, target);
+    return fetch_arm::ee_dist_to(position, target);
 }
 
 void arm_state::print() const

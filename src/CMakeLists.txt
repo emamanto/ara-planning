@@ -33,7 +33,7 @@ set( maze_srcs maze_main.cpp
   MazeWidget.cpp )
 
 set( robot_srcs robot_main.cpp
-  ProbCogArm.cpp
+  FetchArm.cpp
   ProbCogSearchStates.cpp
   3DCollisionWorld.cpp
   ProbCogArmCollision.cpp

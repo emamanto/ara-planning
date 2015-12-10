@@ -2,7 +2,7 @@
 #include <iostream>
 
 int fetch_arm::num_joints = 7;
-float fetch_arm::base_offset = point_3d();
+point_3d fetch_arm::base_offset = point_3d();
 float fetch_arm::hand_length = 0.1f;
 float fetch_arm::hand_width = 0.11f;
 float fetch_arm::hand_height = 0.02;
@@ -23,6 +23,10 @@ pose subtract(pose from, pose minus)
 // This is a hard-coded mess but it describes the big probcog arm
 void fetch_arm::INIT()
 {
+    base_offset.push_back(-0.55);
+    base_offset.push_back(0);
+    base_offset.push_back(0.5);
+
     joint shoulder_pan;
     shoulder_pan.type = REVOLUTE;
     shoulder_pan.around = Z_AXIS;
@@ -103,19 +107,22 @@ void fetch_arm::INIT()
 
     // Discounting hand joint for now, treating as stick on end
 
-    set_primitive_change(10.f);
+    set_primitive_change(6.f);
 }
 
 Eigen::Matrix4f fetch_arm::joint_transform(int joint_number,
                                            pose p)
 {
-    Eigen::Matrix4f xform = translation_matrix(0, 0, base_height);
-    for (int i = 0; i < joint_number; i++)
+    Eigen::Matrix4f xform = translation_matrix(base_offset[0],
+                                               base_offset[1],
+                                               base_offset[2]);
+
+    for (int i = 0; i <= joint_number; i++)
     {
         xform *= rotation_matrix(p.at(i),
                                  configuration.at(i).around);
-        xform *= translation_matrix(0, 0,
-                                    configuration.at(i).length);
+        xform *= translation_matrix(configuration.at(i).length,
+                                    0, 0);
     }
     return xform;
 }
@@ -132,10 +139,15 @@ point_3d fetch_arm::joint_xyz(int joint_number, pose p)
 point_3d fetch_arm::ee_xyz(pose p)
 {
     Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
+                             translation_matrix(get_component_length(num_joints-1),
+                                                0,
+                                                0)*
                              rotation_matrix(p.at(num_joints-1),
                                              get_joint_axis(num_joints-1))*
-                             translation_matrix(0, 0, hand_length));
+                             translation_matrix(hand_length,0,0));
 
+    std::cout << "EE XYZ: " << xform(0,3) << ", " << xform(1,3)
+              << ", " << xform(2,3) << std::endl;
     point_3d xyz;
     xyz.push_back(xform(0,3));
     xyz.push_back(xform(1,3));
@@ -159,15 +171,15 @@ orientation fetch_arm::ee_rpy(pose p)
     return rpy;
 }
 
-float fetch_arm::ee_pitch(pose p)
-{
-    point_3d ee = ee_xyz(p);
-    Eigen::Matrix4f xform = joint_transform(num_joints-1, p);
-    float z_diff = ee.at(2)-xform(2,3);
+// float fetch_arm::ee_pitch(pose p)
+// {
+//     point_3d ee = ee_xyz(p);
+//     Eigen::Matrix4f xform = joint_transform(num_joints-1, p);
+//     float z_diff = ee.at(2)-xform(2,3);
 
-    float pitch = asin(z_diff/hand_length);
-    return pitch;
-}
+//     float pitch = asin(z_diff/hand_length);
+//     return pitch;
+// }
 
 float fetch_arm::ee_dist_to(pose from, point_3d to)
 {
@@ -261,53 +273,53 @@ action fetch_arm::solve_gripper(pose from, float to_pitch)
     int i = 0;
     float fpitch;
 
-    while (true)
-    {
-        i++;
-        fpitch = ee_pitch(cur_joints);
-        if (fabs(to_pitch-fpitch) < 0.01)
-        {
-            return a;
-        }
-        if (i > 1000) break;
+    // while (true)
+    // {
+    //     i++;
+    //     fpitch = ee_pitch(cur_joints);
+    //     if (fabs(to_pitch-fpitch) < 0.01)
+    //     {
+    //         return a;
+    //     }
+    //     if (i > 1000) break;
 
-        for (int k = 1; k < 4; k++)
-        {
-            float delta = cur_joints.at(k)*pow(10, -2);
-            if ( delta < pow(10, -4)) delta = pow(10, -4);
-            pose posd = cur_joints;
-            posd.at(k) = cur_joints.at(k) + delta;
-            float pitch_d = ee_pitch(posd);
-            fk_jacobian(0, k-1) = (pitch_d - fpitch) / delta;
-        }
+    //     for (int k = 1; k < 4; k++)
+    //     {
+    //         float delta = cur_joints.at(k)*pow(10, -2);
+    //         if ( delta < pow(10, -4)) delta = pow(10, -4);
+    //         pose posd = cur_joints;
+    //         posd.at(k) = cur_joints.at(k) + delta;
+    //         float pitch_d = ee_pitch(posd);
+    //         fk_jacobian(0, k-1) = (pitch_d - fpitch) / delta;
+    //     }
 
-        Eigen::JacobiSVD<Eigen::MatrixXf> svd(fk_jacobian,
-                                              (Eigen::ComputeFullU |
-                                               Eigen::ComputeFullV));
+    //     Eigen::JacobiSVD<Eigen::MatrixXf> svd(fk_jacobian,
+    //                                           (Eigen::ComputeFullU |
+    //                                            Eigen::ComputeFullV));
 
-        Eigen::MatrixXf sigma_pseudoinv =
-            Eigen::MatrixXf::Zero(1, 3);
-        sigma_pseudoinv.diagonal() = svd.singularValues();
+    //     Eigen::MatrixXf sigma_pseudoinv =
+    //         Eigen::MatrixXf::Zero(1, 3);
+    //     sigma_pseudoinv.diagonal() = svd.singularValues();
 
-        if (sigma_pseudoinv(0, 0) < 0.000001) break;
+    //     if (sigma_pseudoinv(0, 0) < 0.000001) break;
 
-        sigma_pseudoinv(0, 0) = 1.f/sigma_pseudoinv(0, 0);
-        sigma_pseudoinv.transposeInPlace();
+    //     sigma_pseudoinv(0, 0) = 1.f/sigma_pseudoinv(0, 0);
+    //     sigma_pseudoinv.transposeInPlace();
 
-        Eigen::MatrixXf jacobian_plus =
-            svd.matrixV()*sigma_pseudoinv*(svd.matrixU().transpose());
+    //     Eigen::MatrixXf jacobian_plus =
+    //         svd.matrixV()*sigma_pseudoinv*(svd.matrixU().transpose());
 
-        Eigen::Matrix<float, 1, 1> dp;
-        dp << (to_pitch - fpitch);
-        joint_change = jacobian_plus*dp;
-        joint_change = 0.1*joint_change;
+    //     Eigen::Matrix<float, 1, 1> dp;
+    //     dp << (to_pitch - fpitch);
+    //     joint_change = jacobian_plus*dp;
+    //     joint_change = 0.1*joint_change;
 
-        for (int k = 0; k < 3; k++)
-        {
-            cur_joints.at(k) += joint_change(k);
-            a.at(k) += joint_change(k);
-        }
-    }
+    //     for (int k = 0; k < 3; k++)
+    //     {
+    //         cur_joints.at(k) += joint_change(k);
+    //         a.at(k) += joint_change(k);
+    //     }
+    // }
     std::cout << "Failed Gripper IK" << std::endl;
     return action(num_joints, 0);
 }
@@ -372,6 +384,7 @@ bool fetch_arm::is_valid(pose p)
     // Joint range check
     for (int i = 0; i < num_joints; i++)
     {
+        if (configuration.at(i).type == CONTINUOUS) continue;
         if (p.at(i) < configuration.at(i).min ||
             p.at(i) > configuration.at(i).max) return false;
     }

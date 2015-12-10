@@ -23,9 +23,12 @@ class lcm_handler
 {
 public:
     lcm_handler() :
-        current_command(probcog_arm::get_num_joints(), 0),
+        current_command(fetch_arm::get_num_joints(), 0),
         current_command_index(0),
-        searching(false) {};
+        searching(false) {
+        current_command.at(0) = M_PI/4;
+        current_command.at(1) = M_PI/4;
+    };
     ~lcm_handler() {};
 
     void handle_status_message(const lcm::ReceiveBuffer* rbuf,
@@ -36,7 +39,7 @@ public:
         lcm::LCM lcm;
 
         pose np;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
             np.push_back(stats->statuses[i].position_radians);
         }
@@ -52,8 +55,10 @@ public:
         lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
 #endif
 
+        point_3d pt = fetch_arm::ee_xyz(status);
+
         bool done = true;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
             if (fabs(status[i] - current_command[i]) > 0.01)
             {
@@ -69,7 +74,7 @@ public:
 #ifdef USE_RRTSTAR
             current_command = current_plan.at(current_command_index);
 #else
-            for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            for (int i = 0; i < fetch_arm::get_num_joints(); i++)
             {
                 current_command.at(i) +=
                     current_plan.at(current_command_index).at(i);
@@ -78,17 +83,17 @@ public:
         }
 
         dynamixel_command_list_t command;
-        command.len = probcog_arm::get_num_joints() + 1;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        command.len = fetch_arm::get_num_joints() + 2;
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
             dynamixel_command_t c;
             c.position_radians = current_command.at(i);
 #ifdef SLOW_SPEED
-            c.speed = probcog_arm::get_default_speed(i)*0.1;
+            c.speed = fetch_arm::get_default_speed(i)*0.1;
 #else
-            c.speed = probcog_arm::get_default_speed(i);
+            c.speed = fetch_arm::get_default_speed(i);
 #endif
-            c.max_torque = probcog_arm::get_default_torque(i);
+            c.max_torque = fetch_arm::get_default_torque(i);
             command.commands.push_back(c);
         }
 
@@ -96,9 +101,9 @@ public:
         // if (done && current_plan.size() > 0 &&
         //     current_command_index > current_plan.size())
         // {
-            hand.position_radians = 112.f*DEG_TO_RAD;
-            hand.speed = 0.15;
-            hand.max_torque = 0.5;
+        hand.position_radians = 0;
+        hand.speed = 0.15;
+        hand.max_torque = 0.5;
         // }
         // else
         // {
@@ -106,6 +111,7 @@ public:
         //     hand.speed = 0.15;
         //     hand.max_torque = 0.5;
         // }
+        command.commands.push_back(hand);
         command.commands.push_back(hand);
 
         lcm.publish("ARM_COMMAND", &command);
@@ -116,12 +122,15 @@ public:
                                      const observations_t* obs)
     {
         latest_objects = obs->observations;
+        object_data od;
         collision_world::clear();
         for (std::vector<object_data_t>::iterator i =
                  latest_objects.begin();
              i != latest_objects.end(); i++)
         {
-            collision_world::add_object(i->bbox_dim, i->bbox_xyzrpy);
+            collision_world::add_object(i->bbox_dim,
+                                        i->bbox_xyzrpy,
+                                        od);
         }
     }
 
@@ -150,7 +159,7 @@ public:
         {
             iterations++;
             if (iterations > 500) break;
-            action ik_sol = probcog_arm::solve_ik(ik_start, goal);
+            action ik_sol = fetch_arm::solve_ik(ik_start, goal);
             for (action::iterator i = ik_sol.begin();
                  i != ik_sol.end(); i++)
             {
@@ -161,9 +170,9 @@ public:
                 }
             }
 
-            end_pose = probcog_arm::apply(ik_start, ik_sol);
-            end_pose.at(probcog_arm::get_num_joints() - 1) = 0;
-            action grip_sol = probcog_arm::solve_gripper(end_pose, -M_PI/2.f);
+            end_pose = fetch_arm::apply(ik_start, ik_sol);
+            end_pose.at(fetch_arm::get_num_joints() - 1) = 0;
+            action grip_sol = fetch_arm::solve_gripper(end_pose, -M_PI/2.f);
             valid_sol = false;
             for (action::iterator i = grip_sol.begin();
                  i != grip_sol.end(); i++)
@@ -174,10 +183,10 @@ public:
                     break;
                 }
             }
-            end_pose = probcog_arm::apply(end_pose, grip_sol);
+            end_pose = fetch_arm::apply(end_pose, grip_sol);
 
             valid_sol = (arm_state(end_pose).valid() &&
-                         (probcog_arm::ee_dist_to(end_pose, goal)
+                         (fetch_arm::ee_dist_to(end_pose, goal)
                           < 0.01));
 
             if (valid_sol)
@@ -187,12 +196,12 @@ public:
                 break;
             }
 
-            for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            for (int i = 0; i < fetch_arm::get_num_joints(); i++)
             {
                 float prop = (((float)rand())/((float)RAND_MAX));
-                ik_start.at(i) = (prop*(probcog_arm::get_joint_max(i) -
-                                        probcog_arm::get_joint_min(i)))
-                    + probcog_arm::get_joint_min(i);
+                ik_start.at(i) = (prop*(fetch_arm::get_joint_max(i) -
+                                        fetch_arm::get_joint_min(i)))
+                    + fetch_arm::get_joint_min(i);
             }
         }
 
@@ -213,9 +222,9 @@ public:
         std::vector<search_result<arm_state, action> > latest_search;
 
         search_request<arm_state, action> req(arm_state(status),
-                                              probcog_arm::big_primitives(),
-                                              probcog_arm::small_primitives(),
-                                              5.0,
+                                              fetch_arm::big_primitives(),
+                                              fetch_arm::small_primitives(),
+                                              100.0,
                                               true);
 
 
@@ -233,7 +242,7 @@ public:
         current_command = current_plan.at(0);
 #else
         current_command = status;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
             current_command.at(i) += current_plan.at(0).at(i);
         }
@@ -260,7 +269,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    probcog_arm::INIT();
+    fetch_arm::INIT();
 
     lcm_handler handler;
     lcm.subscribe("ARM_STATUS", &lcm_handler::handle_status_message,

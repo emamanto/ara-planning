@@ -14,7 +14,7 @@ float planner_interface::GRASP_TOP_OFFSET = 0.08;
 float planner_interface::GRASP_INTO_OBJ_OFFSET = 0.03;
 
 planner_interface::planner_interface() :
-    arm_status(probcog_arm::get_num_joints(), 0),
+    arm_status(fetch_arm::get_num_joints(), 0),
     search_cmd_id(-1),
     execute_cmd_id(-1),
     task(WAITING_INITIAL),
@@ -153,7 +153,7 @@ pose planner_interface::compute_rrt_target_pose(point_3d xyz,
         {
             iterations++;
             if (iterations > 500) break;
-            action ik_sol = probcog_arm::solve_ik(ik_start, xyz);
+            action ik_sol = fetch_arm::solve_ik(ik_start, xyz);
             for (action::iterator i = ik_sol.begin();
                  i != ik_sol.end(); i++)
             {
@@ -164,9 +164,9 @@ pose planner_interface::compute_rrt_target_pose(point_3d xyz,
                 }
             }
 
-            end_pose = probcog_arm::apply(ik_start, ik_sol);
-            end_pose.at(probcog_arm::get_num_joints() - 1) = 0;
-            action grip_sol = probcog_arm::solve_gripper(end_pose, pitch);
+            end_pose = fetch_arm::apply(ik_start, ik_sol);
+            end_pose.at(fetch_arm::get_num_joints() - 1) = 0;
+            action grip_sol = fetch_arm::solve_gripper(end_pose, pitch);
             valid_sol = false;
             for (action::iterator i = grip_sol.begin();
                  i != grip_sol.end(); i++)
@@ -177,10 +177,10 @@ pose planner_interface::compute_rrt_target_pose(point_3d xyz,
                     break;
                 }
             }
-            end_pose = probcog_arm::apply(end_pose, grip_sol);
+            end_pose = fetch_arm::apply(end_pose, grip_sol);
 
             valid_sol = (arm_state(end_pose).valid() &&
-                         (probcog_arm::ee_dist_to(end_pose, xyz)
+                         (fetch_arm::ee_dist_to(end_pose, xyz)
                           < 0.01));
 
             if (valid_sol)
@@ -190,12 +190,12 @@ pose planner_interface::compute_rrt_target_pose(point_3d xyz,
                 break;
             }
 
-            for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+            for (int i = 0; i < fetch_arm::get_num_joints(); i++)
             {
                 float prop = (((float)rand())/((float)RAND_MAX));
-                ik_start.at(i) = (prop*(probcog_arm::get_joint_max(i) -
-                                        probcog_arm::get_joint_min(i)))
-                    + probcog_arm::get_joint_min(i);
+                ik_start.at(i) = (prop*(fetch_arm::get_joint_max(i) -
+                                        fetch_arm::get_joint_min(i)))
+                    + fetch_arm::get_joint_min(i);
             }
         }
 
@@ -203,7 +203,7 @@ pose planner_interface::compute_rrt_target_pose(point_3d xyz,
         {
             std::cout << "TOTAL FAILURE TO FIND END POSE"
                       << std::endl;
-            return pose(probcog_arm::get_num_joints(), 0);
+            return pose(fetch_arm::get_num_joints(), 0);
         }
         return end_pose;
 }
@@ -212,23 +212,23 @@ std::vector<action> planner_interface::plan_grasp(pose start)
 {
     std::vector<action> plan;
     // Straight down grab
-    if (fabs(probcog_arm::ee_pitch(start) - -M_PI/2) < 0.1)
+    //if (fabs(fetch_arm::ee_pitch(start) - -M_PI/2) < 0.1)
     {
         // 1. Spin wrist
-        action spin(probcog_arm::get_num_joints(), 0);
+        action spin(fetch_arm::get_num_joints(), 0);
         float spin_angle = (M_PI/2.f + arm_status.at(0)) +
             (M_PI/2.f - target_obj_xyzrpy[5]);
 
-        while (spin_angle > probcog_arm::get_joint_max(4))
+        while (spin_angle > fetch_arm::get_joint_max(4))
         {
             spin_angle -= M_PI/2.f;
         }
-        while (spin_angle < probcog_arm::get_joint_min(4))
+        while (spin_angle < fetch_arm::get_joint_min(4))
         {
             spin_angle += M_PI/2.f;
         }
 
-        spin.at(probcog_arm::get_num_joints()-1) = spin_angle;
+        spin.at(fetch_arm::get_num_joints()-1) = spin_angle;
         plan.push_back(spin);
 
         // 2. Open hand
@@ -236,10 +236,10 @@ std::vector<action> planner_interface::plan_grasp(pose start)
         plan.push_back(hand_open);
 
         // 3. Down onto obj
-        point_3d end = probcog_arm::ee_xyz(start);
+        point_3d end = fetch_arm::ee_xyz(start);
         end.at(2) = end.at(2) - (GRASP_TOP_OFFSET +
                                  GRASP_INTO_OBJ_OFFSET);
-        action down = probcog_arm::solve_ik(start, end);
+        action down = fetch_arm::solve_ik(start, end);
         plan.push_back(down);
 
         // 4. Close hand
@@ -248,17 +248,17 @@ std::vector<action> planner_interface::plan_grasp(pose start)
 
         // 5. Back up to grasp point
         action up = down;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
             up.at(i) *= -1;
         plan.push_back(up);
 
         // 6. Unspin wrist
         action unspin = spin;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
             unspin.at(i) *= -1;
         plan.push_back(unspin);
     }
-    else std::cout << "You're doing something wrong!!" << std::endl;
+    //else std::cout << "You're doing something wrong!!" << std::endl;
 
 #ifdef DEBUG_EXECUTION
     std::cout << "Made a grasp plan of " << plan.size()
@@ -273,13 +273,13 @@ std::vector<action> planner_interface::plan_drop(pose start)
     std::vector<action> plan;
 
     // Straight down drop
-    if (fabs(probcog_arm::ee_pitch(start) - -M_PI/2) < 0.1)
+    //if (fabs(fetch_arm::ee_pitch(start) - -M_PI/2) < 0.1)
     {
         // 1. Down for gentler drop
-        point_3d end = probcog_arm::ee_xyz(start);
+        point_3d end = fetch_arm::ee_xyz(start);
         end.at(2) = end.at(2) - (GRASP_TOP_OFFSET +
                                  GRASP_INTO_OBJ_OFFSET);;
-        action down = probcog_arm::solve_ik(start, end);
+        action down = fetch_arm::solve_ik(start, end);
         plan.push_back(down);
 
         // 2. Open hand
@@ -288,11 +288,11 @@ std::vector<action> planner_interface::plan_drop(pose start)
 
         // 3. Back up
         action up = down;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
             up.at(i) *= -1;
         plan.push_back(up);
     }
-    else std::cout << "You're doing something wrong!!" << std::endl;
+    //else std::cout << "You're doing something wrong!!" << std::endl;
 
 #ifdef DEBUG_EXECUTION
     std::cout << "Made a drop plan of " << plan.size()
@@ -352,7 +352,7 @@ void planner_interface::process_new_plan_command(const planner_command_t* comm)
         std::cout << std::endl
                   << "[PLANNER] Primitive size is " << big_prim_size
                   << std::endl;
-        probcog_arm::set_primitive_change(big_prim_size);
+        fetch_arm::set_primitive_change(big_prim_size);
 
         std::cout << "[PLANNER] Initiating a search to "
                   << arm_state::target[0] << ", "
@@ -378,8 +378,8 @@ void planner_interface::process_new_plan_command(const planner_command_t* comm)
 
         latest_request =
             search_request<arm_state, action>(arm_state(latest_start_pose),
-                                              probcog_arm::big_primitives(),
-                                              probcog_arm::small_primitives(),
+                                              fetch_arm::big_primitives(),
+                                              fetch_arm::small_primitives(),
                                               comm->time_limit,
                                               comm->hard_limit);
         current_plan_is_rrt = false;
@@ -448,7 +448,7 @@ void planner_interface::process_new_plan_command(const planner_command_t* comm)
 void planner_interface::forward_command()
 {
     for (int i = 0;
-         i < probcog_arm::get_num_joints(); i++)
+         i < fetch_arm::get_num_joints(); i++)
     {
         current_command.at(i) +=
             current_plan.at(current_command_index).at(i);
@@ -600,7 +600,7 @@ void planner_interface::handle_command_message(
         execute_cmd_id = comm->command_id;
         std::cout << "[CONTROLLER] Resetting the arm."
                   << std::endl << std::endl;
-        current_command = pose(probcog_arm::get_num_joints(), 0);
+        current_command = pose(fetch_arm::get_num_joints(), 0);
         current_plan.clear();
         current_plan_type = MOVE;
         current_command_index = -1;
@@ -629,12 +629,12 @@ void planner_interface::handle_status_message(
     const dynamixel_status_list_t* stats)
 {
     pose np;
-    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
         np.push_back(stats->statuses[i].position_radians);
     }
     float hand_status =
-        stats->statuses[probcog_arm::get_num_joints()].position_radians;
+        stats->statuses[fetch_arm::get_num_joints()].position_radians;
     if (np != arm_status) arm_status = np;
 
     lcm::LCM lcm;
@@ -674,13 +674,13 @@ void planner_interface::handle_status_message(
     if (task == WAITING_INITIAL)
     {
         dynamixel_command_list_t command;
-        command.len = probcog_arm::get_num_joints() + 1;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        command.len = fetch_arm::get_num_joints() + 1;
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
             dynamixel_command_t c;
             c.position_radians = 0;
-            c.speed = probcog_arm::get_default_speed(i);
-            c.max_torque = probcog_arm::get_default_torque(i);
+            c.speed = fetch_arm::get_default_speed(i);
+            c.max_torque = fetch_arm::get_default_torque(i);
             command.commands.push_back(c);
         }
 
@@ -695,7 +695,7 @@ void planner_interface::handle_status_message(
     if (task == EXECUTING || task == GRASPING)
     {
         bool done = true;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
             if (fabs(arm_status[i] - current_command[i]) > 0.01)
             {
@@ -805,19 +805,19 @@ void planner_interface::handle_status_message(
         }
 
         dynamixel_command_list_t command;
-        command.len = probcog_arm::get_num_joints() + 1;
-        for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+        command.len = fetch_arm::get_num_joints() + 1;
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
             dynamixel_command_t c;
             c.position_radians = current_command.at(i);
 #ifdef SLOW_SPEED // Will override Soar's requests
-            c.speed = probcog_arm::get_default_speed(i)*0.1;
+            c.speed = fetch_arm::get_default_speed(i)*0.1;
 #else
             c.speed = (MIN_PROP_SPEED + (1.f - MIN_PROP_SPEED) *
                        requested_speed) *
-                probcog_arm::get_default_speed(i);
+                fetch_arm::get_default_speed(i);
 #endif
-            c.max_torque = probcog_arm::get_default_torque(i);
+            c.max_torque = fetch_arm::get_default_torque(i);
             command.commands.push_back(c);
         }
 

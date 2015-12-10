@@ -137,18 +137,19 @@ bool collision_world::collision(pose arm_position, bool details)
     hand_objects_m->clear();
     base_objects_m->clear();
 
-    for (int i = 0; i < probcog_arm::get_num_joints(); i++)
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
-        fcl::Box* box = new
-            fcl::Box(probcog_arm::get_component_width(i),
-                     probcog_arm::get_component_width(i),
-                     probcog_arm::get_component_length(i));
+        fcl::Box* bounds = new
+            fcl::Box(fetch_arm::get_component_width(i),
+                     fetch_arm::get_component_width(i),
+                     fetch_arm::get_component_length(i));
 
         Eigen::Matrix4f trmat =
-            probcog_arm::joint_transform(i+1, arm_position)*
-            probcog_arm::translation_matrix(0,
-                                            0,
-                                            -probcog_arm::get_component_length(i)/2);
+            fetch_arm::joint_transform(i, arm_position)*
+            fetch_arm::translation_matrix(-fetch_arm::get_component_length(i)/2,
+                                          0,
+                                          0);
+        trmat *= fetch_arm::rotation_matrix(M_PI/2, Y_AXIS);
 
         fcl::Matrix3f rot(trmat(0, 0), trmat(0, 1), trmat(0, 2),
                           trmat(1, 0), trmat(1, 1), trmat(1, 2),
@@ -161,7 +162,7 @@ bool collision_world::collision(pose arm_position, bool details)
         od->type = "arm";
         od->color = "none";
         boost::shared_ptr<fcl::CollisionGeometry> cg =
-            boost::shared_ptr<fcl::CollisionGeometry>(box);
+            boost::shared_ptr<fcl::CollisionGeometry>(bounds);
         cg->setUserData((void*)od);
 
         fcl::CollisionObject* obj = new fcl::CollisionObject(cg, p);
@@ -172,34 +173,34 @@ bool collision_world::collision(pose arm_position, bool details)
     }
 
     // HAND
-    float width = std::max(probcog_arm::hand_width,
+    float width = std::max(fetch_arm::hand_width,
                            held_object_dims.at(1));
-    float len = (probcog_arm::hand_length + held_object_dims.at(2) -
+    float len = (fetch_arm::hand_length + held_object_dims.at(2) -
                  0.02);
 
     fcl::Box* box;
     if (has_held_object)
     {
-        box = new fcl::Box(width+0.01,
-                           probcog_arm::hand_height*2+0.01,
-                           len+0.01);
+        box = new fcl::Box(len+0.01,
+                           width+0.01,
+                           fetch_arm::hand_height*2+0.01);
     }
     else
     {
-        box = new fcl::Box(probcog_arm::hand_width+0.01,
-                           probcog_arm::hand_height*2+0.01,
-                           probcog_arm::hand_length+0.01);
+        box = new fcl::Box(fetch_arm::hand_length+0.01,
+                           fetch_arm::hand_width+0.01,
+                           fetch_arm::hand_height*2+0.01);
     }
 
-    int last_joint = probcog_arm::get_num_joints()-1;
+    int last_joint = fetch_arm::get_num_joints()-1;
     Eigen::Matrix4f trmat =
-        probcog_arm::joint_transform(last_joint,
+        fetch_arm::joint_transform(last_joint,
                                      arm_position)*
-        probcog_arm::rotation_matrix(arm_position.at(last_joint),
-                                     probcog_arm::get_joint_axis(last_joint))*
-        probcog_arm::translation_matrix(0,
-                                        0.02,
-                                        probcog_arm::hand_length/2);
+        fetch_arm::rotation_matrix(arm_position.at(last_joint),
+                                     fetch_arm::get_joint_axis(last_joint))*
+        fetch_arm::translation_matrix(fetch_arm::hand_length/2,
+                                      0,
+                                      0);
 
     fcl::Matrix3f rot(trmat(0, 0), trmat(0, 1), trmat(0, 2),
                       trmat(1, 0), trmat(1, 1), trmat(1, 2),
@@ -224,12 +225,14 @@ bool collision_world::collision(pose arm_position, bool details)
 
     // BASE
     fcl::Box* base_box = new
-        fcl::Box(0.065, 0.065, probcog_arm::base_height-0.02);
+        fcl::Box(0.1, 0.3, fetch_arm::base_offset[2]-0.02);
 
     fcl::Matrix3f brot(1, 0, 0,
                       0, 1, 0,
                       0, 0, 1);
-    fcl::Vec3f btrans(0, 0, probcog_arm::base_height/2 + 0.011);
+    fcl::Vec3f btrans(fetch_arm::base_offset[0],
+                      fetch_arm::base_offset[1],
+                      fetch_arm::base_offset[2]/2);
     fcl::Transform3f q = fcl::Transform3f(brot, btrans);
 
     object_data* od2 = new object_data();
@@ -322,7 +325,7 @@ arm_collision_boxes_t collision_world::arm_boxes(pose arm_position)
     arm_collision_boxes_t msg;
     msg.len = arm_objects_m->size();
 
-    for (int i = 0; i <= probcog_arm::get_num_joints()+1; i++)
+    for (int i = 0; i <= fetch_arm::get_num_joints()+1; i++)
     {
         bbox_info_t cur;
         cur.joint = i;
