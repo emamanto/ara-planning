@@ -7,7 +7,7 @@
 #include "fcl/broadphase/broadphase.h"
 #include "arm_collision_boxes_t.hpp"
 
-#include "ProbCogArm.h"
+#include "FetchArm.h"
 
 bool collision_function(fcl::CollisionObject* o1,
                         fcl::CollisionObject* o2, void* cdata);

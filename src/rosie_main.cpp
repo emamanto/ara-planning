@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    probcog_arm::INIT();
+    fetch_arm::INIT();
 
     planner_interface pi;
     lcm.subscribe("ARM_STATUS",
