@@ -26,8 +26,6 @@ public:
         current_command(fetch_arm::get_num_joints(), 0),
         current_command_index(0),
         searching(false) {
-        current_command.at(0) = M_PI/4;
-        current_command.at(1) = M_PI/4;
     };
     ~lcm_handler() {};
 

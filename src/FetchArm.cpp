@@ -20,6 +20,19 @@ pose subtract(pose from, pose minus)
     return result;
 }
 
+float mod_pi(float angle)
+{
+    while (angle > M_PI)
+    {
+        angle -= M_PI;
+    }
+    while (angle < -M_PI)
+    {
+        angle += M_PI;
+    }
+    return angle;
+}
+
 // This is a hard-coded mess but it describes the big probcog arm
 void fetch_arm::INIT()
 {
@@ -50,10 +63,10 @@ void fetch_arm::INIT()
     configuration.push_back(shoulder_lift);
 
     joint upperarm_roll;
-    upperarm_roll.type = CONTINUOUS;
+    upperarm_roll.type = REVOLUTE;
     upperarm_roll.around = X_AXIS;
-    upperarm_roll.min = 0;
-    upperarm_roll.max = 0;
+    upperarm_roll.min = -M_PI;
+    upperarm_roll.max = M_PI;
     upperarm_roll.length = 0.133;
     upperarm_roll.width = 0.08;
     upperarm_roll.default_speed = 1.5;
@@ -72,10 +85,10 @@ void fetch_arm::INIT()
     configuration.push_back(elbow_flex);
 
     joint forearm_roll;
-    forearm_roll.type = CONTINUOUS;
+    forearm_roll.type = REVOLUTE;
     forearm_roll.around = X_AXIS;
-    forearm_roll.min = 0;
-    forearm_roll.max = 0;
+    forearm_roll.min = -M_PI;
+    forearm_roll.max = M_PI;
     forearm_roll.length = 0.1245;
     forearm_roll.width = 0.08;
     forearm_roll.default_speed = 1.5;
@@ -94,10 +107,10 @@ void fetch_arm::INIT()
     configuration.push_back(wrist_flex);
 
     joint wrist_roll;
-    wrist_roll.type = CONTINUOUS;
+    wrist_roll.type = REVOLUTE;
     wrist_roll.around = X_AXIS;
-    wrist_roll.min = 0;
-    wrist_roll.max = 0;
+    wrist_roll.min = -M_PI;
+    wrist_roll.max = M_PI;
     // Ignoring fixed gripper joint, adding here
     wrist_roll.length = 0.1485;
     wrist_roll.width = 0.08;
@@ -107,7 +120,7 @@ void fetch_arm::INIT()
 
     // Discounting hand joint for now, treating as stick on end
 
-    set_primitive_change(6.f);
+    set_primitive_change(M_PI/12);
 }
 
 Eigen::Matrix4f fetch_arm::joint_transform(int joint_number,
@@ -143,11 +156,8 @@ point_3d fetch_arm::ee_xyz(pose p)
                                                 0,
                                                 0)*
                              rotation_matrix(p.at(num_joints-1),
-                                             get_joint_axis(num_joints-1))*
-                             translation_matrix(hand_length,0,0));
+                                             get_joint_axis(num_joints-1)));
 
-    std::cout << "EE XYZ: " << xform(0,3) << ", " << xform(1,3)
-              << ", " << xform(2,3) << std::endl;
     point_3d xyz;
     xyz.push_back(xform(0,3));
     xyz.push_back(xform(1,3));
@@ -330,6 +340,7 @@ pose fetch_arm::apply(pose from, action act)
     for (int i = 0; i < num_joints; i++)
     {
         end.at(i) += act.at(i);
+        //end.at(i) = mod_pi(end.at(i));
     }
     return end;
 }
@@ -345,29 +356,24 @@ pose fetch_arm::apply(pose from, std::vector<action> plan)
     return end;
 }
 
-void fetch_arm::set_primitive_change(float big_deg)
+void fetch_arm::set_primitive_change(float big_rad)
 {
     big_prims.clear();
     small_prims.clear();
 
-    // Skip the last joint, which is wrist yaw
-    // This will be fixed during search from now on
-    for (int i = 0; i < num_joints-1; i++)
+    for (int i = 0; i < num_joints; i++)
     {
         // change here if desired
-        float big = big_deg*M_PI/180.f;
+        float big = big_rad;
         float small = big/2.f;
 
-        if (i < 3)
-        {
-            action bp = action(num_joints, 0);
-            bp.at(i) = big;
-            big_prims.push_back(bp);
+        action bp = action(num_joints, 0);
+        bp.at(i) = big;
+        big_prims.push_back(bp);
 
-            action bn = action(num_joints, 0);
-            bn.at(i) = -big;
-            big_prims.push_back(bn);
-        }
+        action bn = action(num_joints, 0);
+        bn.at(i) = -big;
+        big_prims.push_back(bn);
 
         action sp = action(num_joints, 0);
         sp.at(i) = small;
