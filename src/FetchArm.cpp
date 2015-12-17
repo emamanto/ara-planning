@@ -33,7 +33,6 @@ float mod_pi(float angle)
     return angle;
 }
 
-// This is a hard-coded mess but it describes the big probcog arm
 void fetch_arm::INIT()
 {
     base_offset.push_back(-0.55);
