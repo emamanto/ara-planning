@@ -268,6 +268,7 @@ int main(int argc, char* argv[])
     }
 
     fetch_arm::INIT();
+    collision_world::clear();
 
     lcm_handler handler;
     lcm.subscribe("ARM_STATUS", &lcm_handler::handle_status_message,

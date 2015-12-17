@@ -179,17 +179,18 @@ bool collision_world::collision(pose arm_position, bool details)
                  0.02);
 
     fcl::Box* box;
-    if (has_held_object)
-    {
-        box = new fcl::Box(len+0.01,
-                           width+0.01,
-                           fetch_arm::hand_height*2+0.01);
-    }
-    else
+    // if (has_held_object)
+    // {
+    //     box = new fcl::Box(len+0.01,
+    //                        width+0.01,
+    //                        fetch_arm::hand_height*2+0.01);
+    // }
+    //else
+    // HAND OPEN VS CLOSED XXX
     {
         box = new fcl::Box(fetch_arm::hand_length+0.01,
                            fetch_arm::hand_width+0.01,
-                           fetch_arm::hand_height*2+0.01);
+                           fetch_arm::hand_height+0.01);
     }
 
     int last_joint = fetch_arm::get_num_joints()-1;

@@ -1,7 +1,7 @@
 #include "ProbCogSearchStates.h"
 #include <iostream>
-#define D_SMALL 0.15
-#define D_IK 0.1
+#define D_SMALL 0.3
+#define D_IK 0.2
 
 point_3d arm_state::target = point_3d(3, 0);
 float arm_state::target_pitch = 0.f;
@@ -46,7 +46,7 @@ float arm_state::cost(action a)
 bool arm_state::valid() const
 {
     if(!fetch_arm::is_valid(position)) return false;
-    //if(collision_world::collision(position)) return false;
+    if(collision_world::collision(position)) return false;
     return true;
 }
 
