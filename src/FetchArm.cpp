@@ -63,7 +63,7 @@ void fetch_arm::INIT()
     configuration.push_back(shoulder_lift);
 
     joint upperarm_roll;
-    upperarm_roll.type = REVOLUTE;
+    upperarm_roll.type = CONTINUOUS;
     upperarm_roll.around = X_AXIS;
     upperarm_roll.min = -M_PI;
     upperarm_roll.max = M_PI;
@@ -85,7 +85,7 @@ void fetch_arm::INIT()
     configuration.push_back(elbow_flex);
 
     joint forearm_roll;
-    forearm_roll.type = REVOLUTE;
+    forearm_roll.type = CONTINUOUS;
     forearm_roll.around = X_AXIS;
     forearm_roll.min = -M_PI;
     forearm_roll.max = M_PI;
@@ -107,7 +107,7 @@ void fetch_arm::INIT()
     configuration.push_back(wrist_flex);
 
     joint wrist_roll;
-    wrist_roll.type = REVOLUTE;
+    wrist_roll.type = CONTINUOUS;
     wrist_roll.around = X_AXIS;
     wrist_roll.min = -M_PI;
     wrist_roll.max = M_PI;
@@ -340,7 +340,8 @@ pose fetch_arm::apply(pose from, action act)
     for (int i = 0; i < num_joints; i++)
     {
         end.at(i) += act.at(i);
-        //end.at(i) = mod_pi(end.at(i));
+        if (configuration.at(i).type == CONTINUOUS)
+            end.at(i) = mod_pi(end.at(i));
     }
     return end;
 }
@@ -361,7 +362,8 @@ void fetch_arm::set_primitive_change(float big_rad)
     big_prims.clear();
     small_prims.clear();
 
-    for (int i = 0; i < num_joints; i++)
+    // Ignore wrist roll
+    for (int i = 0; i < num_joints-1; i++)
     {
         // change here if desired
         float big = big_rad;
