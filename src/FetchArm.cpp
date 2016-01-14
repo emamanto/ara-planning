@@ -20,6 +20,43 @@ pose subtract(pose from, pose minus)
     return result;
 }
 
+point_3d translation_from_xform(Eigen::Matrix4f xform)
+{
+    point_3d t;
+    t.push_back(xform(0, 3));
+    t.push_back(xform(1, 3));
+    t.push_back(xform(2, 3));
+    return t;
+}
+
+// XZY ORDER--THIS IS WEIRD DON'T FORGET
+// Ripped from threejs
+point_3d eulers_from_xform(Eigen::Matrix4f xform)
+{
+    float m12 = xform(0, 1);
+    if (m12 < -1) m12 = -1;
+    if (m12 > 1) m12 = 1;
+    float z = asin(-m12);
+
+    float x, y;
+    if (fabs(m12) < 0.99999)
+    {
+        x = atan2(xform(2, 1), xform(1, 1));
+        y = atan2(xform(0, 2), xform(0, 0));
+    }
+    else
+    {
+        x = atan2(-xform(1, 2), xform(2, 2));
+        y = 0;
+    }
+
+    orientation r;
+    r.push_back(x);
+    r.push_back(y);
+    r.push_back(z);
+    return r;
+}
+
 float mod_pi(float angle)
 {
     while (angle > M_PI)
@@ -169,15 +206,7 @@ orientation fetch_arm::ee_rpy(pose p)
     Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
                              translation_matrix(0, 0, hand_length));
 
-    orientation rpy;
-    float r = atan2(xform(2,1), xform(2,2));
-    float pi = atan2(-xform(2,0), sqrt(xform(0,0)*xform(0,0) +
-                                       xform(1,0)*xform(1,0)));
-    float y = atan2(xform(1,0), xform(0,0));
-    rpy.push_back(r);
-    rpy.push_back(pi);
-    rpy.push_back(y);
-    return rpy;
+    return eulers_from_xform(xform);
 }
 
 // float fetch_arm::ee_pitch(pose p)
@@ -203,11 +232,8 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
 {
     action a(num_joints, 0.f);
 
-    point_3d target_pos;
-    target_pos.push_back(xform(0, 3));
-    target_pos.push_back(xform(1, 3));
-    target_pos.push_back(xform(2, 3));
-    orientation target_or;
+    point_3d target_pos = translation_from_xform(xform);
+    orientation target_or = eulers_from_xform(xform);
 
     Eigen::MatrixXf jacobian(6, num_joints);
     pose cur_joints = from;
@@ -220,27 +246,63 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
     while (true)
     {
         i++;
-        fxyz = ee_xyz(cur_joints);
-        if (sqrt(pow(to.at(0) - fxyz.at(0), 2) +
-                 pow(to.at(1) - fxyz.at(1), 2) +
-                 pow(to.at(2) - fxyz.at(2), 2)) < 0.001 || i > 1000)
+        cur_xyz = ee_xyz(cur_joints);
+        cur_rpy = ee_rpy(cur_joints);
+        if ((sqrt(pow(target_pos.at(0) - cur_xyz.at(0), 2) +
+                  pow(target_pos.at(1) - cur_xyz.at(1), 2) +
+                  pow(target_pos.at(2) - cur_xyz.at(2), 2)) < 0.001 &&
+             fabs(cur_rpy.at(1) - target_or.at(1)) < 0.01))
         {
-            break;
+            return a;
         }
+        if (i > 500) break;
 
+        // Building the Jacobian
         for (int k = 0; k < num_joints; k++)
         {
-            float delta = cur_joints.at(k)*pow(10, -2);
-            if ( delta < pow(10, -4)) delta = pow(10, -4);
-            pose posd = cur_joints;
-            posd.at(k) = cur_joints.at(k) + delta;
-            point_3d xyz_d = ee_xyz(posd);
-            fk_jacobian(0, k) = (xyz_d.at(0) - fxyz.at(0)) / delta;
-            fk_jacobian(1, k) = (xyz_d.at(1) - fxyz.at(1)) / delta;
-            fk_jacobian(2, k) = (xyz_d.at(2) - fxyz.at(2)) / delta;
+            Eigen::Matrix4f joint_xform = joint_transform(k, cur_joints);
+            Eigen::Vector4f axis_vec;
+            axis a = fetch_arm::get_joint_axis(k);
+            if (a == X_AXIS)
+            {
+                a << 1, 0, 0, 1;
+            }
+            else if (a == Y_AXIS)
+            {
+                a << 0, 1, 0, 1;
+            }
+            else // Z_AXIS
+            {
+                a << 0, 0, 1, 1;
+            }
+
+            Eigen::Vector4f axis_in_world_4 = joint_xform*axis_vec;
+            Eigen::Vector3f axis_in_world;
+            axis_in_world << axis_in_world_4(0),
+                axis_in_world_4(1),
+                axis_in_world_4(2);
+            Eigen::Vector3f joint_origin;
+            joint_origin << joint_xform(0, 3),
+                joint_xform(1, 3),
+                joint_xform(2, 3);
+
+            Eigen::Vector3f o_diff;
+            o_diff << cur_xyz.at(0) - joint_origin(0),
+                cur_xyz.at(1) - joint_origin(1),
+                cur_xyz.at(2) - joint_origin(2);
+
+            Eigen::Vector3f linear = axis_in_world.cross(o_diff);
+            for (int m = 0; m < 3; m++)
+            {
+                jacobian(m, k) = linear(m);
+            }
+            for (int n = 3; n < 6; n++)
+            {
+                jacobian(n, k) = axis_in_world(n);
+            }
         }
 
-        Eigen::JacobiSVD<Eigen::MatrixXf> svd(fk_jacobian,
+        Eigen::JacobiSVD<Eigen::MatrixXf> svd(jacobian,
                                               (Eigen::ComputeFullU |
                                                Eigen::ComputeFullV));
 
@@ -248,21 +310,30 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
             Eigen::MatrixXf::Zero(3, num_joints);
         sigma_pseudoinv.diagonal() = svd.singularValues();
 
-        if (sigma_pseudoinv(0, 0) < 0.000001 ||
-            sigma_pseudoinv(1, 1) < 0.000001 ||
-            sigma_pseudoinv(2, 2) < 0.000001) break;
+        bool stop = false;
+        for (int k = 0; k < 6; k++)
+        {
+            if (sigma_pseudoinv(k, k) < 0.000001) stop = true;
+            sigma_pseudoinv(k, k) = 1.f/sigma_pseudoinv(k, k);
+        }
+        if (stop)
+        {
+            std::cout << "Math problem with Jacobian!" << std::endl;
+            break;
+        }
 
-        sigma_pseudoinv(0, 0) = 1.f/sigma_pseudoinv(0, 0);
-        sigma_pseudoinv(1, 1) = 1.f/sigma_pseudoinv(1, 1);
-        sigma_pseudoinv(2, 2) = 1.f/sigma_pseudoinv(2, 2);
         sigma_pseudoinv.transposeInPlace();
 
         Eigen::MatrixXf jacobian_plus =
                                     svd.matrixV()*sigma_pseudoinv*(svd.matrixU().transpose());
 
-        Eigen::Vector3f dp;
-        dp << (to.at(0) - fxyz.at(0)), (to.at(1) - fxyz.at(1)),
-            (to.at(2) - fxyz.at(2));
+        Eigen::VectorXf dp;
+        dp << (target_pos.at(0) - cur_xyz.at(0)),
+            (target_pos.at(1) - cur_xyz.at(1)),
+            (target_pos.at(2) - cur_xyz.at(2)),
+            (target_or.at(0) - cur_rpy.at(0)),
+            (target_or.at(1) - cur_rpy.at(1)),
+            (target_or.at(2) - cur_rpy.at(2));
         joint_change = jacobian_plus*dp;
         joint_change = 0.1*joint_change;
 
@@ -273,9 +344,6 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
         }
     }
 
-    if (sqrt(pow(to.at(0) - fxyz.at(0), 2) +
-             pow(to.at(1) - fxyz.at(1), 2) +
-             pow(to.at(2) - fxyz.at(2), 2)) < 0.01) return a;
     std::cout << "Failed IK" << std::endl;
     return action(num_joints, 0);
 }

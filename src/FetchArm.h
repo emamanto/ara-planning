@@ -26,6 +26,8 @@ typedef std::vector<float> orientation;
 typedef std::vector<float> action;
 
 pose subtract(pose from, pose minus);
+point_3d translation_from_xform(Eigen::Matrix4f xform);
+orientation eulers_from_xform(Eigen::Matrix4f xform);
 
 class fetch_arm
 {
@@ -47,7 +49,7 @@ public:
 
     static float ee_dist_to(pose from, point_3d to);
 
-    static action solve_ik(pose from, Matrix4f xform);
+    static action solve_ik(pose from, Eigen::Matrix4f xform);
 
     static float get_joint_max(int joint_number)
     { return configuration.at(joint_number).max; }

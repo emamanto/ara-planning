@@ -64,7 +64,13 @@ bool arm_state::use_finisher() const
 
 action arm_state::compute_finisher() const
 {
-    action xyz = fetch_arm::solve_ik(position, target);
+    Eigen::Matrix4f target_xform =
+        fetch_arm::translation_matrix(target.at(0),
+                                      target.at(1),
+                                      target.at(2));
+    target_xform *= fetch_arm::rotation_matrix(M_PI/2, Y_AXIS);
+
+    action xyz = fetch_arm::solve_ik(position, target_xform);
     //if (!pitch_matters)
     return xyz;
 
@@ -87,8 +93,7 @@ action arm_state::compute_finisher() const
 bool arm_state::is_goal() const
 {
     if (target_distance() > 0.01) return false;
-    // if (fabs(fetch_arm::ee_pitch(position) - target_pitch) > 0.01
-    //     && pitch_matters) return false;
+    if (fabs(M_PI/2 - fetch_arm::ee_rpy(position).at(1)) > 0.01) return false;
     else return true;
 }
 
