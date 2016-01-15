@@ -26,9 +26,9 @@ public:
         current_command(),
         current_command_index(0),
         searching(false) {
-        current_command.push_back(M_PI/4);
-        current_command.push_back(M_PI/3);
-        current_command.push_back(-M_PI/4);
+        current_command.push_back(M_PI/8);
+        current_command.push_back(M_PI/2);
+        current_command.push_back(-M_PI/2 + M_PI/8);
         current_command.push_back(M_PI/2);
         current_command.push_back(0);
         current_command.push_back(M_PI/2);
