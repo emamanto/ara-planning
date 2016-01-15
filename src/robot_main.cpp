@@ -223,7 +223,7 @@ public:
 #else
         arm_state::target = goal;
         arm_state::pitch_matters = true;
-        arm_state::target_pitch = -M_PI/2.f;
+        //arm_state::target_pitch = -M_PI/2.f;
         std::vector<search_result<arm_state, action> > latest_search;
 
         search_request<arm_state, action> req(arm_state(status),
@@ -234,6 +234,7 @@ public:
 
 
         arastar<arm_state, action>(req);
+
         latest_search = req.copy_solutions();
         current_plan = latest_search.at(latest_search.size()-1).path;
         current_plan = shortcut<arm_state, action>(current_plan,

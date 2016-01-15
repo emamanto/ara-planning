@@ -248,6 +248,7 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
         i++;
         cur_xyz = ee_xyz(cur_joints);
         cur_rpy = ee_rpy(cur_joints);
+
         if ((sqrt(pow(target_pos.at(0) - cur_xyz.at(0), 2) +
                   pow(target_pos.at(1) - cur_xyz.at(1), 2) +
                   pow(target_pos.at(2) - cur_xyz.at(2), 2)) < 0.001 &&
@@ -261,19 +262,20 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
         for (int k = 0; k < num_joints; k++)
         {
             Eigen::Matrix4f joint_xform = joint_transform(k, cur_joints);
+
             Eigen::Vector4f axis_vec;
             axis a = fetch_arm::get_joint_axis(k);
             if (a == X_AXIS)
             {
-                a << 1, 0, 0, 1;
+                axis_vec << 1, 0, 0, 1;
             }
             else if (a == Y_AXIS)
             {
-                a << 0, 1, 0, 1;
+                axis_vec << 0, 1, 0, 1;
             }
             else // Z_AXIS
             {
-                a << 0, 0, 1, 1;
+                axis_vec << 0, 0, 1, 1;
             }
 
             Eigen::Vector4f axis_in_world_4 = joint_xform*axis_vec;
@@ -281,6 +283,7 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
             axis_in_world << axis_in_world_4(0),
                 axis_in_world_4(1),
                 axis_in_world_4(2);
+
             Eigen::Vector3f joint_origin;
             joint_origin << joint_xform(0, 3),
                 joint_xform(1, 3),
@@ -298,7 +301,7 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
             }
             for (int n = 3; n < 6; n++)
             {
-                jacobian(n, k) = axis_in_world(n);
+                jacobian(n, k) = axis_in_world(n-3);
             }
         }
 
@@ -307,18 +310,21 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
                                                Eigen::ComputeFullV));
 
         Eigen::MatrixXf sigma_pseudoinv =
-            Eigen::MatrixXf::Zero(3, num_joints);
+            Eigen::MatrixXf::Zero(6, num_joints);
         sigma_pseudoinv.diagonal() = svd.singularValues();
 
         bool stop = false;
         for (int k = 0; k < 6; k++)
         {
-            if (sigma_pseudoinv(k, k) < 0.000001) stop = true;
+            if (sigma_pseudoinv(k, k) < 0.000001)
+            {
+                stop = true;
+                break;
+            }
             sigma_pseudoinv(k, k) = 1.f/sigma_pseudoinv(k, k);
         }
         if (stop)
         {
-            std::cout << "Math problem with Jacobian!" << std::endl;
             break;
         }
 
@@ -327,13 +333,14 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
         Eigen::MatrixXf jacobian_plus =
                                     svd.matrixV()*sigma_pseudoinv*(svd.matrixU().transpose());
 
-        Eigen::VectorXf dp;
+        Eigen::Matrix<float, 6, 1> dp;
         dp << (target_pos.at(0) - cur_xyz.at(0)),
             (target_pos.at(1) - cur_xyz.at(1)),
             (target_pos.at(2) - cur_xyz.at(2)),
             (target_or.at(0) - cur_rpy.at(0)),
             (target_or.at(1) - cur_rpy.at(1)),
             (target_or.at(2) - cur_rpy.at(2));
+
         joint_change = jacobian_plus*dp;
         joint_change = 0.1*joint_change;
 
