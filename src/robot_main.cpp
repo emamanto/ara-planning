@@ -50,9 +50,21 @@ public:
         }
         if (np != status) status = np;
 
-        if (collision_world::collision(status))
+        if (collision_world::collision(status, true))
         {
-            std::cout << "COLLISION" << std::endl;
+            std::cout << "There are "
+                      << (collision_world::num_collisions())
+                      << " collisions: ";
+                for (int i = 0;
+                     i < collision_world::num_collisions(); i++)
+                {
+                    collision_pair pr = collision_world::get_collision_pair(i);
+                    std::cout << pr.first.type << ", "
+                              << pr.first.color << " + "
+                              << pr.second.type << ", "
+                              << pr.second.color << " ";
+                }
+            std::cout << std::endl;
         }
 
 #ifdef PUBLISH_COLLISION_MODEL

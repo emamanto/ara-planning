@@ -136,6 +136,7 @@ bool collision_world::collision(pose arm_position, bool details)
     arm_objects_m->clear();
     hand_objects_m->clear();
     base_objects_m->clear();
+    colliding.clear();
 
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
@@ -169,15 +170,12 @@ bool collision_world::collision(pose arm_position, bool details)
         arm_objects_m->registerObject(obj);
 
         if (i < 2) base_objects_m->registerObject(obj);
-        if (i > 2) hand_objects_m->registerObject(obj);
+        if (i > 4) hand_objects_m->registerObject(obj);
     }
 
     // HAND
-    float width = std::max(fetch_arm::hand_width,
-                           held_object_dims.at(1));
-    float len = (fetch_arm::hand_length + held_object_dims.at(2) -
-                 0.02);
-
+    float width = fetch_arm::hand_width;
+    float len = fetch_arm::hand_length;
     fcl::Box* box;
     // if (has_held_object)
     // {
@@ -248,7 +246,10 @@ bool collision_world::collision(pose arm_position, bool details)
         fcl::CollisionObject(cg2, q);
 
     base_objects_m->registerObject(bobj);
-    arm_objects_m->registerObject(bobj);
+    // XXX
+    // If I don't add the base to arm_objects_m, there is a segfault.
+    // WHYYYY?
+    //arm_objects_m->registerObject(bobj);
 
     // Self-collision check
     collision_data self_data;
@@ -265,7 +266,9 @@ bool collision_world::collision(pose arm_position, bool details)
 
     // end BASE
 
-    // std::cout << "Checking for collision against "
+    // std::cout << "Checking for collision of "
+    //           << arm_objects_m->size()
+    //           << " arm objs against "
     //           << world_objects_m->size() << " world objs"
     //           << std::endl;
 
