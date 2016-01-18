@@ -8,7 +8,7 @@
 #include "Search.h"
 #include "ProbCogArmCollision.h"
 #include "Shortcut.h"
-#include "RRTStarPlanner.h"
+//#include "RRTStarPlanner.h"
 #include "dynamixel_status_list_t.hpp"
 #include "dynamixel_command_list_t.hpp"
 #include "arm_collision_boxes_t.hpp"
