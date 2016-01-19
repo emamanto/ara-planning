@@ -72,7 +72,7 @@ float mod_pi(float angle)
 
 void fetch_arm::INIT()
 {
-    base_offset.push_back(-0.4);
+    base_offset.push_back(-0.5);
     base_offset.push_back(0);
     base_offset.push_back(0.5);
 

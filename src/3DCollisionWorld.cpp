@@ -224,14 +224,14 @@ bool collision_world::collision(pose arm_position, bool details)
 
     // BASE
     fcl::Box* base_box = new
-        fcl::Box(0.1, 0.3, fetch_arm::base_offset[2]-0.02);
+        fcl::Box(0.1, 0.3, fetch_arm::base_offset[2]-0.07);
 
     fcl::Matrix3f brot(1, 0, 0,
                       0, 1, 0,
                       0, 0, 1);
     fcl::Vec3f btrans(fetch_arm::base_offset[0],
                       fetch_arm::base_offset[1],
-                      fetch_arm::base_offset[2]/2);
+                      fetch_arm::base_offset[2]/2 + 0.05);
     fcl::Transform3f q = fcl::Transform3f(brot, btrans);
 
     object_data* od2 = new object_data();
@@ -240,16 +240,13 @@ bool collision_world::collision(pose arm_position, bool details)
     od2->color = "none";
     boost::shared_ptr<fcl::CollisionGeometry> cg2 =
         boost::shared_ptr<fcl::CollisionGeometry>(base_box);
-    cg2->setUserData((void*)od);
+    cg2->setUserData((void*)od2);
 
     fcl::CollisionObject* bobj = new
         fcl::CollisionObject(cg2, q);
 
     base_objects_m->registerObject(bobj);
-    // XXX
-    // If I don't add the base to arm_objects_m, there is a segfault.
-    // WHYYYY?
-    //arm_objects_m->registerObject(bobj);
+    arm_objects_m->registerObject(bobj);
 
     // Self-collision check
     collision_data self_data;
