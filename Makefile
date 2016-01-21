@@ -10,8 +10,9 @@ MAZE_EXECUTABLE=maze_ara
 ROBOT_EXECUTABLE=robot_ara
 ROSIE_EXECUTABLE=rosie_ara
 TEST_EXECUTABLE=tests
+EXPERIMENT_EXECUTABLE=experiment
 
-.phony: build build_maze build_robot build_rosie clean cfg run maze robot rosie test build_test
+.phony: build build_maze build_robot build_rosie clean cfg run maze robot rosie test build_test exp build_exp
 
 build_rosie: $(GEN_MAKEFILE)
 	     make $(MAKE_FLAGS) -C $(BIN_DIR) $(ROSIE_EXECUTABLE)
@@ -27,6 +28,9 @@ build_robot: $(GEN_MAKEFILE)
 
 build_test: $(GEN_MAKEFILE)
 	     make $(MAKE_FLAGS) -C $(BIN_DIR) $(TEST_EXECUTABLE)
+
+build_exp: $(GEN_MAKEFILE)
+	     make $(MAKE_FLAGS) -C $(BIN_DIR) $(EXPERIMENT_EXECUTABLE)
 
 $(GEN_MAKEFILE):
 	mkdir -p $(BIN_DIR); \
@@ -49,6 +53,8 @@ $(ROSIE_EXECUTABLE): build_rosie
 
 $(TEST_EXECUTABLE): build_test
 
+$(EXPERIMENT_EXECUTABLE): build_exp
+
 run: $(EXECUTABLE)
 	$(BIN_DIR)/$(EXECUTABLE)
 
@@ -63,3 +69,6 @@ rosie: $(ROSIE_EXECUTABLE)
 
 test: $(TEST_EXECUTABLE)
 	$(BIN_DIR)/$(TEST_EXECUTABLE)
+
+exp: $(EXPERIMENT_EXECUTABLE)
+	$(BIN_DIR)/$(EXPERIMENT_EXECUTABLE)

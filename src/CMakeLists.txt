@@ -47,6 +47,12 @@ set( rosie_srcs rosie_main.cpp
   ProbCogArmCollision.cpp
   RRTStarPlanner.cpp )
 
+set( exp_srcs experiment_main.cpp
+  FetchArm.cpp
+  ProbCogSearchStates.cpp
+  3DCollisionWorld.cpp
+  ProbCogArmCollision.cpp )
+
 set( headers ArmSim.h
   Visualizer.h
   ArmControlPanel.h
@@ -98,6 +104,18 @@ add_executable(robot_ara
 
 target_link_libraries(
   robot_ara
+  lcm
+  fcl
+  #ompl
+  ${Boost_LIBRARIES}
+)
+
+add_executable(experiment
+  ${exp_srcs}
+  )
+
+target_link_libraries(
+  experiment
   lcm
   fcl
   #ompl

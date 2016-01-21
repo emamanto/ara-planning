@@ -1,0 +1,320 @@
+#include <lcm/lcm-cpp.hpp>
+#include <iostream>
+#include <unistd.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "ProbCogSearchStates.h"
+#include "Search.h"
+#include "ProbCogArmCollision.h"
+#include "Shortcut.h"
+#include "dynamixel_status_list_t.hpp"
+#include "dynamixel_command_list_t.hpp"
+#include "arm_collision_boxes_t.hpp"
+#include "observations_t.hpp"
+
+//#define PUBLISH_COLLISION_MODEL
+
+class experiment_handler
+{
+public:
+    pose apos;
+    pose dpos;
+    std::vector<pose> current_plan;
+    int plan_index;
+    bool searching;
+    int num_collisions;
+    std::vector<object_data_t> latest_objects;
+
+    experiment_handler() :
+        dpos(),
+        plan_index(0),
+        searching(false),
+        num_collisions(0)
+    {
+        dpos.push_back(M_PI/8);
+        dpos.push_back(M_PI/2);
+        dpos.push_back(-M_PI/2 + M_PI/8);
+        dpos.push_back(M_PI/2);
+        dpos.push_back(0);
+        dpos.push_back(M_PI/2);
+        dpos.push_back(0);
+    };
+
+    ~experiment_handler() {};
+
+    void handle_status_message(const lcm::ReceiveBuffer* rbuf,
+                               const std::string& channel,
+                               const dynamixel_status_list_t* stats)
+    {
+        if (searching) return;
+        lcm::LCM lcm;
+
+        // Update pose from status
+        pose np;
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+        {
+            np.push_back(stats->statuses[i].position_radians);
+        }
+        if (np != apos) apos = np;
+
+        // Check collision status based on new pose
+        if (collision_world::collision(apos, true))
+        {
+            if (num_collisions < collision_world::num_collisions())
+            {
+                int new_collisions = collision_world::num_collisions() - num_collisions;
+                std::cout << "There are "
+                          << new_collisions
+                          << " new collisions. All current collisions: ";
+                for (int i = 0;
+                     i < collision_world::num_collisions(); i++)
+                {
+                    collision_pair pr = collision_world::get_collision_pair(i);
+                    std::cout << pr.first.type << ", "
+                              << pr.first.color << " + "
+                              << pr.second.type << ", "
+                              << pr.second.color << " ";
+                }
+                std::cout << std::endl;
+            }
+            num_collisions = collision_world::num_collisions();
+        }
+        else
+        {
+            num_collisions = 0;
+        }
+
+#ifdef PUBLISH_COLLISION_MODEL
+        arm_collision_boxes_t arm_msg = collision_world::arm_boxes(apos);
+        lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
+#endif
+
+        bool done = true;
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+        {
+            if (fabs(apos[i] - dpos[i]) > 0.01)
+            {
+                done = false;
+                break;
+            }
+        }
+
+        if (done && current_plan.size() > 0 &&
+            plan_index < current_plan.size()-1)
+        {
+            plan_index++;
+            for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+            {
+                dpos.at(i) +=
+                    current_plan.at(plan_index).at(i);
+            }
+        }
+
+        dynamixel_command_list_t command;
+        command.len = fetch_arm::get_num_joints() + 2;
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+        {
+            dynamixel_command_t c;
+            c.position_radians = dpos.at(i);
+            c.max_torque = fetch_arm::get_default_torque(i);
+            command.commands.push_back(c);
+        }
+
+        dynamixel_command_t hand;
+        hand.position_radians = 0;
+        hand.speed = 0.15;
+        hand.max_torque = 0.5;
+        command.commands.push_back(hand);
+        command.commands.push_back(hand);
+
+        lcm.publish("ARM_COMMAND", &command);
+    }
+
+    void handle_observations_message(const lcm::ReceiveBuffer* rbuf,
+                                     const std::string& channel,
+                                     const observations_t* obs)
+    {
+        latest_objects = obs->observations;
+        object_data od;
+        collision_world::clear();
+        for (std::vector<object_data_t>::iterator i =
+                 latest_objects.begin();
+             i != latest_objects.end(); i++)
+        {
+            collision_world::add_object(i->bbox_dim,
+                                        i->bbox_xyzrpy,
+                                        od);
+        }
+    }
+
+//     void handle_target_message(const lcm::ReceiveBuffer* rbuf,
+//                                const std::string& channel,
+//                                const search_target_t* targ)
+//     {
+//         searching = true;
+
+//         lcm::LCM lcm;
+//         point_3d goal;
+//         for (int i = 0; i < 3; i++)
+//         {
+//             goal.push_back(targ->target[i]);
+//         }
+
+//         //////////////////////////
+//         std::cout << "=== STARTING SEARCH ===" << std::endl;
+// #ifdef USE_RRTSTAR
+//         bool valid_sol = false;
+//         pose end_pose;
+//         pose ik_start = status;
+//         int iterations = 0;
+
+//         while (!valid_sol)
+//         {
+//             iterations++;
+//             if (iterations > 500) break;
+//             action ik_sol = fetch_arm::solve_ik(ik_start, goal);
+//             for (action::iterator i = ik_sol.begin();
+//                  i != ik_sol.end(); i++)
+//             {
+//                 if (*i != 0)
+//                 {
+//                     valid_sol = true;
+//                     break;
+//                 }
+//             }
+
+//             end_pose = fetch_arm::apply(ik_start, ik_sol);
+//             end_pose.at(fetch_arm::get_num_joints() - 1) = 0;
+//             action grip_sol = fetch_arm::solve_gripper(end_pose, -M_PI/2.f);
+//             valid_sol = false;
+//             for (action::iterator i = grip_sol.begin();
+//                  i != grip_sol.end(); i++)
+//             {
+//                 if (*i != 0)
+//                 {
+//                     valid_sol = true;
+//                     break;
+//                 }
+//             }
+//             end_pose = fetch_arm::apply(end_pose, grip_sol);
+
+//             valid_sol = (arm_state(end_pose).valid() &&
+//                          (fetch_arm::ee_dist_to(end_pose, goal)
+//                           < 0.01));
+
+//             if (valid_sol)
+//             {
+//                 std::cout << "Got an end pose on iteration "
+//                           << iterations << std::endl;
+//                 break;
+//             }
+
+//             for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+//             {
+//                 float prop = (((float)rand())/((float)RAND_MAX));
+//                 ik_start.at(i) = (prop*(fetch_arm::get_joint_max(i) -
+//                                         fetch_arm::get_joint_min(i)))
+//                     + fetch_arm::get_joint_min(i);
+//             }
+//         }
+
+//         if (!valid_sol)
+//         {
+//             std::cout << "TOTAL FAILURE TO FIND END POSE"
+//                       << std::endl;
+//             searching = false;
+//             return;
+//         }
+
+//         current_plan = rrtstar::plan(status, end_pose);
+//         current_plan.push_back(end_pose);
+// #else
+//         arm_state::target = goal;
+//         arm_state::pitch_matters = true;
+//         //arm_state::target_pitch = -M_PI/2.f;
+//         std::vector<search_result<arm_state, action> > latest_search;
+
+//         search_request<arm_state, action> req(arm_state(status),
+//                                               fetch_arm::big_primitives(),
+//                                               fetch_arm::small_primitives(),
+//                                               100.0,
+//                                               true);
+
+
+//         arastar<arm_state, action>(req);
+
+//         latest_search = req.copy_solutions();
+//         current_plan = latest_search.at(latest_search.size()-1).path;
+//         current_plan = shortcut<arm_state, action>(current_plan,
+//                                                    arm_state(status));
+//         std::cout << "Shortcutted to " << current_plan.size()
+//                   << std::endl;
+// #endif
+//         ///////////////////////////
+
+// #ifdef USE_RRTSTAR
+//         dpos = current_plan.at(0);
+// #else
+//         dpos = status;
+//         for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+//         {
+//             dpos.at(i) += current_plan.at(0).at(i);
+//         }
+// #endif
+
+//         plan_index = 0;
+//         searching = false;
+//     }
+
+};
+
+int main(int argc, char* argv[])
+{
+    int obj_id = -1;
+    char color[] = "no";
+    int target_x = 0;
+    int target_y = 0;
+
+    for (int i = 1; i < argc-1; i++)
+    {
+        if (argv[i] == "-i")
+        {
+            obj_id = boost::lexical_cast<int>(argv[i + 1]);
+        }
+        else if (argv[i] == "-c")
+        {
+            color[0] = argv[i + 1][0];
+            color[1] = argv[i + 1][1];
+        }
+        else if (argv[i] == "-x")
+        {
+            target_x = boost::lexical_cast<int>(argv[i + 1]);
+        }
+        else if (argv[i] == "-y")
+        {
+            target_y = boost::lexical_cast<int>(argv[i + 1]);
+        }
+    }
+
+    lcm::LCM lcm;
+    if (!lcm.good())
+    {
+        std::cout << "Failed to initialize LCM." << std::endl;
+        return 1;
+    }
+
+    fetch_arm::INIT();
+    collision_world::clear();
+
+    experiment_handler handler;
+    lcm.subscribe("ARM_STATUS", &experiment_handler::handle_status_message,
+                  &handler);
+    lcm.subscribe("OBSERVATIONS", &experiment_handler::handle_observations_message,
+                  &handler);
+
+    while(0 == lcm.handle());
+
+
+    return 0;
+}
