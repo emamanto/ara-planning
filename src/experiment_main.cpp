@@ -34,6 +34,8 @@ public:
     float drop_y;
 
     bool picked_up;
+    bool moved_drop;
+    bool dropped_off;
 
     int observe_time;
 
@@ -50,6 +52,8 @@ public:
         drop_x(drop_target_x),
         drop_y(drop_target_y),
         picked_up(false),
+        moved_drop(false),
+        dropped_off(false),
         observe_time(0)
     {
         target_obj_color[0] = color[0];
@@ -153,13 +157,23 @@ public:
             done = false;
         }
 
+        if(current_plan.at(plan_index).size() == 1 &&
+           current_plan.at(plan_index).at(0) == 0)
+        {
+            std::cout << ahand << std::endl;
+        }
+
+        if(current_plan.at(plan_index).size() == 1 &&
+           current_plan.at(plan_index).at(0) == 0 &&
+           fabs(dhand - ahand) < 0.02)
+        {
+            done = true;
+        }
+
         if (done && current_plan.size() > 0 &&
             plan_index < current_plan.size()-1)
         {
             std::cout << "Finished step " << plan_index << std::endl;
-            std::cout <<  fetch_arm::ee_xyz(apos)[0] << " "
-                      << fetch_arm::ee_xyz(apos)[1] << " "
-                      << fetch_arm::ee_xyz(apos)[2] << std::endl;
             plan_index++;
 
             if (current_plan.at(plan_index).size() == 1)
@@ -186,8 +200,31 @@ public:
         }
         else if (done && !picked_up)
         {
+            std::cout << "Going to compute grasp plan." << std::endl;
             compute_grasp_plan();
             picked_up = true;
+        }
+        else if (done && !moved_drop)
+        {
+            std::cout << "Going to compute second move." << std::endl;
+            compute_next_plan();
+            moved_drop = true;
+        }
+        else if (done && !dropped_off)
+        {
+            std::cout << "Going to compute drop plan." << std::endl;
+            compute_grasp_plan();
+            std::vector<pose> reverse_plan;
+            reverse_plan.push_back(current_plan.at(2));
+            reverse_plan.push_back(current_plan.at(1));
+            reverse_plan.push_back(current_plan.at(4));
+            current_plan = reverse_plan;
+            dpos = apos;
+            for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+            {
+                dpos.at(i) += current_plan.at(0).at(i);
+            }
+            dropped_off = true;
         }
 
         publish_command();
@@ -242,9 +279,18 @@ public:
 
     void compute_next_plan()
     {
-        arm_state::target[0] = 0.0;
-        arm_state::target[1] = 0.0;
-        arm_state::target[2] = 0.06;
+        if (!picked_up)
+        {
+            arm_state::target[0] = 0;
+            arm_state::target[1] = 0;
+            arm_state::target[2] = 0.06;
+        }
+        else
+        {
+            arm_state::target[0] = 0.1;
+            arm_state::target[1] = 0.1;
+            arm_state::target[2] = 0.06;
+        }
         arm_state::pitch_matters = true;
 
         std::cout << "[PLANNER] Initiating a search to "
@@ -272,12 +318,7 @@ public:
         {
             dpos.at(i) += current_plan.at(0).at(i);
         }
-
-        pose final = fetch_arm::apply(apos, current_plan);
-        std::cout << "Applying the plan gets us ";
-            std::cout <<  fetch_arm::ee_xyz(final)[0] << " "
-                      << fetch_arm::ee_xyz(final)[1] << " "
-                      << fetch_arm::ee_xyz(final)[2] << std::endl;
+        plan_index = 0;
     }
 
     void compute_grasp_plan()
@@ -295,8 +336,8 @@ public:
 
         // 3. Down onto obj
         Eigen::Matrix4f target_xform =
-            fetch_arm::translation_matrix(0,
-                                          0,
+            fetch_arm::translation_matrix(fetch_arm::ee_xyz(apos)[0],
+                                          fetch_arm::ee_xyz(apos)[1],
                                           -0.05);
         target_xform *= fetch_arm::rotation_matrix(M_PI/2, Y_AXIS);
 
@@ -307,11 +348,6 @@ public:
     //     start_xform(2, 3) = start_xform(2, 3) - (0.09);
     //     std::cout << "End height " << start_xform(2,3) << std::endl;
         action down = fetch_arm::solve_ik(apos, target_xform);
-        for (int i = 0; i < down.size(); i++)
-        {
-            std::cout << down[i] << " " << std::endl;
-        }
-        std::cout << std::endl;
         current_plan.push_back(down);
 
         // 4. Close hand
@@ -329,7 +365,8 @@ public:
         for (int i = 0; i < fetch_arm::get_num_joints(); i++)
             unspin.at(i) *= -1;
         current_plan.push_back(unspin);
-        std::cout << "Made a grasp plan" << std::endl;
+
+        std::cout << "Made a grasp plan of len " << current_plan.size()  << std::endl;
         dpos = apos;
         for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
