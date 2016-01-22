@@ -94,7 +94,10 @@ bool arm_state::is_goal() const
 {
     if (target_distance() > 0.01) return false;
     if (fabs(M_PI/2 - fetch_arm::ee_rpy(position).at(1)) > 0.01) return false;
-    else return true;
+    std::cout <<  fetch_arm::ee_xyz(position)[0] << " "
+              << fetch_arm::ee_xyz(position)[1] << " "
+              << fetch_arm::ee_xyz(position)[2] << std::endl;
+    return true;
 }
 
 float arm_state::heuristic() const

@@ -41,7 +41,8 @@ public:
                        char color[2],
                        float drop_target_x,
                        float drop_target_y) :
-        dpos(),
+        ahand(0),
+        dhand(0),
         plan_index(0),
         searching(false),
         num_collisions(0),
@@ -202,7 +203,7 @@ public:
             dynamixel_command_t c;
             c.position_radians = dpos.at(i);
             c.max_torque = fetch_arm::get_default_torque(i);
-            c.speed = fetch_arm::get_default_speed(i)*0.1;
+            c.speed = fetch_arm::get_default_speed(i)*0.05;
             command.commands.push_back(c);
         }
 
@@ -241,8 +242,8 @@ public:
 
     void compute_next_plan()
     {
-        arm_state::target[0] = drop_x;
-        arm_state::target[1] = drop_y;
+        arm_state::target[0] = 0.0;
+        arm_state::target[1] = 0.0;
         arm_state::target[2] = 0.06;
         arm_state::pitch_matters = true;
 
@@ -272,6 +273,11 @@ public:
             dpos.at(i) += current_plan.at(0).at(i);
         }
 
+        pose final = fetch_arm::apply(apos, current_plan);
+        std::cout << "Applying the plan gets us ";
+            std::cout <<  fetch_arm::ee_xyz(final)[0] << " "
+                      << fetch_arm::ee_xyz(final)[1] << " "
+                      << fetch_arm::ee_xyz(final)[2] << std::endl;
     }
 
     void compute_grasp_plan()

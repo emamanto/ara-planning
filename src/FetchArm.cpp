@@ -376,8 +376,8 @@ pose fetch_arm::apply(pose from, action act)
     for (int i = 0; i < num_joints; i++)
     {
         end.at(i) += act.at(i);
-        if (configuration.at(i).type == CONTINUOUS)
-            end.at(i) = mod_pi(end.at(i));
+        // if (configuration.at(i).type == CONTINUOUS)
+        //     end.at(i) = mod_pi(end.at(i));
     }
     return end;
 }
@@ -428,7 +428,7 @@ bool fetch_arm::is_valid(pose p)
     // Joint range check
     for (int i = 0; i < num_joints; i++)
     {
-        if (configuration.at(i).type == CONTINUOUS) continue;
+        // if (configuration.at(i).type == CONTINUOUS) continue;
         if (p.at(i) < configuration.at(i).min ||
             p.at(i) > configuration.at(i).max) return false;
     }
