@@ -201,6 +201,17 @@ point_3d fetch_arm::ee_xyz(pose p)
     return xyz;
 }
 
+Eigen::Matrix4f fetch_arm::ee_xform(pose p)
+{
+    Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
+                             translation_matrix(get_component_length(num_joints-1),
+                                                0,
+                                                0)*
+                             rotation_matrix(p.at(num_joints-1),
+                                             get_joint_axis(num_joints-1)));
+    return xform;
+}
+
 orientation fetch_arm::ee_rpy(pose p)
 {
     Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
@@ -254,6 +265,10 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
                   pow(target_pos.at(2) - cur_xyz.at(2), 2)) < 0.001 &&
              fabs(cur_rpy.at(1) - target_or.at(1)) < 0.01))
         {
+            for (int l = 0; l < a.size(); l++)
+            {
+                a[l] = mod_pi(a[l]);
+            }
             return a;
         }
         if (i > 500) break;

@@ -170,7 +170,7 @@ bool collision_world::collision(pose arm_position, bool details)
         arm_objects_m->registerObject(obj);
 
         if (i < 2) base_objects_m->registerObject(obj);
-        if (i > 4) hand_objects_m->registerObject(obj);
+        if (i > 2) hand_objects_m->registerObject(obj);
     }
 
     // HAND

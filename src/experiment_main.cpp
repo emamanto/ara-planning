@@ -20,18 +20,40 @@ class experiment_handler
 public:
     pose apos;
     pose dpos;
+    float ahand;
+    float dhand;
     std::vector<pose> current_plan;
     int plan_index;
     bool searching;
     int num_collisions;
     std::vector<object_data_t> latest_objects;
 
-    experiment_handler() :
+    int target_obj_id;
+    char target_obj_color[2];
+    float drop_x;
+    float drop_y;
+
+    bool picked_up;
+
+    int observe_time;
+
+    experiment_handler(int obj_id,
+                       char color[2],
+                       float drop_target_x,
+                       float drop_target_y) :
         dpos(),
         plan_index(0),
         searching(false),
-        num_collisions(0)
+        num_collisions(0),
+        target_obj_id(obj_id),
+        drop_x(drop_target_x),
+        drop_y(drop_target_y),
+        picked_up(false),
+        observe_time(0)
     {
+        target_obj_color[0] = color[0];
+        target_obj_color[1] = color[1];
+
         dpos.push_back(M_PI/8);
         dpos.push_back(M_PI/2);
         dpos.push_back(-M_PI/2 + M_PI/8);
@@ -48,6 +70,7 @@ public:
                                const dynamixel_status_list_t* stats)
     {
         if (searching) return;
+
         lcm::LCM lcm;
 
         // Update pose from status
@@ -57,6 +80,13 @@ public:
             np.push_back(stats->statuses[i].position_radians);
         }
         if (np != apos) apos = np;
+        ahand = stats->statuses[fetch_arm::get_num_joints()].position_radians;
+
+        if (observe_time < 100)
+        {
+            publish_command();
+            return;
+        }
 
         // Check collision status based on new pose
         if (collision_world::collision(apos, true))
@@ -85,32 +115,86 @@ public:
             num_collisions = 0;
         }
 
-#ifdef PUBLISH_COLLISION_MODEL
-        arm_collision_boxes_t arm_msg = collision_world::arm_boxes(apos);
-        lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
-#endif
+// #ifdef PUBLISH_COLLISION_MODEL
+//         arm_collision_boxes_t arm_msg = collision_world::arm_boxes(apos);
+//         lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
+// #endif
 
+        // If we don't have a plan to execute yet, find one
+        if (current_plan.size() == 0)
+        {
+            if (num_collisions == 0)
+            {
+                searching = true;
+                compute_next_plan();
+                searching = false;
+            }
+            else
+            {
+                std::cout << "Trying to start a search from a collision state"
+                          << std::endl;
+            }
+            return;
+        }
+
+        // Execution control if we do have a plan
         bool done = true;
         for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
-            if (fabs(apos[i] - dpos[i]) > 0.01)
+            if (fabs(apos[i] - dpos[i]) > 0.001)
             {
                 done = false;
                 break;
             }
         }
+        if (fabs(dhand - ahand) > 0.001)
+        {
+            done = false;
+        }
 
         if (done && current_plan.size() > 0 &&
             plan_index < current_plan.size()-1)
         {
+            std::cout << "Finished step " << plan_index << std::endl;
+            std::cout <<  fetch_arm::ee_xyz(apos)[0] << " "
+                      << fetch_arm::ee_xyz(apos)[1] << " "
+                      << fetch_arm::ee_xyz(apos)[2] << std::endl;
             plan_index++;
-            for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+
+            if (current_plan.at(plan_index).size() == 1)
             {
-                dpos.at(i) +=
-                    current_plan.at(plan_index).at(i);
+                if (current_plan.at(plan_index).at(0) == 1)
+                {
+                    std::cout << "Opening hand" << std::endl;
+                    dhand = 0.05;
+                }
+                else
+                {
+                    std::cout << "Closing hand" << std::endl;
+                    dhand = 0.0;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+                {
+                    dpos.at(i) +=
+                        current_plan.at(plan_index).at(i);
+                }
             }
         }
+        else if (done && !picked_up)
+        {
+            compute_grasp_plan();
+            picked_up = true;
+        }
 
+        publish_command();
+    }
+
+    void publish_command()
+    {
+        lcm::LCM lcm;
         dynamixel_command_list_t command;
         command.len = fetch_arm::get_num_joints() + 2;
         for (int i = 0; i < fetch_arm::get_num_joints(); i++)
@@ -118,15 +202,18 @@ public:
             dynamixel_command_t c;
             c.position_radians = dpos.at(i);
             c.max_torque = fetch_arm::get_default_torque(i);
+            c.speed = fetch_arm::get_default_speed(i)*0.1;
             command.commands.push_back(c);
         }
 
         dynamixel_command_t hand;
-        hand.position_radians = 0;
-        hand.speed = 0.15;
+        hand.position_radians = dhand;
+        hand.speed = 0.05;
         hand.max_torque = 0.5;
+        // The hand has two separate joints in it
         command.commands.push_back(hand);
         command.commands.push_back(hand);
+
 
         lcm.publish("ARM_COMMAND", &command);
     }
@@ -135,6 +222,8 @@ public:
                                      const std::string& channel,
                                      const observations_t* obs)
     {
+        if (searching) return;
+
         latest_objects = obs->observations;
         object_data od;
         collision_world::clear();
@@ -146,6 +235,101 @@ public:
                                         i->bbox_xyzrpy,
                                         od);
         }
+
+        observe_time++;
+    }
+
+    void compute_next_plan()
+    {
+        arm_state::target[0] = drop_x;
+        arm_state::target[1] = drop_y;
+        arm_state::target[2] = 0.06;
+        arm_state::pitch_matters = true;
+
+        std::cout << "[PLANNER] Initiating a search to "
+                  << arm_state::target[0] << ", "
+                  << arm_state::target[1] << ", "
+                  << arm_state::target[2]
+                  << std::endl;
+
+        std::vector<search_result<arm_state, action> > latest_search;
+        search_request<arm_state, action> req(arm_state(apos),
+                                              fetch_arm::big_primitives(),
+                                              fetch_arm::small_primitives(),
+                                              5.0,
+                                              true);
+        arastar<arm_state, action>(req);
+
+        latest_search = req.copy_solutions();
+        current_plan = latest_search.at(latest_search.size()-1).path;
+        current_plan = shortcut<arm_state, action>(current_plan,
+                                                   arm_state(apos));
+        std::cout << "Shortcutted to " << current_plan.size()
+                  << std::endl;
+        dpos = apos;
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+        {
+            dpos.at(i) += current_plan.at(0).at(i);
+        }
+
+    }
+
+    void compute_grasp_plan()
+    {
+        current_plan.clear();
+        action spin(fetch_arm::get_num_joints(), 0);
+        float spin_angle = (0);
+
+        spin.at(fetch_arm::get_num_joints()-1) = spin_angle;
+        current_plan.push_back(spin);
+
+        // 2. Open hand
+        action hand_open(1, 1);
+        current_plan.push_back(hand_open);
+
+        // 3. Down onto obj
+        Eigen::Matrix4f target_xform =
+            fetch_arm::translation_matrix(0,
+                                          0,
+                                          -0.05);
+        target_xform *= fetch_arm::rotation_matrix(M_PI/2, Y_AXIS);
+
+    // action xyz = fetch_arm::solve_ik(position, target_xform);
+
+    //     Eigen::Matrix4f start_xform = fetch_arm::ee_xform(apos);
+    //     std::cout << "Start height " << start_xform(2,3) << std::endl;
+    //     start_xform(2, 3) = start_xform(2, 3) - (0.09);
+    //     std::cout << "End height " << start_xform(2,3) << std::endl;
+        action down = fetch_arm::solve_ik(apos, target_xform);
+        for (int i = 0; i < down.size(); i++)
+        {
+            std::cout << down[i] << " " << std::endl;
+        }
+        std::cout << std::endl;
+        current_plan.push_back(down);
+
+        // 4. Close hand
+        action hand_close(1, 0);
+        current_plan.push_back(hand_close);
+
+        // 5. Back up to grasp point
+        action up = down;
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+            up.at(i) *= -1;
+        current_plan.push_back(up);
+
+        // 6. Unspin wrist
+        action unspin = spin;
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+            unspin.at(i) *= -1;
+        current_plan.push_back(unspin);
+        std::cout << "Made a grasp plan" << std::endl;
+        dpos = apos;
+        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+        {
+            dpos.at(i) += current_plan.at(0).at(i);
+        }
+        plan_index = 0;
     }
 
 //     void handle_target_message(const lcm::ReceiveBuffer* rbuf,
@@ -272,7 +456,7 @@ public:
 int main(int argc, char* argv[])
 {
     int obj_id = -1;
-    char color[] = "no";
+    char color[2];
     int target_x = 0;
     int target_y = 0;
 
@@ -289,11 +473,11 @@ int main(int argc, char* argv[])
         }
         else if (argv[i] == "-x")
         {
-            target_x = boost::lexical_cast<int>(argv[i + 1]);
+            target_x = boost::lexical_cast<float>(argv[i + 1]);
         }
         else if (argv[i] == "-y")
         {
-            target_y = boost::lexical_cast<int>(argv[i + 1]);
+            target_y = boost::lexical_cast<float>(argv[i + 1]);
         }
     }
 
@@ -307,7 +491,7 @@ int main(int argc, char* argv[])
     fetch_arm::INIT();
     collision_world::clear();
 
-    experiment_handler handler;
+    experiment_handler handler(obj_id, color, target_x, target_y);
     lcm.subscribe("ARM_STATUS", &experiment_handler::handle_status_message,
                   &handler);
     lcm.subscribe("OBSERVATIONS", &experiment_handler::handle_observations_message,
