@@ -84,7 +84,11 @@ public:
         {
             np.push_back(stats->statuses[i].position_radians);
         }
-        if (np != apos) apos = np;
+        if (np != apos)
+        {
+            apos = np;
+        }
+
         ahand = stats->statuses[fetch_arm::get_num_joints()].position_radians;
 
         if (observe_time < 100)
@@ -146,29 +150,32 @@ public:
         bool done = true;
         for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
-            if (fabs(apos[i] - dpos[i]) > 0.001)
+            if (fabs(apos[i] - dpos[i]) > 0.01)
             {
                 done = false;
+                if (picked_up && !moved_drop && i == 5)
+                {
+                    done = true;
+                }
                 break;
             }
         }
-        if (fabs(dhand - ahand) > 0.001)
+        if (fabs(dhand - ahand) > 0.02)
         {
             done = false;
         }
+        // if(current_plan.at(plan_index).size() == 1 &&
+        //    current_plan.at(plan_index).at(0) == 0)
+        // {
+        //     std::cout << ahand << std::endl;
+        // }
 
-        if(current_plan.at(plan_index).size() == 1 &&
-           current_plan.at(plan_index).at(0) == 0)
-        {
-            std::cout << ahand << std::endl;
-        }
-
-        if(current_plan.at(plan_index).size() == 1 &&
-           current_plan.at(plan_index).at(0) == 0 &&
-           fabs(dhand - ahand) < 0.02)
-        {
-            done = true;
-        }
+        // if(current_plan.at(plan_index).size() == 1 &&
+        //    current_plan.at(plan_index).at(0) == 0 &&
+        //    fabs(dhand - ahand) < 0.02)
+        // {
+        //     done = true;
+        // }
 
         if (done && current_plan.size() > 0 &&
             plan_index < current_plan.size()-1)
@@ -288,7 +295,7 @@ public:
         else
         {
             arm_state::target[0] = 0.1;
-            arm_state::target[1] = 0.1;
+            arm_state::target[1] = 0.2;
             arm_state::target[2] = 0.06;
         }
         arm_state::pitch_matters = true;
