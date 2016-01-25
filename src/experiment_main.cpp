@@ -78,6 +78,8 @@ public:
         dpos.push_back(0);
         dpos.push_back(M_PI/2);
         dpos.push_back(0);
+
+        dhand = 0;
     };
 
     ~experiment_handler() {};
@@ -105,7 +107,7 @@ public:
 
         point_3d ee = fetch_arm::ee_xyz(apos);
         // Check collision status based on new pose
-        if (collision_world::collision(apos, true))
+        if (collision_world::collision(apos, ahand, true))
         {
             if (num_collisions < collision_world::num_collisions())
             {

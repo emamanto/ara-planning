@@ -12,7 +12,8 @@ arm_state::arm_state() :
 {
 }
 
-arm_state::arm_state(pose p) : position(p)
+arm_state::arm_state(pose p, float h) : position(p),
+                                        hand_position(h)
 {
 }
 
@@ -46,7 +47,7 @@ float arm_state::cost(action a)
 bool arm_state::valid() const
 {
     if(!fetch_arm::is_valid(position)) return false;
-    if(collision_world::collision(position)) return false;
+    if(collision_world::collision(position, hand_position)) return false;
     return true;
 }
 

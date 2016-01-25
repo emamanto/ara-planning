@@ -119,7 +119,9 @@ void collision_world::clear()
     add_object(dims, pos, od);
 }
 
-bool collision_world::collision(pose arm_position, bool details)
+bool collision_world::collision(pose arm_position,
+                                float hand_position,
+                                bool details)
 {
     if (!arm_objects_m)
     {
@@ -180,22 +182,12 @@ bool collision_world::collision(pose arm_position, bool details)
     }
 
     // HAND
-    float width = fetch_arm::hand_width;
+    float width = 2*hand_position + 2*fetch_arm::finger_width;
     float len = fetch_arm::hand_length;
     fcl::Box* box;
-    // if (has_held_object)
-    // {
-    //     box = new fcl::Box(len+0.01,
-    //                        width+0.01,
-    //                        fetch_arm::hand_height*2+0.01);
-    // }
-    //else
-    // HAND OPEN VS CLOSED XXX
-    {
-        box = new fcl::Box(fetch_arm::hand_length+0.01,
-                           fetch_arm::hand_width+0.01,
-                           fetch_arm::hand_height+0.01);
-    }
+    box = new fcl::Box(len,
+                       width,
+                       fetch_arm::hand_height+0.01);
 
     int last_joint = fetch_arm::get_num_joints()-1;
     Eigen::Matrix4f trmat =

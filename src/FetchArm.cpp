@@ -6,6 +6,8 @@ point_3d fetch_arm::base_offset = point_3d();
 float fetch_arm::hand_length = 0.1f;
 float fetch_arm::hand_width = 0.11f;
 float fetch_arm::hand_height = 0.02;
+float fetch_arm::finger_width = 0.02;
+
 std::vector<joint> fetch_arm::configuration = std::vector<joint>();
 std::vector<action> fetch_arm::big_prims = std::vector<action>();
 std::vector<action> fetch_arm::small_prims = std::vector<action>();

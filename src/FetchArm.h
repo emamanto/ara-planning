@@ -82,6 +82,7 @@ public:
     static float hand_length;
     static float hand_width;
     static float hand_height;
+    static float finger_width;
 
     static point_3d base_offset;
 

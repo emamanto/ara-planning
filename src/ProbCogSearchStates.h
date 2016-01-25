@@ -7,12 +7,13 @@ class arm_state
 {
 public:
     pose position;
+    float hand_position;
     static point_3d target;
     static float target_pitch;
     static bool pitch_matters;
 
     arm_state();
-    arm_state(pose p);
+    arm_state(pose p, float h = 0.05);
 
     bool operator == (const arm_state& other) const;
     bool operator < (const arm_state& other) const;
