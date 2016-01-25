@@ -1,0 +1,54 @@
+#!/bin/bash
+
+ID=-1
+COLOR=none
+XDROP=0
+YDROP=0
+REBUILD=no
+
+while getopts ":i:c:x:y:b" opt; do
+case $opt in
+    i)
+      ID=$OPTARG
+      ;;
+    c)
+      COLOR=$OPTARG
+      ;;
+    x)
+      XDROP=$OPTARG
+      ;;
+    y)
+      YDROP=$OPTARG
+      ;;
+    b)
+      REBUILD=yes
+      ;;
+    \?)
+      echo "Invalid flag: -$OPTARG"
+      exit
+      ;;
+    :)
+      echo "Flag requires argument: -$OPTARG"
+      exit
+      ;;
+esac
+done
+
+if [ $COLOR = none ]; then
+    if [ $ID = -1 ]; then
+	echo "Target object not specified"
+	exit
+    fi
+else
+    if [ $ID != -1 ]; then
+	echo "Potentially conflicting object requests"
+	exit
+    fi
+fi
+
+
+if [ $REBUILD = yes ]; then
+    make build_exp
+fi
+
+bin/experiment -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP"
