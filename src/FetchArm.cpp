@@ -187,13 +187,7 @@ point_3d fetch_arm::joint_xyz(int joint_number, pose p)
 
 point_3d fetch_arm::ee_xyz(pose p)
 {
-    Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
-                             translation_matrix(get_component_length(num_joints-1),
-                                                0,
-                                                0)*
-                             rotation_matrix(p.at(num_joints-1),
-                                             get_joint_axis(num_joints-1)));
-
+    Eigen::Matrix4f xform = ee_xform(p);
     point_3d xyz;
     xyz.push_back(xform(0,3));
     xyz.push_back(xform(1,3));
@@ -203,12 +197,11 @@ point_3d fetch_arm::ee_xyz(pose p)
 
 Eigen::Matrix4f fetch_arm::ee_xform(pose p)
 {
-    Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
-                             translation_matrix(get_component_length(num_joints-1),
-                                                0,
-                                                0)*
-                             rotation_matrix(p.at(num_joints-1),
-                                             get_joint_axis(num_joints-1)));
+    Eigen::Matrix4f xform = (joint_transform(num_joints-1, p));
+    xform *= rotation_matrix(p.at(num_joints-1),
+                             get_joint_axis(num_joints-1));
+    xform *= translation_matrix(hand_length, 0, 0);
+
     return xform;
 }
 
@@ -219,16 +212,6 @@ orientation fetch_arm::ee_rpy(pose p)
 
     return eulers_from_xform(xform);
 }
-
-// float fetch_arm::ee_pitch(pose p)
-// {
-//     point_3d ee = ee_xyz(p);
-//     Eigen::Matrix4f xform = joint_transform(num_joints-1, p);
-//     float z_diff = ee.at(2)-xform(2,3);
-
-//     float pitch = asin(z_diff/hand_length);
-//     return pitch;
-// }
 
 float fetch_arm::ee_dist_to(pose from, point_3d to)
 {

@@ -103,6 +103,7 @@ public:
 
         ahand = stats->statuses[fetch_arm::get_num_joints()].position_radians;
 
+        point_3d ee = fetch_arm::ee_xyz(apos);
         // Check collision status based on new pose
         if (collision_world::collision(apos, true))
         {
