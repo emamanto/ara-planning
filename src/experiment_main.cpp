@@ -14,7 +14,7 @@
 
 class experiment_handler
 {
-public:
+private:
     pose apos;
     pose dpos;
     float ahand;
@@ -26,7 +26,7 @@ public:
     std::vector<object_data_t> latest_objects;
 
     int target_obj_id;
-    char target_obj_color[2];
+    std::string target_obj_color;
     float drop_x;
     float drop_y;
 
@@ -36,8 +36,9 @@ public:
 
     int observe_time;
 
+public:
     experiment_handler(int obj_id,
-                       char color[2],
+                       std::string color,
                        float drop_target_x,
                        float drop_target_y) :
         ahand(0),
@@ -46,6 +47,7 @@ public:
         searching(false),
         num_collisions(0),
         target_obj_id(obj_id),
+        target_obj_color(color),
         drop_x(drop_target_x),
         drop_y(drop_target_y),
         picked_up(false),
@@ -53,8 +55,21 @@ public:
         dropped_off(false),
         observe_time(0)
     {
-        target_obj_color[0] = color[0];
-        target_obj_color[1] = color[1];
+        if (target_obj_color != "none")
+        {
+            std::cout << "Moving the " << target_obj_color
+                      << " object ";
+        }
+        else if (target_obj_id != -1)
+        {
+            std::cout << "Moving the object with id "
+                      << target_obj_id
+                      << " ";
+        }
+
+        std::cout << "to x = " << drop_x << ", y = "
+                  << drop_y << std::endl;
+
 
         dpos.push_back(M_PI/8);
         dpos.push_back(M_PI/2);
@@ -498,26 +513,25 @@ public:
 int main(int argc, char* argv[])
 {
     int obj_id = -1;
-    char color[2];
-    int target_x = 0;
-    int target_y = 0;
+    std::string color = "none";
+    float target_x = 0;
+    float target_y = 0;
 
     for (int i = 1; i < argc-1; i++)
     {
-        if (argv[i] == "-i")
+        if (std::string(argv[i]) == "-i")
         {
             obj_id = boost::lexical_cast<int>(argv[i + 1]);
         }
-        else if (argv[i] == "-c")
+        else if (std::string(argv[i]) == "-c")
         {
-            color[0] = argv[i + 1][0];
-            color[1] = argv[i + 1][1];
+            color = std::string(argv[i + 1]);
         }
-        else if (argv[i] == "-x")
+        else if (std::string(argv[i]) == "-x")
         {
             target_x = boost::lexical_cast<float>(argv[i + 1]);
         }
-        else if (argv[i] == "-y")
+        else if (std::string(argv[i]) == "-y")
         {
             target_y = boost::lexical_cast<float>(argv[i + 1]);
         }
