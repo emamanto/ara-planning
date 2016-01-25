@@ -49,6 +49,10 @@ fi
 
 if [ $REBUILD = yes ]; then
     make build_exp
+    if [ $? != 0 ]; then
+	echo "Compilation error"
+	exit
+    fi
 fi
 
 bin/experiment -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP"

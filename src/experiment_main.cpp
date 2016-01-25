@@ -301,8 +301,8 @@ public:
         }
         else
         {
-            arm_state::target[0] = 0.1;
-            arm_state::target[1] = 0.2;
+            arm_state::target[0] = drop_x;
+            arm_state::target[1] = drop_y;
             arm_state::target[2] = 0.06;
         }
         arm_state::pitch_matters = true;
