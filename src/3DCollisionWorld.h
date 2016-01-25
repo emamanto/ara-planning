@@ -5,9 +5,15 @@
 
 #include "fcl/collision.h"
 #include "fcl/broadphase/broadphase.h"
-#include "arm_collision_boxes_t.hpp"
 
 #include "FetchArm.h"
+
+#define PUBLISH_COLLISION_MODEL
+
+#ifdef PUBLISH_COLLISION_MODEL
+#include <lcm/lcm-cpp.hpp>
+#include "arm_collision_boxes_t.hpp"
+#endif
 
 bool collision_function(fcl::CollisionObject* o1,
                         fcl::CollisionObject* o2, void* cdata);
@@ -53,17 +59,24 @@ public:
     static void set_held_object(double dims[]);
     static void clear_held_object();
 
-    static arm_collision_boxes_t arm_boxes(pose arm_position);
-
 private:
     collision_world() {};
     collision_world(collision_world const&) {};
     collision_world& operator=(collision_world const&) {};
 
+
+#ifdef PUBLISH_COLLISION_MODEL
+    static void publish_arm_boxes(pose arm_position);
+#endif
+
     static fcl::BroadPhaseCollisionManager* world_objects_m;
     static fcl::BroadPhaseCollisionManager* arm_objects_m;
     static fcl::BroadPhaseCollisionManager* hand_objects_m;
     static fcl::BroadPhaseCollisionManager* base_objects_m;
+    static fcl::CollisionObject* base;
+    static fcl::CollisionObject* hand;
+    static std::vector<fcl::CollisionObject*> arm_parts;
+
     static bool has_held_object;
     static std::vector<float> held_object_dims;
     static std::vector<object_data> world_objects_info;

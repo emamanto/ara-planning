@@ -82,7 +82,7 @@ void fetch_arm::INIT()
     shoulder_pan.min = -92.f*DEG_TO_RAD;
     shoulder_pan.max = 92.f*DEG_TO_RAD;
     shoulder_pan.length = 0.117;
-    shoulder_pan.width = 0.08;
+    shoulder_pan.width = 0.04;
     shoulder_pan.default_speed = 1.0;
     shoulder_pan.default_torque = 33.0;
     configuration.push_back(shoulder_pan);
@@ -93,7 +93,7 @@ void fetch_arm::INIT()
     shoulder_lift.min = -70.f*DEG_TO_RAD;
     shoulder_lift.max = 87.f*DEG_TO_RAD;
     shoulder_lift.length = 0.219;
-    shoulder_lift.width = 0.08;
+    shoulder_lift.width = 0.04;
     shoulder_lift.default_speed = 1.2;
     shoulder_lift.default_torque = 120.0;
     configuration.push_back(shoulder_lift);
@@ -104,7 +104,7 @@ void fetch_arm::INIT()
     upperarm_roll.min = -M_PI;
     upperarm_roll.max = M_PI;
     upperarm_roll.length = 0.133;
-    upperarm_roll.width = 0.08;
+    upperarm_roll.width = 0.04;
     upperarm_roll.default_speed = 1.5;
     upperarm_roll.default_torque = 70.0;
     configuration.push_back(upperarm_roll);
@@ -115,7 +115,7 @@ void fetch_arm::INIT()
     elbow_flex.min = -129.f*DEG_TO_RAD;
     elbow_flex.max = 129.f*DEG_TO_RAD;
     elbow_flex.length = 0.197;
-    elbow_flex.width = 0.08;
+    elbow_flex.width = 0.04;
     elbow_flex.default_speed = 1.4;
     elbow_flex.default_torque = 65.0;
     configuration.push_back(elbow_flex);
@@ -126,7 +126,7 @@ void fetch_arm::INIT()
     forearm_roll.min = -M_PI;
     forearm_roll.max = M_PI;
     forearm_roll.length = 0.1245;
-    forearm_roll.width = 0.08;
+    forearm_roll.width = 0.04;
     forearm_roll.default_speed = 1.5;
     forearm_roll.default_torque = 28.0;
     configuration.push_back(forearm_roll);
@@ -137,7 +137,7 @@ void fetch_arm::INIT()
     wrist_flex.min = -125.f*DEG_TO_RAD;
     wrist_flex.max = 125.f*DEG_TO_RAD;
     wrist_flex.length = 0.1245;
-    wrist_flex.width = 0.08;
+    wrist_flex.width = 0.04;
     wrist_flex.default_speed = 2.2;
     wrist_flex.default_torque = 25.0;
     configuration.push_back(wrist_flex);
@@ -149,7 +149,7 @@ void fetch_arm::INIT()
     wrist_roll.max = M_PI;
     // Ignoring fixed gripper joint, adding here
     wrist_roll.length = 0.1485;
-    wrist_roll.width = 0.08;
+    wrist_roll.width = 0.04;
     wrist_roll.default_speed = 2.2;
     wrist_roll.default_torque = 7.0;
     configuration.push_back(wrist_roll);

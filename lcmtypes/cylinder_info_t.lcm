@@ -1,0 +1,10 @@
+struct cylinder_info_t
+{
+  int64_t utime;
+
+  int32_t joint;
+  double radius;
+  double length;
+  double quat[4];
+  double trans[3];
+}

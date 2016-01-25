@@ -1,5 +1,7 @@
 struct arm_collision_boxes_t
 {
   int32_t len;
-  bbox_info_t boxes[len];
+  cylinder_info_t segments[len];
+  bbox_info_t hand;
+  bbox_info_t base;
 }

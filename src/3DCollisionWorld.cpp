@@ -23,6 +23,11 @@ fcl::BroadPhaseCollisionManager* collision_world::world_objects_m = 0;
 fcl::BroadPhaseCollisionManager* collision_world::arm_objects_m = 0;
 fcl::BroadPhaseCollisionManager* collision_world::hand_objects_m = 0;
 fcl::BroadPhaseCollisionManager* collision_world::base_objects_m = 0;
+fcl::CollisionObject* collision_world::base = 0;
+fcl::CollisionObject* collision_world::hand = 0;
+std::vector<fcl::CollisionObject*> collision_world::arm_parts =
+    std::vector<fcl::CollisionObject*>();
+
 bool collision_world::has_held_object = false;
 std::vector<float> collision_world::held_object_dims = std::vector<float>(3, 0);
 std::vector<object_data> collision_world::world_objects_info = std::vector<object_data>();
@@ -137,13 +142,13 @@ bool collision_world::collision(pose arm_position, bool details)
     hand_objects_m->clear();
     base_objects_m->clear();
     colliding.clear();
+    arm_parts.clear();
 
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
-        fcl::Box* bounds = new
-            fcl::Box(fetch_arm::get_component_width(i),
-                     fetch_arm::get_component_width(i),
-                     fetch_arm::get_component_length(i));
+        fcl::Cylinder* bounds = new
+            fcl::Cylinder(fetch_arm::get_component_width(i),
+                          fetch_arm::get_component_length(i));
 
         Eigen::Matrix4f trmat =
             fetch_arm::joint_transform(i, arm_position)*
@@ -169,6 +174,7 @@ bool collision_world::collision(pose arm_position, bool details)
         fcl::CollisionObject* obj = new fcl::CollisionObject(cg, p);
         arm_objects_m->registerObject(obj);
 
+        arm_parts.push_back(obj);
         if (i < 2) base_objects_m->registerObject(obj);
         if (i > 2) hand_objects_m->registerObject(obj);
     }
@@ -216,10 +222,10 @@ bool collision_world::collision(pose arm_position, bool details)
         boost::shared_ptr<fcl::CollisionGeometry>(box);
     cg->setUserData((void*)od);
 
-    fcl::CollisionObject* hobj = new fcl::CollisionObject(cg, p);
+    hand = new fcl::CollisionObject(cg, p);
 
-    arm_objects_m->registerObject(hobj);
-    hand_objects_m->registerObject(hobj);
+    arm_objects_m->registerObject(hand);
+    hand_objects_m->registerObject(hand);
     // end HAND
 
     // BASE
@@ -242,11 +248,10 @@ bool collision_world::collision(pose arm_position, bool details)
         boost::shared_ptr<fcl::CollisionGeometry>(base_box);
     cg2->setUserData((void*)od2);
 
-    fcl::CollisionObject* bobj = new
-        fcl::CollisionObject(cg2, q);
+    base = new fcl::CollisionObject(cg2, q);
 
-    base_objects_m->registerObject(bobj);
-    arm_objects_m->registerObject(bobj);
+    base_objects_m->registerObject(base);
+    arm_objects_m->registerObject(base);
 
     // Self-collision check
     collision_data self_data;
@@ -258,6 +263,10 @@ bool collision_world::collision(pose arm_position, bool details)
 
     hand_objects_m->collide(base_objects_m, &self_data,
                             collision_function);
+
+#ifdef PUBLISH_COLLISION_MODEL
+    publish_arm_boxes(arm_position);
+#endif
 
     if (self_data.result.isCollision()) return true;
 
@@ -317,37 +326,74 @@ void collision_world::clear_held_object()
     // held_object_dims = std::vector<float>(3, 0);
 }
 
-arm_collision_boxes_t collision_world::arm_boxes(pose arm_position)
+// I'm making these no longer boxes... cylinders match the arm's
+// shapes better. The LCM type is going to stick with the same name though.
+#ifdef PUBLISH_COLLISION_MODEL
+void collision_world::publish_arm_boxes(pose arm_position)
 {
-    collision(arm_position);
-    std::vector<fcl::CollisionObject*> objs;
-    arm_objects_m->getObjects(objs);
+    arm_collision_boxes_t cur_boxes;
+    cur_boxes.len = fetch_arm::get_num_joints();
+    cur_boxes.segments.clear();
 
-    arm_collision_boxes_t msg;
-    msg.len = arm_objects_m->size();
+    bbox_info_t base_info;
+    base_info.joint = 0;
+    const fcl::Box* bb = static_cast<const fcl::Box*>(base->getCollisionGeometry());
+    for (int j = 0; j < 3; j++) base_info.dim[j] = bb->side[j];
 
-    for (int i = 0; i <= fetch_arm::get_num_joints()+1; i++)
+    fcl::Quaternion3f qb = base->getQuatRotation();
+    base_info.quat[0] = qb.getW();
+    base_info.quat[1] = qb.getX();
+    base_info.quat[2] = qb.getY();
+    base_info.quat[3] = qb.getZ();
+
+    fcl::Vec3f vb = base->getTranslation();
+    base_info.trans[0] = vb[0];
+    base_info.trans[1] = vb[1];
+    base_info.trans[2] = vb[2];
+
+    cur_boxes.base = base_info;
+
+    bbox_info_t hand_info;
+    hand_info.joint = fetch_arm::get_num_joints();
+    const fcl::Box* bh = static_cast<const fcl::Box*>(hand->getCollisionGeometry());
+    for (int j = 0; j < 3; j++) hand_info.dim[j] = bh->side[j];
+
+    fcl::Quaternion3f qh = hand->getQuatRotation();
+    hand_info.quat[0] = qh.getW();
+    hand_info.quat[1] = qh.getX();
+    hand_info.quat[2] = qh.getY();
+    hand_info.quat[3] = qh.getZ();
+
+    fcl::Vec3f vh = hand->getTranslation();
+    hand_info.trans[0] = vh[0];
+    hand_info.trans[1] = vh[1];
+    hand_info.trans[2] = vh[2];
+
+    cur_boxes.hand = hand_info;
+
+    for (int i = 0; i < arm_parts.size(); i++)
     {
-        bbox_info_t cur;
+        cylinder_info_t cur;
         cur.joint = i;
-        const fcl::Box* b = static_cast<const fcl::Box*>(objs[i]->getCollisionGeometry());
-        cur.dim[0] = b->side[0];
-        cur.dim[1] = b->side[1];
-        cur.dim[2] = b->side[2];
+        const fcl::Cylinder* b = static_cast<const fcl::Cylinder*>(arm_parts[i]->getCollisionGeometry());
+        cur.radius = b->radius;
+        cur.length = b->lz;
 
-        fcl::Quaternion3f q = objs[i]->getQuatRotation();
+        fcl::Quaternion3f q = arm_parts[i]->getQuatRotation();
         cur.quat[0] = q.getW();
         cur.quat[1] = q.getX();
         cur.quat[2] = q.getY();
         cur.quat[3] = q.getZ();
 
-        fcl::Vec3f v = objs[i]->getTranslation();
+        fcl::Vec3f v = arm_parts[i]->getTranslation();
         cur.trans[0] = v[0];
         cur.trans[1] = v[1];
         cur.trans[2] = v[2];
 
-        msg.boxes.push_back(cur);
+        cur_boxes.segments.push_back(cur);
     }
 
-    return msg;
+    lcm::LCM lcm;
+    lcm.publish("ARM_COLLISION_BOXES", &cur_boxes);
 }
+#endif

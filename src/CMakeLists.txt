@@ -5,7 +5,7 @@ find_package(Qt4 REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS system thread timer)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS "-pthread -I /usr/include/eigen3/")
 
 include(${QT_USE_FILE})

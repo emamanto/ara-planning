@@ -10,10 +10,7 @@
 #include "Shortcut.h"
 #include "dynamixel_status_list_t.hpp"
 #include "dynamixel_command_list_t.hpp"
-#include "arm_collision_boxes_t.hpp"
 #include "observations_t.hpp"
-
-//#define PUBLISH_COLLISION_MODEL
 
 class experiment_handler
 {
@@ -91,12 +88,6 @@ public:
 
         ahand = stats->statuses[fetch_arm::get_num_joints()].position_radians;
 
-        if (observe_time < 100)
-        {
-            publish_command();
-            return;
-        }
-
         // Check collision status based on new pose
         if (collision_world::collision(apos, true))
         {
@@ -124,10 +115,11 @@ public:
             num_collisions = 0;
         }
 
-// #ifdef PUBLISH_COLLISION_MODEL
-//         arm_collision_boxes_t arm_msg = collision_world::arm_boxes(apos);
-//         lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
-// #endif
+        if (observe_time < 100)
+        {
+            publish_command();
+            return;
+        }
 
         // If we don't have a plan to execute yet, find one
         if (current_plan.size() == 0)
