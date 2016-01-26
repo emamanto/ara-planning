@@ -104,8 +104,8 @@ void collision_world::clear()
 
     // TABLE
     std::vector<float> dims;
-    dims.push_back(1);
-    dims.push_back(1);
+    dims.push_back(3);
+    dims.push_back(3);
     dims.push_back(0.04);
 
     std::vector<float> pos;
