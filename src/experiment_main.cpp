@@ -238,9 +238,7 @@ void experiment_handler::compute_next_plan()
     current_status = SEARCH;
     if (current_stage == REACH)
     {
-        arm_state::target[0] = 0;
-        arm_state::target[1] = 0;
-        arm_state::target[2] = 0.1;
+        set_reach_point();
     }
     else
     {
@@ -326,6 +324,71 @@ void experiment_handler::compute_grasp_plan()
     }
     plan_index = 0;
     current_status = EXECUTE;
+}
+
+void experiment_handler::set_reach_point()
+{
+    float x = 0;
+    float y = 0;
+
+    // USE ID
+    if (target_obj_id != -1)
+    {
+        bool found = false;
+        for (std::vector<object_data_t>::iterator i =
+                 latest_objects.begin();
+             i != latest_objects.end(); i++)
+        {
+            if (i->id == target_obj_id)
+            {
+                x = i->bbox_xyzrpy[0];
+                y = i->bbox_xyzrpy[1];
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            std::cout << "No object with requested id" << std::endl;
+            exit(1);
+        }
+    }
+    // USE COLOR
+    else
+    {
+        bool found = false;
+        for (std::vector<object_data_t>::iterator i =
+                 latest_objects.begin();
+             i != latest_objects.end(); i++)
+        {
+            for (int j = 0; j < i->num_cat; j++)
+            {
+                if (i->cat_dat[j].cat.cat == 1)
+                {
+                    for (int k = 0; k < i->cat_dat[j].len; k++)
+                    {
+                        if (i->cat_dat[j].label[k].compare(target_obj_color) == 0 &&
+                        i->cat_dat[j].confidence[k] > 0.5)
+                        {
+                            x = i->bbox_xyzrpy[0];
+                            y = i->bbox_xyzrpy[1];
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!found)
+        {
+            std::cout << "No object with requested color" << std::endl;
+            exit(1);
+        }
+    }
+
+    arm_state::target[0] = x;
+    arm_state::target[1] = y;
+    arm_state::target[2] = 0.1;
 }
 
 int main(int argc, char* argv[])

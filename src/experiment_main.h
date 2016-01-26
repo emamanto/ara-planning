@@ -29,6 +29,7 @@ private:
     void publish_command();
     void compute_next_plan();
     void compute_grasp_plan();
+    void set_reach_point();
 
     bool motion_done();
     void request_hand_motion(bool opening);
