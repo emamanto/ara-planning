@@ -15,7 +15,6 @@
 #include "search_target_t.hpp"
 #include "observations_t.hpp"
 
-#define PUBLISH_COLLISION_MODEL
 //#define USE_RRTSTAR
 //#define SLOW_SPEED
 
@@ -50,7 +49,7 @@ public:
         }
         if (np != status) status = np;
 
-        if (collision_world::collision(status, true))
+        if (collision_world::collision(status, 0, true))
         {
             std::cout << "There are "
                       << (collision_world::num_collisions())
@@ -66,11 +65,6 @@ public:
                 }
             std::cout << std::endl;
         }
-
-#ifdef PUBLISH_COLLISION_MODEL
-        arm_collision_boxes_t arm_msg = collision_world::arm_boxes(status);
-        lcm.publish("ARM_COLLISION_BOXES", &arm_msg);
-#endif
 
         point_3d pt = fetch_arm::ee_xyz(status);
 
