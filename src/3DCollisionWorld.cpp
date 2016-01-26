@@ -244,6 +244,21 @@ bool collision_world::collision(pose arm_position,
     base_objects_m->registerObject(base);
     arm_objects_m->registerObject(base);
 
+#ifdef PUBLISH_COLLISION_MODEL
+    if (should_publish)
+    {
+        publish_arm_boxes(arm_position);
+    }
+#endif
+
+    // end BASE
+
+    // std::cout << "Checking for collision of "
+    //           << arm_objects_m->size()
+    //           << " arm objs against "
+    //           << world_objects_m->size() << " world objs"
+    //           << std::endl;
+
     // Self-collision check
     collision_data self_data;
     self_data.request = fcl::CollisionRequest();
@@ -255,23 +270,19 @@ bool collision_world::collision(pose arm_position,
     hand_objects_m->collide(base_objects_m, &self_data,
                             collision_function);
 
-#ifdef PUBLISH_COLLISION_MODEL
-    if (should_publish)
+
+    for (int i = 0; i < self_data.result.numContacts(); i++)
     {
-        publish_arm_boxes(arm_position);
+        object_data* obj1 =
+            (object_data*)(self_data.result.getContact(i).o1->getUserData());
+        object_data* obj2 =
+            (object_data*)(self_data.result.getContact(i).o2->getUserData());
+
+        collision_pair pr = std::make_pair<object_data, object_data>(*obj1, *obj2);
+        colliding.push_back(pr);
     }
-#endif
 
-    if (self_data.result.isCollision()) return true;
-
-    // end BASE
-
-    // std::cout << "Checking for collision of "
-    //           << arm_objects_m->size()
-    //           << " arm objs against "
-    //           << world_objects_m->size() << " world objs"
-    //           << std::endl;
-
+    // World collision check
     collision_data data;
     data.request = fcl::CollisionRequest();
     data.request.enable_contact = false;
@@ -282,20 +293,19 @@ bool collision_world::collision(pose arm_position,
     arm_objects_m->collide(world_objects_m, &data,
                            collision_function);
 
-//    if (details)
-//    {
-        for (int i = 0; i < data.result.numContacts(); i++)
-        {
-            object_data* obj1 =
-                (object_data*)(data.result.getContact(i).o1->getUserData());
+    for (int i = 0; i < data.result.numContacts(); i++)
+    {
+        object_data* obj1 =
+            (object_data*)(data.result.getContact(i).o1->getUserData());
         object_data* obj2 =
             (object_data*)(data.result.getContact(i).o2->getUserData());
 
         collision_pair pr = std::make_pair<object_data, object_data>(*obj1, *obj2);
         colliding.push_back(pr);
-        }
-//     }
-    return data.result.isCollision();
+    }
+
+    return (data.result.isCollision() ||
+            self_data.result.isCollision());
 }
 
 void collision_world::set_held_object(double dims[])
