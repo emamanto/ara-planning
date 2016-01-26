@@ -13,15 +13,13 @@ experiment_handler::experiment_handler(int obj_id,
     ahand(0),
     dhand(0),
     plan_index(0),
-    searching(false),
     num_collisions(0),
     target_obj_id(obj_id),
     target_obj_color(color),
     drop_x(drop_target_x),
     drop_y(drop_target_y),
-    picked_up(false),
-    moved_drop(false),
-    dropped_off(false),
+    current_stage(REACH),
+    current_status(WAIT),
     observe_time(0)
 {
     if (target_obj_color != "none")
@@ -56,7 +54,7 @@ void experiment_handler::handle_status_message(
     const std::string& channel,
     const dynamixel_status_list_t* stats)
 {
-    if (searching) return;
+    if (current_status == SEARCH) return;
 
     lcm::LCM lcm;
 
@@ -81,14 +79,11 @@ void experiment_handler::handle_status_message(
         return;
     }
 
-    // If we don't have a plan to execute yet, find one
-    if (current_plan.size() == 0)
+    if (current_status == WAIT && current_stage != DONE)
     {
         if (num_collisions == 0)
         {
-            searching = true;
             compute_next_plan();
-            searching = false;
         }
         else
         {
@@ -99,82 +94,66 @@ void experiment_handler::handle_status_message(
     }
 
     // Execution control if we do have a plan
-    bool done = true;
-    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+    if (current_status == EXECUTE)
     {
-        if (fabs(apos[i] - dpos[i]) > 0.01)
+        if (!motion_done())
         {
-            done = false;
-            if (picked_up && !moved_drop && i == 5)
-            {
-                done = true;
-            }
-            break;
+            publish_command();
+            return;
         }
-    }
-    if (fabs(dhand - ahand) > 0.02)
-    {
-        done = false;
-    }
 
-    if (done && current_plan.size() > 0 &&
-        plan_index < current_plan.size()-1)
-    {
-        std::cout << "Finished step " << plan_index << std::endl;
-        plan_index++;
-
-        if (current_plan.at(plan_index).size() == 1)
+        // Not yet at end of plan execution
+        if (current_plan.size() > 0 &&
+            plan_index < current_plan.size()-1)
         {
-            if (current_plan.at(plan_index).at(0) == 1)
+            plan_index++;
+
+            if (current_plan.at(plan_index).size() == 1)
             {
-                std::cout << "Opening hand" << std::endl;
-                dhand = 0.05;
+                request_hand_motion(current_plan[plan_index][0]);
             }
             else
             {
-                std::cout << "Closing hand" << std::endl;
-                dhand = 0.0;
+                for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+                {
+                    dpos.at(i) +=
+                        current_plan.at(plan_index).at(i);
+                }
             }
+        }
+        // Finished executing plan, move to next stage
+        else if (current_stage == REACH)
+        {
+            compute_grasp_plan();
+            current_stage = GRASP;
+        }
+        else if (current_stage == GRASP)
+        {
+            compute_next_plan();
+            current_stage = MOVE;
+        }
+        else if (current_stage == MOVE)
+        {
+            std::cout << "Going to compute drop plan." << std::endl;
+            compute_grasp_plan();
+            std::vector<pose> reverse_plan;
+            reverse_plan.push_back(current_plan.at(2));
+            reverse_plan.push_back(current_plan.at(1));
+            reverse_plan.push_back(current_plan.at(4));
+            current_plan = reverse_plan;
+            dpos = apos;
+            for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+            {
+                dpos.at(i) += current_plan.at(0).at(i);
+            }
+            current_stage = DROP;
         }
         else
         {
-            for (int i = 0; i < fetch_arm::get_num_joints(); i++)
-            {
-                dpos.at(i) +=
-                    current_plan.at(plan_index).at(i);
-            }
+            current_status = WAIT;
+            current_stage = DONE;
         }
     }
-    else if (done && !picked_up)
-    {
-        std::cout << "Going to compute grasp plan." << std::endl;
-        compute_grasp_plan();
-        picked_up = true;
-    }
-    else if (done && !moved_drop)
-    {
-        std::cout << "Going to compute second move." << std::endl;
-        compute_next_plan();
-        moved_drop = true;
-    }
-    else if (done && !dropped_off)
-    {
-        std::cout << "Going to compute drop plan." << std::endl;
-        compute_grasp_plan();
-        std::vector<pose> reverse_plan;
-        reverse_plan.push_back(current_plan.at(2));
-        reverse_plan.push_back(current_plan.at(1));
-        reverse_plan.push_back(current_plan.at(4));
-        current_plan = reverse_plan;
-        dpos = apos;
-        for (int i = 0; i < fetch_arm::get_num_joints(); i++)
-        {
-            dpos.at(i) += current_plan.at(0).at(i);
-        }
-        dropped_off = true;
-    }
-
-    publish_command();
 }
 
 void experiment_handler::check_collisions()
@@ -237,7 +216,7 @@ void experiment_handler::handle_observations_message(
     const std::string& channel,
     const observations_t* obs)
 {
-    if (searching) return;
+    if (current_status == SEARCH) return;
 
     latest_objects = obs->observations;
     object_data od;
@@ -256,21 +235,22 @@ void experiment_handler::handle_observations_message(
 
 void experiment_handler::compute_next_plan()
 {
-    if (!picked_up)
+    current_status = SEARCH;
+    if (current_stage == REACH)
     {
         arm_state::target[0] = 0;
         arm_state::target[1] = 0;
-        arm_state::target[2] = 0.06;
+        arm_state::target[2] = 0.1;
     }
     else
     {
         arm_state::target[0] = drop_x;
         arm_state::target[1] = drop_y;
-        arm_state::target[2] = 0.06;
+        arm_state::target[2] = 0.1;
     }
     arm_state::pitch_matters = true;
 
-    std::cout << "[PLANNER] Initiating a search to "
+    std::cout << "New search to target: "
               << arm_state::target[0] << ", "
               << arm_state::target[1] << ", "
               << arm_state::target[2]
@@ -296,10 +276,12 @@ void experiment_handler::compute_next_plan()
         dpos.at(i) += current_plan.at(0).at(i);
     }
     plan_index = 0;
+    current_status = EXECUTE;
 }
 
 void experiment_handler::compute_grasp_plan()
 {
+    current_status = SEARCH;
     current_plan.clear();
     action spin(fetch_arm::get_num_joints(), 0);
     float spin_angle = (0);
@@ -343,6 +325,7 @@ void experiment_handler::compute_grasp_plan()
         dpos.at(i) += current_plan.at(0).at(i);
     }
     plan_index = 0;
+    current_status = EXECUTE;
 }
 
 int main(int argc, char* argv[])
@@ -392,4 +375,40 @@ int main(int argc, char* argv[])
 
 
     return 0;
+}
+
+bool experiment_handler::motion_done()
+{
+    bool done = true;
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+    {
+        if (fabs(apos[i] - dpos[i]) > 0.01)
+        {
+            done = false;
+            break;
+        }
+    }
+    if (fabs(dhand - ahand) > 0.02)
+    {
+        done = false;
+    }
+    return done;
+}
+
+void experiment_handler::request_hand_motion(bool opening)
+{
+    if (opening == 1)
+    {
+        std::cout << "Opening hand" << std::endl;
+        dhand = 0.05;
+    }
+    else if (opening == 0)
+    {
+        std::cout << "Closing hand" << std::endl;
+        dhand = 0.0;
+    }
+    else
+    {
+        std::cout << "Invalid hand request" << std::endl;
+    }
 }

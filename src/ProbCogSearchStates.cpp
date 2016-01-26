@@ -47,7 +47,7 @@ float arm_state::cost(action a)
 bool arm_state::valid() const
 {
     if(!fetch_arm::is_valid(position)) return false;
-    if(collision_world::collision(position, hand_position)) return false;
+    if(collision_world::collision(position, hand_position, false)) return false;
     return true;
 }
 

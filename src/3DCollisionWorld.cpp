@@ -121,7 +121,7 @@ void collision_world::clear()
 
 bool collision_world::collision(pose arm_position,
                                 float hand_position,
-                                bool details)
+                                bool should_publish)
 {
     if (!arm_objects_m)
     {
@@ -177,8 +177,7 @@ bool collision_world::collision(pose arm_position,
         arm_objects_m->registerObject(obj);
 
         arm_parts.push_back(obj);
-        if (i < 2) base_objects_m->registerObject(obj);
-        if (i > 2) hand_objects_m->registerObject(obj);
+        if (i > 0) hand_objects_m->registerObject(obj);
     }
 
     // HAND
@@ -257,7 +256,10 @@ bool collision_world::collision(pose arm_position,
                             collision_function);
 
 #ifdef PUBLISH_COLLISION_MODEL
-    publish_arm_boxes(arm_position);
+    if (should_publish)
+    {
+        publish_arm_boxes(arm_position);
+    }
 #endif
 
     if (self_data.result.isCollision()) return true;
@@ -280,8 +282,8 @@ bool collision_world::collision(pose arm_position,
     arm_objects_m->collide(world_objects_m, &data,
                            collision_function);
 
-    if (details)
-    {
+//    if (details)
+//    {
         for (int i = 0; i < data.result.numContacts(); i++)
         {
             object_data* obj1 =
@@ -292,7 +294,7 @@ bool collision_world::collision(pose arm_position,
         collision_pair pr = std::make_pair<object_data, object_data>(*obj1, *obj2);
         colliding.push_back(pr);
         }
-    }
+//     }
     return data.result.isCollision();
 }
 

@@ -53,7 +53,7 @@ public:
 
     static bool collision(pose arm_position,
                           float hand_position,
-                          bool details = false);
+                          bool should_publish = false);
     static int num_collisions() {return colliding.size();}
     static collision_pair& get_collision_pair(int i)
     {return colliding.at(i);}
