@@ -9,7 +9,8 @@
 experiment_handler::experiment_handler(int obj_id,
                                        std::string color,
                                        float drop_target_x,
-                                       float drop_target_y) :
+                                       float drop_target_y,
+                                       bool reset = true) :
     ahand(0),
     dhand(0),
     plan_index(0),
@@ -38,13 +39,16 @@ experiment_handler::experiment_handler(int obj_id,
               << drop_y << std::endl;
 
 
-    dpos.push_back(M_PI/8);
-    dpos.push_back(M_PI/2);
-    dpos.push_back(-M_PI/2 + M_PI/8);
-    dpos.push_back(M_PI/2);
-    dpos.push_back(0);
-    dpos.push_back(M_PI/2);
-    dpos.push_back(0);
+    if (reset)
+    {
+        dpos.push_back(M_PI/8);
+        dpos.push_back(M_PI/2);
+        dpos.push_back(-M_PI/2 + M_PI/8);
+        dpos.push_back(M_PI/2);
+        dpos.push_back(0);
+        dpos.push_back(M_PI/2);
+        dpos.push_back(0);
+    }
 
     dhand = 0;
 };
@@ -68,18 +72,23 @@ void experiment_handler::handle_status_message(
     {
         apos = np;
     }
+    if (dpos.size() == 0)
+    {
+        dpos = apos;
+    }
 
     ahand = stats->statuses[fetch_arm::get_num_joints()].position_radians;
 
     check_collisions();
 
-    if (observe_time < 100)
+    if (observe_time < 10 ||
+        (current_stage == REACH && !motion_done()))
     {
         publish_command();
         return;
     }
 
-    if (current_status == WAIT && current_stage != DONE)
+    if (current_status == WAIT)
     {
         if (num_collisions == 0)
         {
@@ -151,7 +160,7 @@ void experiment_handler::handle_status_message(
         else
         {
             current_status = WAIT;
-            current_stage = DONE;
+            exit(0);
         }
     }
 }
@@ -391,55 +400,6 @@ void experiment_handler::set_reach_point()
     arm_state::target[2] = 0.1;
 }
 
-int main(int argc, char* argv[])
-{
-    int obj_id = -1;
-    std::string color = "none";
-    float target_x = 0;
-    float target_y = 0;
-
-    for (int i = 1; i < argc-1; i++)
-    {
-        if (std::string(argv[i]) == "-i")
-        {
-            obj_id = boost::lexical_cast<int>(argv[i + 1]);
-        }
-        else if (std::string(argv[i]) == "-c")
-        {
-            color = std::string(argv[i + 1]);
-        }
-        else if (std::string(argv[i]) == "-x")
-        {
-            target_x = boost::lexical_cast<float>(argv[i + 1]);
-        }
-        else if (std::string(argv[i]) == "-y")
-        {
-            target_y = boost::lexical_cast<float>(argv[i + 1]);
-        }
-    }
-
-    lcm::LCM lcm;
-    if (!lcm.good())
-    {
-        std::cout << "Failed to initialize LCM." << std::endl;
-        return 1;
-    }
-
-    fetch_arm::INIT();
-    collision_world::clear();
-
-    experiment_handler handler(obj_id, color, target_x, target_y);
-    lcm.subscribe("ARM_STATUS", &experiment_handler::handle_status_message,
-                  &handler);
-    lcm.subscribe("OBSERVATIONS", &experiment_handler::handle_observations_message,
-                  &handler);
-
-    while(0 == lcm.handle());
-
-
-    return 0;
-}
-
 bool experiment_handler::motion_done()
 {
     bool done = true;
@@ -474,4 +434,58 @@ void experiment_handler::request_hand_motion(bool opening)
     {
         std::cout << "Invalid hand request" << std::endl;
     }
+}
+
+int main(int argc, char* argv[])
+{
+    int obj_id = -1;
+    std::string color = "none";
+    float target_x = 0;
+    float target_y = 0;
+    bool reset = false;
+
+    for (int i = 1; i < argc; i++)
+    {
+        if (std::string(argv[i]) == "-i")
+        {
+            obj_id = boost::lexical_cast<int>(argv[i + 1]);
+        }
+        else if (std::string(argv[i]) == "-c")
+        {
+            color = std::string(argv[i + 1]);
+        }
+        else if (std::string(argv[i]) == "-x")
+        {
+            target_x = boost::lexical_cast<float>(argv[i + 1]);
+        }
+        else if (std::string(argv[i]) == "-y")
+        {
+            target_y = boost::lexical_cast<float>(argv[i + 1]);
+        }
+        else if (std::string(argv[i]) == "-r")
+        {
+            reset = true;
+        }
+    }
+
+    lcm::LCM lcm;
+    if (!lcm.good())
+    {
+        std::cout << "Failed to initialize LCM." << std::endl;
+        return 1;
+    }
+
+    fetch_arm::INIT();
+    collision_world::clear();
+
+    experiment_handler handler(obj_id, color, target_x, target_y, reset);
+    lcm.subscribe("ARM_STATUS", &experiment_handler::handle_status_message,
+                  &handler);
+    lcm.subscribe("OBSERVATIONS", &experiment_handler::handle_observations_message,
+                  &handler);
+
+    while(0 == lcm.handle());
+
+
+    return 0;
 }

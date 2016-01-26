@@ -6,7 +6,7 @@
 #include "dynamixel_command_list_t.hpp"
 #include "observations_t.hpp"
 
-enum stage{REACH, GRASP, MOVE, DROP, DONE};
+enum stage{REACH, GRASP, MOVE, DROP};
 enum status{SEARCH, EXECUTE, WAIT};
 
 class experiment_handler
@@ -15,7 +15,8 @@ public:
     experiment_handler(int obj_id,
                        std::string color,
                        float drop_target_x,
-                       float drop_target_y);
+                       float drop_target_y,
+                       bool reset);
     ~experiment_handler() {};
 
     void handle_status_message(const lcm::ReceiveBuffer* rbuf,
