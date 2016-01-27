@@ -177,7 +177,7 @@ bool collision_world::collision(pose arm_position,
         arm_objects_m->registerObject(obj);
 
         arm_parts.push_back(obj);
-        if (i > 0) hand_objects_m->registerObject(obj);
+        if (i > 1) hand_objects_m->registerObject(obj);
     }
 
     // HAND

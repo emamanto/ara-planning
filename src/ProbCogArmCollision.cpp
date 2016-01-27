@@ -3,7 +3,7 @@
 #include <iostream>
 
 // Parameter for fiddling
-#define TIME_PER_STEP 0.1
+#define TIME_PER_STEP 0.01
 
 template<>
 bool subdivision_collision_check<arm_state, action>(arm_state start,

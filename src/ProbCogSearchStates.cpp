@@ -5,7 +5,6 @@
 
 point_3d arm_state::target = point_3d(3, 0);
 float arm_state::target_pitch = 0.f;
-bool arm_state::pitch_matters = true;
 
 arm_state::arm_state() :
     position(fetch_arm::get_num_joints(), 0)
@@ -79,32 +78,13 @@ action arm_state::compute_finisher() const
     target_xform *= fetch_arm::rotation_matrix(M_PI/2, Y_AXIS);
 
     action xyz = fetch_arm::solve_ik(position, target_xform);
-    //if (!pitch_matters)
     return xyz;
-
-    //action pitch = fetch_arm::solve_gripper(position, target_pitch);
-
-    // action total;
-    // bool invalid = true;
-    // for (int i = 0; i < fetch_arm::get_num_joints(); i++)
-    // {
-    //     total.push_back(xyz.at(i) + pitch.at(i));
-    //     if (pitch.at(i) != 0) invalid = false;
-    // }
-    // invalid = (invalid ||
-    //            fetch_arm::ee_dist_to(fetch_arm::apply(position, total),
-    //                                    target) > 0.01);
-    // if (invalid) return pitch;
-    // return total;
 }
 
 bool arm_state::is_goal() const
 {
     if (target_distance() > 0.01) return false;
     if (fabs(M_PI/2 - fetch_arm::ee_rpy(position).at(1)) > 0.01) return false;
-    std::cout <<  fetch_arm::ee_xyz(position)[0] << " "
-              << fetch_arm::ee_xyz(position)[1] << " "
-              << fetch_arm::ee_xyz(position)[2] << std::endl;
     return true;
 }
 

@@ -223,8 +223,8 @@ public:
         current_plan.push_back(end_pose);
 #else
         arm_state::target = goal;
-        arm_state::pitch_matters = true;
         //arm_state::target_pitch = -M_PI/2.f;
+
         std::vector<search_result<arm_state, action> > latest_search;
 
         search_request<arm_state, action> req(arm_state(status),

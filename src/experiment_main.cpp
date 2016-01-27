@@ -25,12 +25,12 @@ experiment_handler::experiment_handler(int obj_id,
 {
     if (target_obj_color != "none")
     {
-        std::cout << "Moving the " << target_obj_color
+        std::cout << "[INPUT] Moving the " << target_obj_color
                   << " object ";
     }
     else if (target_obj_id != -1)
     {
-        std::cout << "Moving the object with id "
+        std::cout << "[INPUT] Moving the object with id "
                   << target_obj_id
                   << " ";
     }
@@ -41,11 +41,11 @@ experiment_handler::experiment_handler(int obj_id,
 
     if (reset)
     {
-        dpos.push_back(M_PI/8);
-        dpos.push_back(M_PI/2);
-        dpos.push_back(-M_PI/2 + M_PI/8);
-        dpos.push_back(M_PI/2);
+        dpos.push_back(fetch_arm::get_joint_max(0));
         dpos.push_back(0);
+        dpos.push_back(-M_PI/2);
+        dpos.push_back(M_PI/3);
+        dpos.push_back(M_PI/2);
         dpos.push_back(M_PI/2);
         dpos.push_back(0);
     }
@@ -96,8 +96,9 @@ void experiment_handler::handle_status_message(
         }
         else
         {
-            std::cout << "Trying to start a search from a collision state"
+            std::cout << "[ERROR] Trying to start a search from a collision state"
                       << std::endl;
+            exit(1);
         }
         return;
     }
@@ -143,7 +144,7 @@ void experiment_handler::handle_status_message(
         }
         else if (current_stage == MOVE)
         {
-            std::cout << "Going to compute drop plan." << std::endl;
+            std::cout << "[CONTROL] Going to compute drop plan." << std::endl;
             compute_grasp_plan();
             std::vector<pose> reverse_plan;
             reverse_plan.push_back(current_plan.at(2));
@@ -172,7 +173,7 @@ void experiment_handler::check_collisions()
         if (num_collisions < collision_world::num_collisions())
         {
             int new_collisions = collision_world::num_collisions() - num_collisions;
-            std::cout << "There are "
+            std::cout << "[COLLISION] "
                       << new_collisions
                       << " new collisions. All current collisions: ";
             for (int i = 0;
@@ -255,9 +256,8 @@ void experiment_handler::compute_next_plan()
         arm_state::target[1] = drop_y;
         arm_state::target[2] = 0.1;
     }
-    arm_state::pitch_matters = true;
 
-    std::cout << "New search to target: "
+    std::cout << "[CONTROL] New search to target: "
               << arm_state::target[0] << ", "
               << arm_state::target[1] << ", "
               << arm_state::target[2]
@@ -275,7 +275,7 @@ void experiment_handler::compute_next_plan()
     current_plan = latest_search.at(latest_search.size()-1).path;
     current_plan = shortcut<arm_state, action>(current_plan,
                                                arm_state(apos));
-    std::cout << "Shortcutted to " << current_plan.size()
+    std::cout << "[CONTROL] Shortcutted to " << current_plan.size()
               << std::endl;
     dpos = apos;
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
@@ -325,7 +325,6 @@ void experiment_handler::compute_grasp_plan()
         unspin.at(i) *= -1;
     current_plan.push_back(unspin);
 
-    std::cout << "Made a grasp plan of len " << current_plan.size()  << std::endl;
     dpos = apos;
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
@@ -358,7 +357,7 @@ void experiment_handler::set_reach_point()
         }
         if (!found)
         {
-            std::cout << "No object with requested id" << std::endl;
+            std::cout << "[ERROR] No object with requested id" << std::endl;
             exit(1);
         }
     }
@@ -422,17 +421,17 @@ void experiment_handler::request_hand_motion(bool opening)
 {
     if (opening == 1)
     {
-        std::cout << "Opening hand" << std::endl;
+        //std::cout << "Opening hand" << std::endl;
         dhand = 0.05;
     }
     else if (opening == 0)
     {
-        std::cout << "Closing hand" << std::endl;
+        //std::cout << "Closing hand" << std::endl;
         dhand = 0.0;
     }
     else
     {
-        std::cout << "Invalid hand request" << std::endl;
+        std::cout << "[ERROR] Invalid hand request" << std::endl;
     }
 }
 
