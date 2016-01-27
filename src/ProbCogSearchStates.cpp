@@ -38,6 +38,13 @@ arm_state arm_state::apply(action a)
     return arm_state(child);
 }
 
+bool arm_state::action_valid(action a)
+{
+    bool is_collision = subdivision_collision_check<arm_state, action>(position, a, 0);
+    return !is_collision;
+    return true;
+}
+
 float arm_state::cost(action a)
 {
     pose next = fetch_arm::apply(position, a);
@@ -114,11 +121,11 @@ float arm_state::target_distance() const
 
 void arm_state::print() const
 {
-    std::cout << "POSE: ";
+    std::cout << "POSE: " << std::endl;
     for (int i = 0; i < position.size(); i++)
     {
-        std::cout << "joint " << i << " at " << position.at(i)
-                  << " rad  ";
+        std::cout << "\tjoint " << i << " at " << position.at(i)
+                  << " rad  " << std::endl;
     }
     std::cout << std::endl;
 }

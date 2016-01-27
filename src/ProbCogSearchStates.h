@@ -2,6 +2,7 @@
 
 #include "FetchArm.h"
 #include "3DCollisionWorld.h"
+#include "ProbCogArmCollision.h"
 
 class arm_state
 {
@@ -20,6 +21,7 @@ public:
     bool operator > (const arm_state& other) const;
 
     arm_state apply(action a);
+    bool action_valid(action a);
     float cost(action a);
     bool valid() const;
     bool small_steps() const;

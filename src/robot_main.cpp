@@ -16,22 +16,22 @@
 #include "observations_t.hpp"
 
 //#define USE_RRTSTAR
-//#define SLOW_SPEED
+#define SLOW_SPEED
 
 class lcm_handler
 {
 public:
     lcm_handler() :
-        current_command(),
+        current_command(7, 0),
         current_command_index(0),
         searching(false) {
-        current_command.push_back(M_PI/8);
-        current_command.push_back(M_PI/2);
-        current_command.push_back(-M_PI/2 + M_PI/8);
-        current_command.push_back(M_PI/2);
-        current_command.push_back(0);
-        current_command.push_back(M_PI/2);
-        current_command.push_back(0);
+        // current_command.push_back(M_PI/8);
+        // current_command.push_back(M_PI/2);
+        // current_command.push_back(-M_PI/2 + M_PI/8);
+        // current_command.push_back(M_PI/2);
+        // current_command.push_back(0);
+        // current_command.push_back(M_PI/2);
+        // current_command.push_back(0);
     };
     ~lcm_handler() {};
 
@@ -63,7 +63,8 @@ public:
                               << pr.second.type << ", "
                               << pr.second.color << " ";
                 }
-            std::cout << std::endl;
+                std::cout << "on the " <<  current_command_index
+                          << " step in the plan" <<  std::endl;
         }
 
         point_3d pt = fetch_arm::ee_xyz(status);
@@ -78,9 +79,15 @@ public:
             }
         }
 
+        static bool printed = false;
         if (done && current_plan.size() > 0 &&
             current_command_index < current_plan.size()-1)
         {
+            // std::cout << "The actual values for the end of the "
+            //           << current_command_index << " step are ";
+            // arm_state(status).print();
+            // std::cout << "Valid? " << arm_state(status).valid() << std::endl;
+
             current_command_index++;
 #ifdef USE_RRTSTAR
             current_command = current_plan.at(current_command_index);
@@ -91,6 +98,14 @@ public:
                     current_plan.at(current_command_index).at(i);
             }
 #endif
+        }
+        else if (done && current_plan.size() > 0 && !printed)
+        {
+            // std::cout << "The actual values for the end of the "
+            //           << current_command_index << " step are ";
+            // arm_state(status).print();
+            // std::cout << "Valid? " << arm_state(status).valid() << std::endl;
+            printed = true;
         }
 
         dynamixel_command_list_t command;
@@ -247,6 +262,20 @@ public:
                                                    arm_state(status));
         std::cout << "Shortcutted to " << current_plan.size()
                   << std::endl;
+
+        // pose executed = status;
+        // int i = 0;
+        // for (std::vector<pose>:: iterator k = current_plan.begin();
+        //          k != current_plan.end(); k++)
+        // {
+        //     executed = fetch_arm::apply(executed, *k);
+        //     std::cout << "The expected values for the end of the "
+        //               << i  << " step are ";
+        //     arm_state(executed).print();
+        //     std::cout << "Vaid? " << arm_state(executed).valid() << std::endl;
+        //     i++;
+        // }
+        // std::cout << "===============================" << std::endl;
 #endif
         ///////////////////////////
 

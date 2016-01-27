@@ -367,7 +367,8 @@ bool improve_path(search_request<S, P>& request,
              p != primitives->end(); p++)
         {
             S child = s.state.apply(*p);
-            if (!child.valid()) continue;
+            if (!(s.state.action_valid(*p) &&
+                  child.valid())) continue;
             float new_cost = progress.costs[s.state] +
                 s.state.cost(*p);
 

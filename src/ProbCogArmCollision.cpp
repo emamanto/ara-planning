@@ -1,4 +1,6 @@
 #include "ProbCogArmCollision.h"
+#include "ProbCogSearchStates.h"
+#include <iostream>
 
 // Parameter for fiddling
 #define TIME_PER_STEP 0.1
@@ -65,7 +67,10 @@ bool subdivision_collision_check<arm_state, action>(arm_state start,
                     chkpoint.at(i) += chgs_per_step.at(i);
                 }
             }
-            if (!arm_state(chkpoint).valid()) return true;
+            if (!arm_state(chkpoint).valid())
+            {
+                return true;
+            }
         }
 
     }
