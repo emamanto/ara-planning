@@ -134,17 +134,19 @@ void experiment_handler::handle_status_message(
         // Finished executing plan, move to next stage
         else if (current_stage == REACH)
         {
+            print_stage(GRASP);
             compute_grasp_plan();
             current_stage = GRASP;
         }
         else if (current_stage == GRASP)
         {
+            print_stage(MOVE);
             compute_next_plan();
             current_stage = MOVE;
         }
         else if (current_stage == MOVE)
         {
-            std::cout << "[CONTROL] Going to compute drop plan." << std::endl;
+            print_stage(DROP);
             compute_grasp_plan();
             std::vector<pose> reverse_plan;
             reverse_plan.push_back(current_plan.at(2));
@@ -248,6 +250,7 @@ void experiment_handler::compute_next_plan()
     current_status = SEARCH;
     if (current_stage == REACH)
     {
+        print_stage(REACH);
         set_reach_point();
     }
     else
@@ -432,6 +435,26 @@ void experiment_handler::request_hand_motion(bool opening)
     else
     {
         std::cout << "[ERROR] Invalid hand request" << std::endl;
+    }
+}
+
+void experiment_handler::print_stage(stage s)
+{
+    std::cout << std::endl;
+    switch (s)
+    {
+    case 0:
+        std::cout << "[STAGE] REACH" << std::endl;
+        break;
+    case 1:
+        std::cout << "[STAGE] GRASP" << std::endl;
+        break;
+    case 2:
+        std::cout << "[STAGE] MOVE" << std::endl;
+        break;
+    case 3:
+        std::cout << "[STAGE] DROP" << std::endl;
+        break;
     }
 }
 

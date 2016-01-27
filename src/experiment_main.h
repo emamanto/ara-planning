@@ -34,6 +34,7 @@ private:
 
     bool motion_done();
     void request_hand_motion(bool opening);
+    void print_stage(stage s);
 
     pose apos;
     pose dpos;
