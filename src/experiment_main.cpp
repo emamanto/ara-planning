@@ -148,8 +148,8 @@ void experiment_handler::handle_status_message(
         else if (current_stage == GRASP)
         {
             print_stage(MOVE);
-            compute_next_plan();
             current_stage = MOVE;
+            current_status = WAIT;
         }
         else if (current_stage == MOVE)
         {
