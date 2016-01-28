@@ -83,9 +83,6 @@ void experiment_handler::handle_status_message(
     ahand = stats->statuses[fetch_arm::get_num_joints()].position_radians;
     hand_speed = stats->statuses[fetch_arm::get_num_joints()].speed;
 
-    // std::cout << fetch_arm::ee_xyz(apos)[0] << " "
-    //           << fetch_arm::ee_xyz(apos)[1] << " "
-    //           << fetch_arm::ee_xyz(apos)[2] << std::endl;
     check_collisions();
 
     if (observe_time < 10 ||
@@ -232,12 +229,43 @@ void experiment_handler::handle_observations_message(
     if (current_status == SEARCH) return;
 
     latest_objects = obs->observations;
-    object_data od;
     collision_world::clear();
     for (std::vector<object_data_t>::iterator i =
              latest_objects.begin();
          i != latest_objects.end(); i++)
     {
+        object_data od;
+        od.id = i->id;
+        od.type = "block";
+        for (int j = 0; j < i->num_cat; j++)
+        {
+            if (i->cat_dat[j].cat.cat == 1)
+            {
+                od.color = "not sure yet";
+                for (int k = 0; k < i->cat_dat[j].len; k++)
+                {
+                    if (i->cat_dat[j].label[k].compare("red") == 0 &&
+                        i->cat_dat[j].confidence[k] > 0.9)
+                    {
+                        od.color = "red";
+                        break;
+                    }
+                    else if (i->cat_dat[j].label[k].compare("green") == 0 &&
+                             i->cat_dat[j].confidence[k] > 0.9)
+                    {
+                        od.color = "green";
+                        break;
+                    }
+                    else if (i->cat_dat[j].label[k].compare("blue") == 0 &&
+                             i->cat_dat[j].confidence[k] > 0.4)
+                    {
+                        od.color = "blue";
+                        break;
+                    }
+                }
+            }
+        }
+
         collision_world::add_object(i->bbox_dim,
                                     i->bbox_xyzrpy,
                                     od);
