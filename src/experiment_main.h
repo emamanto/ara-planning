@@ -42,7 +42,7 @@ private:
     float dhand;
     float hand_speed;
     bool holding_object;
-    std::vector<pose> current_plan;
+    std::vector<action> current_plan;
     int plan_index;
     int num_collisions;
     std::vector<object_data_t> latest_objects;

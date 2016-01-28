@@ -155,7 +155,7 @@ void experiment_handler::handle_status_message(
         {
             print_stage(DROP);
             compute_grasp_plan();
-            std::vector<pose> reverse_plan;
+            std::vector<action> reverse_plan;
             reverse_plan.push_back(current_plan.at(2));
             reverse_plan.push_back(current_plan.at(1));
             reverse_plan.push_back(current_plan.at(4));
