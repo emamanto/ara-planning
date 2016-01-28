@@ -41,6 +41,7 @@ private:
     float ahand;
     float dhand;
     float hand_speed;
+    bool holding_object;
     std::vector<pose> current_plan;
     int plan_index;
     int num_collisions;
@@ -50,6 +51,7 @@ private:
     std::string target_obj_color;
     float drop_x;
     float drop_y;
+    float drop_z;
 
     stage current_stage;
     status current_status;

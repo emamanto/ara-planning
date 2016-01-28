@@ -13,12 +13,15 @@ experiment_handler::experiment_handler(int obj_id,
                                        bool reset = true) :
     ahand(0),
     dhand(0),
+    hand_speed(0),
+    holding_object(false),
     plan_index(0),
     num_collisions(0),
     target_obj_id(obj_id),
     target_obj_color(color),
     drop_x(drop_target_x),
     drop_y(drop_target_y),
+    drop_z(0),
     current_stage(REACH),
     current_status(WAIT),
     observe_time(0)
@@ -80,6 +83,9 @@ void experiment_handler::handle_status_message(
     ahand = stats->statuses[fetch_arm::get_num_joints()].position_radians;
     hand_speed = stats->statuses[fetch_arm::get_num_joints()].speed;
 
+    // std::cout << fetch_arm::ee_xyz(apos)[0] << " "
+    //           << fetch_arm::ee_xyz(apos)[1] << " "
+    //           << fetch_arm::ee_xyz(apos)[2] << std::endl;
     check_collisions();
 
     if (observe_time < 10 ||
@@ -209,6 +215,11 @@ void experiment_handler::publish_command()
         c.position_radians = dpos.at(i);
         c.max_torque = fetch_arm::get_default_torque(i);
         c.speed = fetch_arm::get_default_speed(i)*0.05;
+        if (current_stage == GRASP ||
+            current_stage == DROP)
+        {
+            c.speed *= 0.1;
+        }
         command.commands.push_back(c);
     }
 
@@ -219,7 +230,6 @@ void experiment_handler::publish_command()
     // The hand has two separate joints in it
     command.commands.push_back(hand);
     command.commands.push_back(hand);
-
 
     lcm.publish("ARM_COMMAND", &command);
 }
@@ -258,7 +268,7 @@ void experiment_handler::compute_next_plan()
     {
         arm_state::target[0] = drop_x;
         arm_state::target[1] = drop_y;
-        arm_state::target[2] = 0.1;
+        arm_state::target[2] = drop_z;
     }
 
     std::cout << "[CONTROL] New search to target: "
@@ -396,7 +406,7 @@ void experiment_handler::set_reach_point()
         }
         if (!found)
         {
-            std::cout << "No object with requested color" << std::endl;
+            std::cout << "[ERROR] No object with requested color" << std::endl;
             exit(1);
         }
     }
@@ -404,11 +414,30 @@ void experiment_handler::set_reach_point()
     arm_state::target[0] = x;
     arm_state::target[1] = y;
     arm_state::target[2] = z;
+    drop_z = z;
 }
 
 bool experiment_handler::motion_done()
 {
     bool done = true;
+    if (fabs(dhand - ahand) > 0.01)
+    {
+        done = false;
+    }
+    if (dhand == 0 && hand_speed < 0.0001  &&
+        current_plan.size() > 0 &&
+        current_plan.at(plan_index).size() == 1 &&
+        !holding_object)
+    {
+        std::cout << "[CONTROL] Grasped an object" << std::endl;
+        done = true;
+        holding_object = true;
+    }
+    else if (hand_speed < 0.001 && holding_object)
+    {
+        done = true;
+    }
+
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
         if (fabs(apos[i] - dpos[i]) > 0.01)
@@ -417,18 +446,6 @@ bool experiment_handler::motion_done()
             break;
         }
     }
-    if (fabs(dhand - ahand) > 0.01)
-    {
-        done = false;
-    }
-    /// XXX Broken
-    if (dhand == 0 && hand_speed < 0.001  &&
-        current_plan.size() > 0 &&
-        current_stage != REACH)
-    {
-        std::cout << "Hand stuck but done!" << std::endl;
-        done = true;
-    }
     return done;
 }
 
@@ -436,12 +453,12 @@ void experiment_handler::request_hand_motion(bool opening)
 {
     if (opening == 1)
     {
-        //std::cout << "Opening hand" << std::endl;
         dhand = 0.05;
+        std::cout << "[CONTROL] Releasing object" << std::endl;
+        holding_object = false;
     }
     else if (opening == 0)
     {
-        //std::cout << "Closing hand" << std::endl;
         dhand = 0.0;
     }
     else
