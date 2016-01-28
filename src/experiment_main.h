@@ -40,6 +40,7 @@ private:
     pose dpos;
     float ahand;
     float dhand;
+    float hand_speed;
     std::vector<pose> current_plan;
     int plan_index;
     int num_collisions;

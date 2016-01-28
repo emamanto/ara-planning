@@ -78,6 +78,7 @@ void experiment_handler::handle_status_message(
     }
 
     ahand = stats->statuses[fetch_arm::get_num_joints()].position_radians;
+    hand_speed = stats->statuses[fetch_arm::get_num_joints()].speed;
 
     check_collisions();
 
@@ -213,7 +214,7 @@ void experiment_handler::publish_command()
 
     dynamixel_command_t hand;
     hand.position_radians = dhand;
-    hand.speed = 0.05;
+    hand.speed = 0.01;
     hand.max_torque = 0.5;
     // The hand has two separate joints in it
     command.commands.push_back(hand);
@@ -307,7 +308,7 @@ void experiment_handler::compute_grasp_plan()
     Eigen::Matrix4f target_xform =
         fetch_arm::translation_matrix(fetch_arm::ee_xyz(apos)[0],
                                       fetch_arm::ee_xyz(apos)[1],
-                                      -0.05);
+                                      fetch_arm::ee_xyz(apos)[2]-0.04);
     target_xform *= fetch_arm::rotation_matrix(M_PI/2, Y_AXIS);
     action down = fetch_arm::solve_ik(apos, target_xform);
     current_plan.push_back(down);
@@ -341,6 +342,7 @@ void experiment_handler::set_reach_point()
 {
     float x = 0;
     float y = 0;
+    float z = 0;
 
     // USE ID
     if (target_obj_id != -1)
@@ -354,6 +356,7 @@ void experiment_handler::set_reach_point()
             {
                 x = i->bbox_xyzrpy[0];
                 y = i->bbox_xyzrpy[1];
+                z = i->bbox_xyzrpy[2] + (i->bbox_dim[2]/2) + 0.02;
                 found = true;
                 break;
             }
@@ -383,6 +386,7 @@ void experiment_handler::set_reach_point()
                         {
                             x = i->bbox_xyzrpy[0];
                             y = i->bbox_xyzrpy[1];
+                            z = i->bbox_xyzrpy[2] + (i->bbox_dim[2]/2) + 0.02;
                             found = true;
                             break;
                         }
@@ -399,7 +403,7 @@ void experiment_handler::set_reach_point()
 
     arm_state::target[0] = x;
     arm_state::target[1] = y;
-    arm_state::target[2] = 0.1;
+    arm_state::target[2] = z;
 }
 
 bool experiment_handler::motion_done()
@@ -413,9 +417,17 @@ bool experiment_handler::motion_done()
             break;
         }
     }
-    if (fabs(dhand - ahand) > 0.02)
+    if (fabs(dhand - ahand) > 0.01)
     {
         done = false;
+    }
+    /// XXX Broken
+    if (dhand == 0 && hand_speed < 0.001  &&
+        current_plan.size() > 0 &&
+        current_stage != REACH)
+    {
+        std::cout << "Hand stuck but done!" << std::endl;
+        done = true;
     }
     return done;
 }
