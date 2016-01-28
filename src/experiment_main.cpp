@@ -154,17 +154,7 @@ void experiment_handler::handle_status_message(
         else if (current_stage == MOVE)
         {
             print_stage(DROP);
-            compute_grasp_plan();
-            std::vector<action> reverse_plan;
-            reverse_plan.push_back(current_plan.at(2));
-            reverse_plan.push_back(current_plan.at(1));
-            reverse_plan.push_back(current_plan.at(4));
-            current_plan = reverse_plan;
-            dpos = apos;
-            for (int i = 0; i < fetch_arm::get_num_joints(); i++)
-            {
-                dpos.at(i) += current_plan.at(0).at(i);
-            }
+            compute_drop_plan();
             current_stage = DROP;
         }
         else
@@ -348,6 +338,43 @@ void experiment_handler::compute_grasp_plan()
     current_status = EXECUTE;
 }
 
+void experiment_handler::compute_drop_plan()
+{
+    current_status = SEARCH;
+    current_plan.clear();
+
+    // 1. Down
+    Eigen::Matrix4f target_xform =
+        fetch_arm::translation_matrix(fetch_arm::ee_xyz(apos)[0],
+                                      fetch_arm::ee_xyz(apos)[1],
+                                      fetch_arm::ee_xyz(apos)[2]-0.04);
+    target_xform *= fetch_arm::rotation_matrix(M_PI/2, Y_AXIS);
+    action down = fetch_arm::solve_ik(apos, target_xform);
+    current_plan.push_back(down);
+
+    // 2. Open hand
+    action hand_open(1, 1);
+    current_plan.push_back(hand_open);
+
+    // 3. Back up to grasp point
+    action up = down;
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+        up.at(i) *= -1;
+    current_plan.push_back(up);
+
+    // 4. Close hand
+    action hand_close(1, 0);
+    current_plan.push_back(hand_close);
+
+    dpos = apos;
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+    {
+        dpos.at(i) += current_plan.at(0).at(i);
+    }
+    plan_index = 0;
+    current_status = EXECUTE;
+}
+
 void experiment_handler::set_reach_point()
 {
     float x = 0;
@@ -424,8 +451,10 @@ bool experiment_handler::motion_done()
     {
         done = false;
     }
+    // Checks if the hand is closing for a grasp
     if (dhand == 0 && hand_speed < 0.0001  &&
         current_plan.size() > 0 &&
+        current_stage == GRASP &
         current_plan.at(plan_index).size() == 1 &&
         !holding_object)
     {
@@ -454,7 +483,8 @@ void experiment_handler::request_hand_motion(bool opening)
     if (opening == 1)
     {
         dhand = 0.05;
-        std::cout << "[CONTROL] Releasing object" << std::endl;
+        if (holding_object)
+            std::cout << "[CONTROL] Releasing object" << std::endl;
         holding_object = false;
     }
     else if (opening == 0)
