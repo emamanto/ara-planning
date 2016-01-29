@@ -181,12 +181,23 @@ bool collision_world::collision(pose arm_position,
     }
 
     // HAND
-    float width = 2*hand_position + 2*fetch_arm::finger_width;
-    float len = fetch_arm::hand_length;
+    float width, len, height;
+    if (has_held_object)
+    {
+        width = 2*hand_position + 2*fetch_arm::finger_width;
+        len = fetch_arm::hand_length + held_object_dims[2] - 0.02;
+        height = held_object_dims[1];
+    }
+    else
+    {
+        width = 2*hand_position + 2*fetch_arm::finger_width;
+        len = fetch_arm::hand_length;
+        height = fetch_arm::hand_height+0.01;
+    }
     fcl::Box* box;
     box = new fcl::Box(len,
                        width,
-                       fetch_arm::hand_height+0.01);
+                       height);
 
     int last_joint = fetch_arm::get_num_joints()-1;
     Eigen::Matrix4f trmat =
@@ -308,26 +319,20 @@ bool collision_world::collision(pose arm_position,
             self_data.result.isCollision());
 }
 
-void collision_world::set_held_object(double dims[])
+void collision_world::set_held_object(std::vector<float> dims)
 {
-    return;
-    /// BROKE
-    // has_held_object = true;
-    // //std::cout << "Held object is in collision map." << std::endl;
-    // held_object_dims.clear();
-    // for (int i = 0; i < 3; i++)
-    // {
-    //     held_object_dims.push_back(dims[i]);
-    // }
+    has_held_object = true;
+    held_object_dims.clear();
+    for (int i = 0; i < 3; i++)
+    {
+        held_object_dims.push_back(dims[i]);
+    }
 }
 
 void collision_world::clear_held_object()
 {
-    return;
-    /// BROKE
-    // has_held_object = false;
-    // //std::cout << "No held object in collision map." << std::endl;
-    // held_object_dims = std::vector<float>(3, 0);
+    has_held_object = false;
+    held_object_dims.clear();;
 }
 
 // I'm making these no longer boxes... cylinders match the arm's

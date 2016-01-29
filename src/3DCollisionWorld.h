@@ -58,7 +58,7 @@ public:
     static collision_pair& get_collision_pair(int i)
     {return colliding.at(i);}
 
-    static void set_held_object(double dims[]);
+    static void set_held_object(std::vector<float> dims);
     static void clear_held_object();
 
 private:

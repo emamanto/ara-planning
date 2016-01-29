@@ -201,7 +201,7 @@ void experiment_handler::publish_command()
         dynamixel_command_t c;
         c.position_radians = dpos.at(i);
         c.max_torque = fetch_arm::get_default_torque(i);
-        c.speed = fetch_arm::get_default_speed(i)*0.05;
+        c.speed = fetch_arm::get_default_speed(i)*0.01;
         if (current_stage == GRASP ||
             current_stage == DROP)
         {
@@ -422,6 +422,8 @@ void experiment_handler::set_reach_point()
                 x = i->bbox_xyzrpy[0];
                 y = i->bbox_xyzrpy[1];
                 z = i->bbox_xyzrpy[2] + (i->bbox_dim[2]/2) + 0.02;
+                for (int j = 0; j < 3; j++)
+                    target_obj_dim.push_back(i->bbox_dim[j]);
                 found = true;
                 break;
             }
@@ -452,6 +454,8 @@ void experiment_handler::set_reach_point()
                             x = i->bbox_xyzrpy[0];
                             y = i->bbox_xyzrpy[1];
                             z = i->bbox_xyzrpy[2] + (i->bbox_dim[2]/2) + 0.02;
+                            for (int c = 0; c < 3; c++)
+                                target_obj_dim.push_back(i->bbox_dim[c]);
                             found = true;
                             break;
                         }
@@ -489,6 +493,7 @@ bool experiment_handler::motion_done()
         std::cout << "[CONTROL] Grasped an object" << std::endl;
         done = true;
         holding_object = true;
+        collision_world::set_held_object(target_obj_dim);
     }
     else if (hand_speed < 0.001 && holding_object)
     {
@@ -513,6 +518,7 @@ void experiment_handler::request_hand_motion(bool opening)
         dhand = 0.05;
         if (holding_object)
             std::cout << "[CONTROL] Releasing object" << std::endl;
+        collision_world::clear_held_object;
         holding_object = false;
     }
     else if (opening == 0)

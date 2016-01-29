@@ -50,6 +50,7 @@ private:
 
     int target_obj_id;
     std::string target_obj_color;
+    std::vector<float> target_obj_dim;
     float drop_x;
     float drop_y;
     float drop_z;
