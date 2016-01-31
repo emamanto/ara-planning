@@ -202,12 +202,9 @@ bool collision_world::collision(pose arm_position,
     int last_joint = fetch_arm::get_num_joints()-1;
     Eigen::Matrix4f trmat =
         fetch_arm::joint_transform(last_joint,
-                                     arm_position)*
-        fetch_arm::rotation_matrix(arm_position.at(last_joint),
-                                     fetch_arm::get_joint_axis(last_joint))*
-        fetch_arm::translation_matrix(fetch_arm::hand_length/2,
-                                      0,
-                                      0);
+                                   arm_position);
+    trmat *= fetch_arm::translation_matrix(fetch_arm::hand_length/2,
+                                           0, 0);
 
     fcl::Matrix3f rot(trmat(0, 0), trmat(0, 1), trmat(0, 2),
                       trmat(1, 0), trmat(1, 1), trmat(1, 2),

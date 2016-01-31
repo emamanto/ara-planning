@@ -200,8 +200,6 @@ point_3d fetch_arm::ee_xyz(pose p)
 Eigen::Matrix4f fetch_arm::ee_xform(pose p)
 {
     Eigen::Matrix4f xform = (joint_transform(num_joints-1, p));
-    xform *= rotation_matrix(p.at(num_joints-1),
-                             get_joint_axis(num_joints-1));
     xform *= translation_matrix(hand_length, 0, 0);
 
     return xform;
@@ -211,7 +209,6 @@ orientation fetch_arm::ee_rpy(pose p)
 {
     Eigen::Matrix4f xform = (joint_transform(num_joints-1, p)*
                              translation_matrix(0, 0, hand_length));
-
     return eulers_from_xform(xform);
 }
 
