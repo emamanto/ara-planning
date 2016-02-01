@@ -12,6 +12,8 @@ public:
     static point_3d target;
     static float target_pitch;
 
+    // Make static collision world too?
+
     arm_state();
     arm_state(pose p, float h = 0.05);
 

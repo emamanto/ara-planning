@@ -162,18 +162,18 @@ void experiment_handler::handle_status_message(
 
 void experiment_handler::check_collisions()
 {
-    if (collision_world::collision(apos, ahand, true))
+    if (observed.collision(apos, ahand, true))
     {
-        if (num_collisions < collision_world::num_collisions())
+        if (num_collisions < observed.num_collisions())
         {
-            int new_collisions = collision_world::num_collisions() - num_collisions;
+            int new_collisions = observed.num_collisions() - num_collisions;
             std::cout << "[COLLISION] "
                       << new_collisions
                       << " new collisions. All current collisions: ";
             for (int i = 0;
-                 i < collision_world::num_collisions(); i++)
+                 i < observed.num_collisions(); i++)
             {
-                collision_pair pr = collision_world::get_collision_pair(i);
+                collision_pair pr = observed.get_collision_pair(i);
                 std::cout << pr.first.type << ", "
                           << pr.first.color << " + "
                           << pr.second.type << ", "
@@ -181,7 +181,7 @@ void experiment_handler::check_collisions()
             }
             std::cout << std::endl;
         }
-        num_collisions = collision_world::num_collisions();
+        num_collisions = observed.num_collisions();
     }
     else
     {
@@ -227,7 +227,7 @@ void experiment_handler::handle_observations_message(
     if (current_status == SEARCH) return;
 
     latest_objects = obs->observations;
-    collision_world::clear();
+    observed.clear();
     for (std::vector<object_data_t>::iterator i =
              latest_objects.begin();
          i != latest_objects.end(); i++)
@@ -264,9 +264,9 @@ void experiment_handler::handle_observations_message(
             }
         }
 
-        collision_world::add_object(i->bbox_dim,
-                                    i->bbox_xyzrpy,
-                                    od);
+        observed.add_object(i->bbox_dim,
+                            i->bbox_xyzrpy,
+                            od);
     }
 
     observe_time++;
@@ -516,7 +516,7 @@ void experiment_handler::request_hand_motion(bool opening)
         dhand = 0.05;
         if (holding_object)
             std::cout << "[CONTROL] Releasing object" << std::endl;
-        collision_world::clear_held_object;
+        collision_world::clear_held_object();
         holding_object = false;
     }
     else if (opening == 0)
@@ -589,7 +589,6 @@ int main(int argc, char* argv[])
     }
 
     fetch_arm::INIT();
-    collision_world::clear();
 
     experiment_handler handler(obj_id, color, target_x, target_y, reset);
     lcm.subscribe("ARM_STATUS", &experiment_handler::handle_status_message,

@@ -45,7 +45,9 @@ private:
     bool holding_object;
     std::vector<action> current_plan;
     int plan_index;
+
     int num_collisions;
+    collision_world observed;
     std::vector<object_data_t> latest_objects;
 
     int target_obj_id;

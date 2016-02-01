@@ -19,19 +19,20 @@ bool collision_function(fcl::CollisionObject* o1,
     return cd->done;
 }
 
-fcl::BroadPhaseCollisionManager* collision_world::world_objects_m = 0;
-fcl::BroadPhaseCollisionManager* collision_world::arm_objects_m = 0;
-fcl::BroadPhaseCollisionManager* collision_world::hand_objects_m = 0;
-fcl::BroadPhaseCollisionManager* collision_world::base_objects_m = 0;
-fcl::CollisionObject* collision_world::base = 0;
-fcl::CollisionObject* collision_world::hand = 0;
-std::vector<fcl::CollisionObject*> collision_world::arm_parts =
-    std::vector<fcl::CollisionObject*>();
-
 bool collision_world::has_held_object = false;
 std::vector<float> collision_world::held_object_dims = std::vector<float>(3, 0);
-std::vector<object_data> collision_world::world_objects_info = std::vector<object_data>();
-std::vector<collision_pair> collision_world::colliding = std::vector<collision_pair>();
+
+collision_world::collision_world()
+{
+    world_objects_m = new fcl::BroadPhaseCollisionManager();
+    arm_objects_m = new fcl::BroadPhaseCollisionManager();
+    hand_objects_m = new fcl::BroadPhaseCollisionManager();
+    base_objects_m = new fcl::BroadPhaseCollisionManager();
+    base = new fcl::CollisionObject();
+    hand = new fcl::CollisionObject();
+
+    clear();
+}
 
 void collision_world::add_object(std::vector<float> dim,
                                  std::vector<float> xyzrpy,
@@ -56,11 +57,6 @@ void collision_world::add_object(std::vector<float> dim,
 
     // Put translation and rotation together
     fcl::Transform3f p = fcl::Transform3f(rot, trans);
-
-    if (!world_objects_m)
-    {
-        world_objects_m = new fcl::DynamicAABBTreeCollisionManager();
-    }
 
     world_objects_info.push_back(obj_info);
     boost::shared_ptr<fcl::CollisionGeometry> cg =
@@ -91,16 +87,9 @@ void collision_world::add_object(double dim[],
 
 void collision_world::clear()
 {
-    if (world_objects_m)
-    {
-        world_objects_m->clear();
-        world_objects_info.clear();
-        colliding.clear();
-    }
-    else
-    {
-        world_objects_m = new fcl::DynamicAABBTreeCollisionManager();
-    }
+    world_objects_m->clear();
+    world_objects_info.clear();
+    colliding.clear();
 
     // TABLE
     std::vector<float> dims;
@@ -123,23 +112,6 @@ bool collision_world::collision(pose arm_position,
                                 float hand_position,
                                 bool should_publish)
 {
-    if (!arm_objects_m)
-    {
-        arm_objects_m = new fcl::DynamicAABBTreeCollisionManager();
-    }
-    if (!hand_objects_m)
-    {
-        hand_objects_m = new fcl::DynamicAABBTreeCollisionManager();
-    }
-    if (!base_objects_m)
-    {
-        base_objects_m = new fcl::DynamicAABBTreeCollisionManager();
-    }
-    if (!world_objects_m)
-    {
-        world_objects_m = new fcl::DynamicAABBTreeCollisionManager();
-    }
-
     arm_objects_m->clear();
     hand_objects_m->clear();
     base_objects_m->clear();
