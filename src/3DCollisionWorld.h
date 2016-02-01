@@ -67,9 +67,8 @@ private:
     collision_world(collision_world const&) {};
     collision_world& operator=(collision_world const&) {};
 
-
 #ifdef PUBLISH_COLLISION_MODEL
-    static void publish_arm_boxes(pose arm_position);
+    void publish_arm_boxes(pose arm_position);
 #endif
 
     fcl::BroadPhaseCollisionManager* world_objects_m;

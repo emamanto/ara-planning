@@ -32,4 +32,6 @@ public:
     float heuristic() const;
     float target_distance() const;
     void print() const;
+
+    static collision_world* collision_model;
 };

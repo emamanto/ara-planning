@@ -24,12 +24,10 @@ std::vector<float> collision_world::held_object_dims = std::vector<float>(3, 0);
 
 collision_world::collision_world()
 {
-    world_objects_m = new fcl::BroadPhaseCollisionManager();
-    arm_objects_m = new fcl::BroadPhaseCollisionManager();
-    hand_objects_m = new fcl::BroadPhaseCollisionManager();
-    base_objects_m = new fcl::BroadPhaseCollisionManager();
-    base = new fcl::CollisionObject();
-    hand = new fcl::CollisionObject();
+    world_objects_m = new fcl::DynamicAABBTreeCollisionManager();
+    arm_objects_m = new fcl::DynamicAABBTreeCollisionManager();
+    hand_objects_m = new fcl::DynamicAABBTreeCollisionManager();
+    base_objects_m = new fcl::DynamicAABBTreeCollisionManager();
 
     clear();
 }

@@ -52,6 +52,8 @@ experiment_handler::experiment_handler(int obj_id,
         dpos.push_back(M_PI/2);
         dpos.push_back(-M_PI/2);
     }
+
+    arm_state::collision_model = &observed;
 };
 
 void experiment_handler::handle_status_message(
