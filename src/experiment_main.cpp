@@ -16,7 +16,7 @@ experiment_handler::experiment_handler(int obj_id,
     hand_speed(0),
     holding_object(false),
     plan_index(0),
-    num_collisions(0),
+    total_collision_time(0),
     target_obj_id(obj_id),
     target_obj_color(color),
     drop_x(drop_target_x),
@@ -94,7 +94,7 @@ void experiment_handler::handle_status_message(
 
     if (current_status == WAIT)
     {
-        if (num_collisions == 0)
+        if (collision_ids.size() == 0)
         {
             compute_next_plan();
         }
@@ -157,6 +157,9 @@ void experiment_handler::handle_status_message(
         else
         {
             current_status = WAIT;
+            std::cout << "[COLLISION] Frames spent in collision = "
+                      << total_collision_time
+                      << std::endl;
             exit(0);
         }
     }
@@ -166,28 +169,48 @@ void experiment_handler::check_collisions()
 {
     if (observed.collision(apos, ahand, true))
     {
-        if (num_collisions < observed.num_collisions())
+        std::vector<int> updated;
+        for (int i = 0; i < observed.num_collisions(); i++)
         {
-            int new_collisions = observed.num_collisions() - num_collisions;
-            std::cout << "[COLLISION] "
-                      << new_collisions
-                      << " new collisions. All current collisions: ";
-            for (int i = 0;
-                 i < observed.num_collisions(); i++)
+            collision_pair pr = observed.get_collision_pair(i);
+            int id;
+            if (pr.first.type == "hand" || pr.first.type == "arm")
             {
-                collision_pair pr = observed.get_collision_pair(i);
-                std::cout << pr.first.type << ", "
+                id = pr.second.id;
+            }
+            else
+            {
+                id = pr.first.id;
+            }
+
+            bool is_new = true;
+            for (std::vector<int>::iterator j = collision_ids.begin();
+                 j != collision_ids.end(); j++)
+            {
+                if (*j == id)
+                {
+                    is_new = false;
+                    break;
+                }
+            }
+
+            if (is_new)
+            {
+                std::cout << "[COLLISION] Between "
+                          << pr.first.type << ", "
                           << pr.first.color << " + "
                           << pr.second.type << ", "
-                          << pr.second.color << " ";
+                          << pr.second.color
+                          << std::endl;
             }
-            std::cout << std::endl;
+            updated.push_back(id);
+            total_collision_time++;
         }
-        num_collisions = observed.num_collisions();
+        collision_ids = updated;
     }
     else
     {
-        num_collisions = 0;
+        collision_ids.clear();
     }
 }
 
@@ -237,35 +260,7 @@ void experiment_handler::handle_observations_message(
         object_data od;
         od.id = i->id;
         od.type = "block";
-        for (int j = 0; j < i->num_cat; j++)
-        {
-            if (i->cat_dat[j].cat.cat == 1)
-            {
-                od.color = "not sure yet";
-                for (int k = 0; k < i->cat_dat[j].len; k++)
-                {
-                    if (i->cat_dat[j].label[k].compare("red") == 0 &&
-                        i->cat_dat[j].confidence[k] > 0.9)
-                    {
-                        od.color = "red";
-                        break;
-                    }
-                    else if (i->cat_dat[j].label[k].compare("green") == 0 &&
-                             i->cat_dat[j].confidence[k] > 0.9)
-                    {
-                        od.color = "green";
-                        break;
-                    }
-                    else if (i->cat_dat[j].label[k].compare("blue") == 0 &&
-                             i->cat_dat[j].confidence[k] > 0.4)
-                    {
-                        od.color = "blue";
-                        break;
-                    }
-                }
-            }
-        }
-
+        od.color = "ground truth";
         observed.add_object(i->bbox_dim,
                             i->bbox_xyzrpy,
                             od);
@@ -595,7 +590,7 @@ int main(int argc, char* argv[])
     experiment_handler handler(obj_id, color, target_x, target_y, reset);
     lcm.subscribe("ARM_STATUS", &experiment_handler::handle_status_message,
                   &handler);
-    lcm.subscribe("OBSERVATIONS", &experiment_handler::handle_observations_message,
+    lcm.subscribe("GROUND_TRUTH_OBJECTS", &experiment_handler::handle_observations_message,
                   &handler);
 
     while(0 == lcm.handle());
