@@ -240,6 +240,7 @@ bool collision_world::collision(pose arm_position,
     // Self-collision check
     collision_data self_data;
     self_data.request = fcl::CollisionRequest();
+    self_data.request.num_max_contacts = 5;
     self_data.request.enable_contact = false;
     self_data.request.enable_cost = false;
 
@@ -263,6 +264,7 @@ bool collision_world::collision(pose arm_position,
     // World collision check
     collision_data data;
     data.request = fcl::CollisionRequest();
+    data.request.num_max_contacts = 5;
     data.request.enable_contact = false;
     data.request.enable_cost = false;
 

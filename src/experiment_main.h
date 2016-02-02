@@ -47,7 +47,7 @@ private:
     int plan_index;
 
     std::vector<int> collision_ids;
-    int total_collision_time;
+    int stage_collision_time;
     collision_world ground_truth;
     collision_world observed;
     std::vector<object_data_t> latest_objects;

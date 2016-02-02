@@ -16,7 +16,7 @@ experiment_handler::experiment_handler(int obj_id,
     hand_speed(0),
     holding_object(false),
     plan_index(0),
-    total_collision_time(0),
+    stage_collision_time(0),
     target_obj_id(obj_id),
     target_obj_color(color),
     drop_x(drop_target_x),
@@ -28,6 +28,7 @@ experiment_handler::experiment_handler(int obj_id,
 {
     if (target_obj_color != "none")
     {
+        std::cout << std::endl;
         std::cout << "[INPUT] Moving the " << target_obj_color
                   << " object ";
     }
@@ -161,9 +162,8 @@ void experiment_handler::handle_status_message(
         else
         {
             current_status = WAIT;
-            std::cout << "[COLLISION] Frames spent in collision = "
-                      << total_collision_time
-                      << std::endl;
+            std::cout << "[COLLISION] Total frames in stage = "
+                      << stage_collision_time << std::endl;
             exit(0);
         }
     }
@@ -174,6 +174,14 @@ void experiment_handler::check_collisions()
     if (ground_truth.collision(apos, ahand, true))
     {
         std::vector<int> updated;
+        if (ground_truth.num_collisions() == 1 &&
+            (current_stage == GRASP ||
+             current_stage == DROP ||
+             holding_object))
+        {
+            collision_ids.clear();
+            return;
+        }
         for (int i = 0; i < ground_truth.num_collisions(); i++)
         {
             collision_pair pr = ground_truth.get_collision_pair(i);
@@ -201,16 +209,14 @@ void experiment_handler::check_collisions()
             if (is_new)
             {
                 std::cout << "[COLLISION] Between "
-                          << pr.first.type << ", "
-                          << pr.first.color << " + "
-                          << pr.second.type << ", "
-                          << pr.second.color
+                          << pr.first.type << " + "
+                          << pr.second.type
                           << std::endl;
             }
             updated.push_back(id);
         }
 
-        total_collision_time++;
+        stage_collision_time++;
         collision_ids = updated;
     }
     else
@@ -229,11 +235,11 @@ void experiment_handler::publish_command()
         dynamixel_command_t c;
         c.position_radians = dpos.at(i);
         c.max_torque = fetch_arm::get_default_torque(i);
-        c.speed = fetch_arm::get_default_speed(i)*0.01;
+        c.speed = fetch_arm::get_default_speed(i)*0.05;
         if (current_stage == GRASP ||
             current_stage == DROP)
         {
-            c.speed *= 0.1;
+            c.speed *= 0.5;
         }
         command.commands.push_back(c);
     }
@@ -285,7 +291,7 @@ void experiment_handler::handle_observations_message(
             object_data od;
             od.id = i->id;
             od.type = "block";
-            od.color = "ground truth";
+            od.color = "observed";
             observed.add_object(i->bbox_dim,
                                 i->bbox_xyzrpy,
                                 od);
@@ -308,9 +314,9 @@ void experiment_handler::compute_next_plan()
         arm_state::target[2] = drop_z;
     }
 
-    std::cout << "[CONTROL] New search to target: "
-              << arm_state::target[0] << ", "
-              << arm_state::target[1] << ", "
+    std::cout << "[CONTROL] New search to target: x = "
+              << arm_state::target[0] << ", y = "
+              << arm_state::target[1] << ", z = "
               << arm_state::target[2]
               << std::endl;
 
@@ -552,6 +558,9 @@ void experiment_handler::request_hand_motion(bool opening)
 
 void experiment_handler::print_stage(stage s)
 {
+    std::cout << "[COLLISION] Total frames in stage = "
+              << stage_collision_time << std::endl;
+    stage_collision_time = 0;
     std::cout << std::endl;
     switch (s)
     {
