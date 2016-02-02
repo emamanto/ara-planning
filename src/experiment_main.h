@@ -48,8 +48,10 @@ private:
 
     std::vector<int> collision_ids;
     int total_collision_time;
+    collision_world ground_truth;
     collision_world observed;
     std::vector<object_data_t> latest_objects;
+    std::vector<object_data_t> latest_observations;
 
     int target_obj_id;
     std::string target_obj_color;

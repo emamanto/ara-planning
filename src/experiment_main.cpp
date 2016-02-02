@@ -98,6 +98,10 @@ void experiment_handler::handle_status_message(
         {
             compute_next_plan();
         }
+        else if (collision_ids.size() == 1 && holding_object)
+        {
+            compute_next_plan();
+        }
         else
         {
             std::cout << "[ERROR] Trying to start a search from a collision state"
@@ -167,12 +171,12 @@ void experiment_handler::handle_status_message(
 
 void experiment_handler::check_collisions()
 {
-    if (observed.collision(apos, ahand, true))
+    if (ground_truth.collision(apos, ahand, true))
     {
         std::vector<int> updated;
-        for (int i = 0; i < observed.num_collisions(); i++)
+        for (int i = 0; i < ground_truth.num_collisions(); i++)
         {
-            collision_pair pr = observed.get_collision_pair(i);
+            collision_pair pr = ground_truth.get_collision_pair(i);
             int id;
             if (pr.first.type == "hand" || pr.first.type == "arm")
             {
@@ -204,8 +208,9 @@ void experiment_handler::check_collisions()
                           << std::endl;
             }
             updated.push_back(id);
-            total_collision_time++;
         }
+
+        total_collision_time++;
         collision_ids = updated;
     }
     else
@@ -251,22 +256,41 @@ void experiment_handler::handle_observations_message(
 {
     if (current_status == SEARCH) return;
 
-    latest_objects = obs->observations;
-    observed.clear();
-    for (std::vector<object_data_t>::iterator i =
-             latest_objects.begin();
-         i != latest_objects.end(); i++)
+    if (channel == "GROUND_TRUTH_OBJECTS")
     {
-        object_data od;
-        od.id = i->id;
-        od.type = "block";
-        od.color = "ground truth";
-        observed.add_object(i->bbox_dim,
-                            i->bbox_xyzrpy,
-                            od);
+        latest_objects = obs->observations;
+        ground_truth.clear();
+        for (std::vector<object_data_t>::iterator i =
+                 latest_objects.begin();
+             i != latest_objects.end(); i++)
+        {
+            object_data od;
+            od.id = i->id;
+            od.type = "block";
+            od.color = "ground truth";
+            ground_truth.add_object(i->bbox_dim,
+                                i->bbox_xyzrpy,
+                                od);
+        }
     }
-
-    observe_time++;
+    else if (channel == "OBSERVATIONS")
+    {
+        observe_time++;
+        latest_observations = obs->observations;
+        observed.clear();
+        for (std::vector<object_data_t>::iterator i =
+                 latest_observations.begin();
+             i != latest_observations.end(); i++)
+        {
+            object_data od;
+            od.id = i->id;
+            od.type = "block";
+            od.color = "ground truth";
+            observed.add_object(i->bbox_dim,
+                                i->bbox_xyzrpy,
+                                od);
+        }
+    }
 }
 
 void experiment_handler::compute_next_plan()
@@ -409,8 +433,8 @@ void experiment_handler::set_reach_point()
     {
         bool found = false;
         for (std::vector<object_data_t>::iterator i =
-                 latest_objects.begin();
-             i != latest_objects.end(); i++)
+                 latest_observations.begin();
+             i != latest_observations.end(); i++)
         {
             if (i->id == target_obj_id)
             {
@@ -434,8 +458,8 @@ void experiment_handler::set_reach_point()
     {
         bool found = false;
         for (std::vector<object_data_t>::iterator i =
-                 latest_objects.begin();
-             i != latest_objects.end(); i++)
+                 latest_observations.begin();
+             i != latest_observations.end(); i++)
         {
             for (int j = 0; j < i->num_cat; j++)
             {
@@ -591,6 +615,8 @@ int main(int argc, char* argv[])
     lcm.subscribe("ARM_STATUS", &experiment_handler::handle_status_message,
                   &handler);
     lcm.subscribe("GROUND_TRUTH_OBJECTS", &experiment_handler::handle_observations_message,
+                  &handler);
+    lcm.subscribe("OBSERVATIONS", &experiment_handler::handle_observations_message,
                   &handler);
 
     while(0 == lcm.handle());
