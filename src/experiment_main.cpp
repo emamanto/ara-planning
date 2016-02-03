@@ -332,8 +332,32 @@ void experiment_handler::compute_next_plan()
     current_plan = latest_search.at(latest_search.size()-1).path;
     current_plan = shortcut<arm_state, action>(current_plan,
                                                arm_state(apos));
-    std::cout << "[CONTROL] Shortcutted to " << current_plan.size()
-              << std::endl;
+    std::cout << "[CONTROL] Shortcutted plan to " << current_plan.size()
+              << " actions" << std::endl;
+
+    float joint_dist = 0;
+    for (std::vector<action>::iterator i = current_plan.begin();
+         i != current_plan.end(); i++)
+    {
+        for (action::iterator j = i->begin(); j != i->end(); j++)
+        {
+            joint_dist += fabs(*j);
+        }
+    }
+    std::cout << "[STATS] Plan length in joint space = "
+              << joint_dist << " rad" << std::endl;
+
+    float hand_dist = 0;
+    pose step = apos;
+    for (int i = 0; i < current_plan.size(); i++)
+    {
+        pose next_step = fetch_arm::apply(step, current_plan.at(i));
+        hand_dist += fetch_arm::ee_dist_to(step, fetch_arm::ee_xyz(next_step));
+        step = next_step;
+    }
+    std::cout << "[STATS] Plan length in hand distance traveled = "
+              << hand_dist << " m" << std::endl;
+
     dpos = apos;
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
