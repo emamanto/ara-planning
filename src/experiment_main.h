@@ -1,3 +1,4 @@
+#include <boost/timer/timer.hpp>
 #include "ProbCogSearchStates.h"
 #include "Search.h"
 #include "ProbCogArmCollision.h"
@@ -62,6 +63,8 @@ private:
 
     stage current_stage;
     status current_status;
+
+    boost::timer::cpu_timer execution_timer;
 
     int observe_time;
 };

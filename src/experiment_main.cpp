@@ -143,18 +143,30 @@ void experiment_handler::handle_status_message(
         // Finished executing plan, move to next stage
         else if (current_stage == REACH)
         {
+            std::cout << "[STATS] Reach execution time was "
+                      << (execution_timer.elapsed().wall / 1e9)
+                      << " s" <<std::endl;
+
             print_stage(GRASP);
             compute_grasp_plan();
             current_stage = GRASP;
         }
         else if (current_stage == GRASP)
         {
+            std::cout << "[STATS] Grasp execution time was "
+                      << (execution_timer.elapsed().wall / 1e9)
+                      << " s" <<std::endl;
+
             print_stage(MOVE);
             current_stage = MOVE;
             current_status = WAIT;
         }
         else if (current_stage == MOVE)
         {
+            std::cout << "[STATS] Move execution time was "
+                      << (execution_timer.elapsed().wall / 1e9)
+                      << " s" <<std::endl;
+
             print_stage(DROP);
             compute_drop_plan();
             current_stage = DROP;
@@ -162,8 +174,12 @@ void experiment_handler::handle_status_message(
         else
         {
             current_status = WAIT;
+            std::cout << "[STATS] Drop execution time was "
+                      << (execution_timer.elapsed().wall / 1e9)
+                      << " s" <<std::endl;
             std::cout << "[COLLISION] Total frames in stage = "
                       << stage_collision_time << std::endl;
+
             exit(0);
         }
     }
@@ -364,6 +380,7 @@ void experiment_handler::compute_next_plan()
         dpos.at(i) += current_plan.at(0).at(i);
     }
     plan_index = 0;
+    execution_timer.start();
     current_status = EXECUTE;
 }
 
@@ -412,6 +429,7 @@ void experiment_handler::compute_grasp_plan()
         dpos.at(i) += current_plan.at(0).at(i);
     }
     plan_index = 0;
+    execution_timer.start();
     current_status = EXECUTE;
 }
 
@@ -449,6 +467,7 @@ void experiment_handler::compute_drop_plan()
         dpos.at(i) += current_plan.at(0).at(i);
     }
     plan_index = 0;
+    execution_timer.start();
     current_status = EXECUTE;
 }
 
