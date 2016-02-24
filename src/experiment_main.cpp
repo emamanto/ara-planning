@@ -63,6 +63,7 @@ void experiment_handler::handle_status_message(
     const dynamixel_status_list_t* stats)
 {
     if (current_status == SEARCH) return;
+    if (observe_time < 10) return;
 
     lcm::LCM lcm;
 
@@ -86,8 +87,7 @@ void experiment_handler::handle_status_message(
 
     check_collisions();
 
-    if (observe_time < 10 ||
-        (current_stage == REACH && !motion_done()))
+    if (current_stage == REACH && !motion_done())
     {
         publish_command();
         return;
