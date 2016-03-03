@@ -62,6 +62,6 @@ fi
 if [ $RESET = yes ]; then
     bin/experiment -r -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP"
 else
-bin/experiment -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP"
+    bin/experiment -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP"
 fi
 
