@@ -17,6 +17,7 @@ experiment_handler::experiment_handler(int obj_id,
     holding_object(false),
     plan_index(0),
     stage_collision_time(0),
+    current_min_distance(0),
     target_obj_id(obj_id),
     target_obj_color(color),
     drop_x(drop_target_x),
@@ -147,6 +148,20 @@ void experiment_handler::handle_status_message(
                       << (execution_timer.elapsed().wall / 1e9)
                       << " s" <<std::endl;
 
+            double sum = 0;
+            for (std::vector<double>::iterator i = current_distances.begin();
+                 i != current_distances.end(); i++)
+            {
+                sum += *i;
+            }
+
+            std::cout << "[STATS] Reach average clearance was "
+                      << (sum / current_distances.size())
+                      << " m" <<std::endl;
+            std::cout << "[STATS] Reach minimum clearance was "
+                      << current_min_distance
+                      << " m" <<std::endl;
+
             print_stage(GRASP);
             compute_grasp_plan();
             current_stage = GRASP;
@@ -163,17 +178,34 @@ void experiment_handler::handle_status_message(
         }
         else if (current_stage == MOVE)
         {
+            double sum = 0;
+            for (std::vector<double>::iterator i = current_distances.begin();
+                 i != current_distances.end(); i++)
+            {
+                sum += *i;
+            }
+
             std::cout << "[STATS] Move execution time was "
                       << (execution_timer.elapsed().wall / 1e9)
                       << " s" <<std::endl;
+            std::cout << "[STATS] Move average clearance was "
+                      << (sum / current_distances.size())
+                      << " m" <<std::endl;
+            std::cout << "[STATS] Move minimum clearance was "
+                      << current_min_distance
+                      << " m" <<std::endl;
+
 
             print_stage(DROP);
             compute_drop_plan();
             current_stage = DROP;
+            current_distances.clear();
+            current_min_distance = 99999;
         }
         else
         {
             current_status = WAIT;
+
             std::cout << "[STATS] Drop execution time was "
                       << (execution_timer.elapsed().wall / 1e9)
                       << " s" <<std::endl;
@@ -187,7 +219,13 @@ void experiment_handler::handle_status_message(
 
 void experiment_handler::check_collisions()
 {
-    if (ground_truth.collision(apos, ahand, true))
+    collision_info inf = ground_truth.collision(apos, ahand, true, true);
+
+    current_distances.push_back(inf.distance);
+    if (inf.distance < current_min_distance)
+        current_min_distance = inf.distance;
+
+    if (inf.collision)
     {
         std::vector<int> updated;
         if (ground_truth.num_collisions() == 1 &&
@@ -286,6 +324,15 @@ void experiment_handler::handle_observations_message(
                  latest_objects.begin();
              i != latest_objects.end(); i++)
         {
+            // HACK--If I change the size of the target
+            // objects, I need to change this!
+            if (i->bbox_dim[0] == 0.06 &&
+                i->bbox_dim[1] == 0.06 &&
+                i->bbox_dim[2] == 0.06)
+            {
+                continue;
+            }
+
             object_data od;
             od.id = i->id;
             od.type = "block";
@@ -322,6 +369,9 @@ void experiment_handler::compute_next_plan()
     {
         print_stage(REACH);
         set_reach_point();
+
+        current_distances.clear();
+        current_min_distance = 99999;
     }
     else
     {

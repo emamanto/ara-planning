@@ -4,6 +4,7 @@
 #include <string>
 
 #include "fcl/collision.h"
+#include "fcl/distance.h"
 #include "fcl/broadphase/broadphase.h"
 
 #include "FetchArm.h"
@@ -17,6 +18,9 @@
 
 bool collision_function(fcl::CollisionObject* o1,
                         fcl::CollisionObject* o2, void* cdata);
+bool distance_function(fcl::CollisionObject* o1,
+                       fcl::CollisionObject* o2,
+                       void* cdata, fcl::FCL_REAL& dist);
 
 struct collision_data
 {
@@ -30,11 +34,30 @@ struct collision_data
     bool done;
 };
 
+struct distance_data
+{
+    distance_data()
+    {
+        done = false;
+    }
+
+    fcl::DistanceRequest request;
+    fcl::DistanceResult result;
+    bool done;
+};
+
 struct object_data
 {
     int id;
     std::string type;
     std::string color;
+};
+
+struct collision_info
+{
+    bool collision;
+    bool computed_distance;
+    double distance;
 };
 
 typedef std::pair<object_data, object_data> collision_pair;
@@ -56,6 +79,12 @@ public:
     bool collision(pose arm_position,
                    float hand_position,
                    bool should_publish = false);
+
+    collision_info collision(pose arm_position,
+                             float hand_position,
+                             bool compute_distance,
+                             bool should_publish);
+
     int num_collisions() {return colliding.size();}
     collision_pair& get_collision_pair(int i)
     {return colliding.at(i);}

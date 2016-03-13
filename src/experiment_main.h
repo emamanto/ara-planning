@@ -54,6 +54,9 @@ private:
     std::vector<object_data_t> latest_objects;
     std::vector<object_data_t> latest_observations;
 
+    std::vector<double> current_distances;
+    double current_min_distance;
+
     int target_obj_id;
     std::string target_obj_color;
     std::vector<float> target_obj_dim;

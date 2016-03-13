@@ -19,6 +19,25 @@ bool collision_function(fcl::CollisionObject* o1,
     return cd->done;
 }
 
+bool distance_function(fcl::CollisionObject* o1,
+                       fcl::CollisionObject* o2,
+                       void* cdata_, fcl::FCL_REAL& dist)
+{
+    distance_data* cdata = static_cast<distance_data*>(cdata_);
+    const fcl::DistanceRequest& request = cdata->request;
+    fcl::DistanceResult& result = cdata->result;
+
+    if(cdata->done) { dist = result.min_distance; return true; }
+
+    fcl::distance(o1, o2, request, result);
+
+    dist = result.min_distance;
+
+    if(dist <= 0) return true; // in collision or in touch
+
+    return cdata->done;
+}
+
 bool collision_world::has_held_object = false;
 std::vector<float> collision_world::held_object_dims = std::vector<float>(3, 0);
 
@@ -110,11 +129,26 @@ bool collision_world::collision(pose arm_position,
                                 float hand_position,
                                 bool should_publish)
 {
+    collision_info t = collision(arm_position, hand_position,
+                                 false, should_publish);
+    return t.collision;
+}
+
+collision_info collision_world::collision(pose arm_position,
+                                          float hand_position,
+                                          bool compute_distance,
+                                          bool should_publish)
+{
     arm_objects_m->clear();
     hand_objects_m->clear();
     base_objects_m->clear();
     colliding.clear();
     arm_parts.clear();
+
+    collision_info results_info;
+    results_info.collision = false;
+    results_info.computed_distance = compute_distance;
+    results_info.distance = 0;
 
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
@@ -273,6 +307,17 @@ bool collision_world::collision(pose arm_position,
     arm_objects_m->collide(world_objects_m, &data,
                            collision_function);
 
+    if (compute_distance)
+    {
+        distance_data dist_data;
+        dist_data.request = fcl::DistanceRequest(true);
+        dist_data.result = fcl::DistanceResult();
+
+        arm_objects_m->distance(world_objects_m, &dist_data, distance_function);
+        double min_distance = dist_data.result.min_distance;
+        results_info.distance = min_distance;
+    }
+
     for (int i = 0; i < data.result.numContacts(); i++)
     {
         object_data* obj1 =
@@ -284,8 +329,10 @@ bool collision_world::collision(pose arm_position,
         colliding.push_back(pr);
     }
 
-    return (data.result.isCollision() ||
-            self_data.result.isCollision());
+    results_info.collision = (data.result.isCollision() ||
+                              self_data.result.isCollision());
+
+    return results_info;
 }
 
 void collision_world::set_held_object(std::vector<float> dims)
