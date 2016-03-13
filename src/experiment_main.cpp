@@ -221,9 +221,12 @@ void experiment_handler::check_collisions()
 {
     collision_info inf = ground_truth.collision(apos, ahand, true, true);
 
-    current_distances.push_back(inf.distance);
-    if (inf.distance < current_min_distance)
-        current_min_distance = inf.distance;
+    if (inf.distance > 0)
+    {
+        current_distances.push_back(inf.distance);
+        if (inf.distance < current_min_distance)
+            current_min_distance = inf.distance;
+    }
 
     if (inf.collision)
     {
