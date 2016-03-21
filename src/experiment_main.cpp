@@ -530,6 +530,11 @@ void experiment_handler::set_reach_point()
     float y = 0;
     float z = 0;
 
+    while (latest_observations.size() == 0)
+    {
+        sleep(0.01);
+    }
+
     // USE ID
     if (target_obj_id != -1)
     {
