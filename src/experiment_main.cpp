@@ -411,7 +411,8 @@ void experiment_handler::compute_next_plan()
                                           fetch_arm::big_primitives(),
                                           fetch_arm::small_primitives(),
                                           search_time_lim,
-                                          true);
+                                          true,
+                                          search_first_sol);
     arastar<arm_state, action>(req);
 
     latest_search = req.copy_solutions();

@@ -52,6 +52,7 @@ public:
                    std::vector<P> small,
                    float time_lim = -1,
                    bool hard_lim = false,
+                   bool first_sol = false,
                    float eps = 10.f) :
         killed(false),
         paused(false),
@@ -61,6 +62,7 @@ public:
         start_time(0),
         total_time(0),
         hard_limit(hard_lim),
+        first_sol(first_sol),
         start(start_pose),
         big_prs(big),
         s_prs(small),
@@ -88,8 +90,14 @@ public:
         big_prs = other.big_prs;
         s_prs = other.s_prs;
         epsilon = other.epsilon;
+        first_sol = other.first_sol;
 
         return *this;
+    }
+
+    bool return_first_sol()
+    {
+        return first_sol;
     }
 
     void go()
@@ -270,6 +278,7 @@ private:
     std::clock_t start_time;
     float total_time;
     bool hard_limit;
+    bool first_sol;
     S start;
     std::vector<P> big_prs;
     std::vector<P> s_prs;
@@ -522,9 +531,10 @@ void arastar(search_request<S, P>& request)
         return;
     }
 
-#ifdef FIRST_SOL
-    return;
-#endif
+    if (request.return_first_sol())
+    {
+        return;
+    }
 
     while (e_prime > 1.f)
     {
