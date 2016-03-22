@@ -17,7 +17,10 @@ public:
                        std::string color,
                        float drop_target_x,
                        float drop_target_y,
-                       bool reset);
+                       float time_lim,
+                       float step_size_deg,
+                       bool first_sol,
+                       bool reset = true);
     ~experiment_handler() {};
 
     void handle_status_message(const lcm::ReceiveBuffer* rbuf,
@@ -63,6 +66,10 @@ private:
     float drop_x;
     float drop_y;
     float drop_z;
+
+    float search_time_lim;
+    float search_step_size;
+    bool search_first_sol;
 
     stage current_stage;
     status current_status;

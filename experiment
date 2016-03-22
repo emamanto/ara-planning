@@ -4,10 +4,13 @@ ID=-1
 COLOR=none
 XDROP=0
 YDROP=0
+TIME_LIM=3
+STEP_SIZE_DEG=15
 REBUILD=no
 RESET=no
+FIRST_SOL=no
 
-while getopts ":i:c:x:y:br" opt; do
+while getopts ":i:c:x:y:t:s:brf" opt; do
 case $opt in
     i)
       ID=$OPTARG
@@ -21,11 +24,20 @@ case $opt in
     y)
       YDROP=$OPTARG
       ;;
+    t)
+      TIME_LIM=$OPTARG
+      ;;
+    s)
+      STEP_SIZE_DEG=$OPTARG
+      ;;
     b)
       REBUILD=yes
       ;;
     r)
       RESET=yes
+      ;;
+    f)
+      FIRST_SOL=yes
       ;;
     \?)
       echo "Invalid flag: -$OPTARG"
@@ -60,8 +72,16 @@ if [ $REBUILD = yes ]; then
 fi
 
 if [ $RESET = yes ]; then
-    bin/experiment -r -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP"
+    if [ $FIRST_SOL = yes ]; then
+	bin/experiment -r -f -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP" -t "$TIME_LIM" -s "$STEP_SIZE_DEG"
+    else
+	bin/experiment -r -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP" -t "$TIME_LIM" -s "$STEP_SIZE_DEG"
+    fi
 else
-    bin/experiment -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP"
+    if [ $FIRST_SOL = yes ]; then
+	bin/experiment -f -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP" -t "$TIME_LIM" -s "$STEP_SIZE_DEG"
+    else
+	bin/experiment -i "$ID" -c "$COLOR" -x "$XDROP" -y "$YDROP" -t "$TIME_LIM" -s "$STEP_SIZE_DEG"
+    fi
 fi
 

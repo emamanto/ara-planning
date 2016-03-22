@@ -10,7 +10,10 @@ experiment_handler::experiment_handler(int obj_id,
                                        std::string color,
                                        float drop_target_x,
                                        float drop_target_y,
-                                       bool reset = true) :
+                                       float time_lim,
+                                       float step_size_deg,
+                                       bool first_sol,
+                                       bool reset) :
     ahand(0),
     dhand(0),
     hand_speed(0),
@@ -23,10 +26,15 @@ experiment_handler::experiment_handler(int obj_id,
     drop_x(drop_target_x),
     drop_y(drop_target_y),
     drop_z(0),
+    search_time_lim(time_lim),
+    search_step_size(step_size_deg),
+    search_first_sol(first_sol),
     current_stage(REACH),
     current_status(WAIT),
     observe_time(0)
 {
+    fetch_arm::set_primitive_change(search_step_size*DEG_TO_RAD);
+
     if (target_obj_color != "none")
     {
         std::cout << std::endl;
@@ -42,6 +50,15 @@ experiment_handler::experiment_handler(int obj_id,
 
     std::cout << "to x = " << drop_x << ", y = "
               << drop_y << std::endl;
+
+    std::cout << "[INPUT] Search will ";
+    if (!first_sol)
+    {
+        std::cout << "not ";
+    }
+    std::cout << "return first solution, using step size "
+              << search_step_size << " deg and time limit "
+              << search_time_lim << std::endl;
 
 
     if (reset)
@@ -686,7 +703,10 @@ int main(int argc, char* argv[])
     std::string color = "none";
     float target_x = 0;
     float target_y = 0;
+    float time_lim = 3;
+    float step_size_deg = 15;
     bool reset = false;
+    bool first_sol = false;
 
     for (int i = 1; i < argc; i++)
     {
@@ -706,6 +726,18 @@ int main(int argc, char* argv[])
         {
             target_y = boost::lexical_cast<float>(argv[i + 1]);
         }
+        else if (std::string(argv[i]) == "-t")
+        {
+            time_lim = boost::lexical_cast<float>(argv[i + 1]);
+        }
+        else if (std::string(argv[i]) == "-s")
+        {
+            step_size_deg = boost::lexical_cast<float>(argv[i + 1]);
+        }
+        else if (std::string(argv[i]) == "-f")
+        {
+            first_sol = true;
+        }
         else if (std::string(argv[i]) == "-r")
         {
             reset = true;
@@ -721,7 +753,9 @@ int main(int argc, char* argv[])
 
     fetch_arm::INIT();
 
-    experiment_handler handler(obj_id, color, target_x, target_y, reset);
+    experiment_handler handler(obj_id, color, target_x, target_y,
+                               time_lim, step_size_deg, first_sol, reset);
+
     lcm.subscribe("ARM_STATUS", &experiment_handler::handle_status_message,
                   &handler);
     lcm.subscribe("GROUND_TRUTH_OBJECTS", &experiment_handler::handle_observations_message,
