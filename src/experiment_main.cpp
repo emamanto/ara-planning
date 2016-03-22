@@ -410,7 +410,7 @@ void experiment_handler::compute_next_plan()
     search_request<arm_state, action> req(arm_state(apos),
                                           fetch_arm::big_primitives(),
                                           fetch_arm::small_primitives(),
-                                          5.0,
+                                          search_time_lim,
                                           true);
     arastar<arm_state, action>(req);
 
@@ -703,7 +703,7 @@ int main(int argc, char* argv[])
     std::string color = "none";
     float target_x = 0;
     float target_y = 0;
-    float time_lim = 3;
+    float time_lim = 5;
     float step_size_deg = 15;
     bool reset = false;
     bool first_sol = false;
