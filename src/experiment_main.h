@@ -9,6 +9,7 @@
 
 enum stage{REACH, GRASP, MOVE, DROP};
 enum status{SEARCH, EXECUTE, WAIT};
+enum planner{ARASTAR, RRTSTAR};
 
 class experiment_handler
 {
@@ -17,6 +18,7 @@ public:
                        std::string color,
                        float drop_target_x,
                        float drop_target_y,
+                       planner p,
                        float time_lim,
                        float step_size_deg,
                        bool first_sol,
@@ -67,6 +69,7 @@ private:
     float drop_y;
     float drop_z;
 
+    planner planning_algo;
     float search_time_lim;
     float search_step_size;
     bool search_first_sol;

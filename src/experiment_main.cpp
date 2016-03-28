@@ -10,6 +10,7 @@ experiment_handler::experiment_handler(int obj_id,
                                        std::string color,
                                        float drop_target_x,
                                        float drop_target_y,
+                                       planner p,
                                        float time_lim,
                                        float step_size_deg,
                                        bool first_sol,
@@ -26,6 +27,7 @@ experiment_handler::experiment_handler(int obj_id,
     drop_x(drop_target_x),
     drop_y(drop_target_y),
     drop_z(0),
+    planning_algo(p),
     search_time_lim(time_lim),
     search_step_size(step_size_deg),
     search_first_sol(first_sol),
@@ -51,15 +53,22 @@ experiment_handler::experiment_handler(int obj_id,
     std::cout << "to x = " << drop_x << ", y = "
               << drop_y << std::endl;
 
-    std::cout << "[INPUT] Search will ";
-    if (!first_sol)
+    if (planning_algo == ARASTAR)
     {
-        std::cout << "not ";
+        std::cout << "[INPUT] ARA* search will ";
+        if (!first_sol)
+        {
+            std::cout << "not ";
+        }
+        std::cout << "return first solution, using step size "
+                  << search_step_size << " deg and time limit "
+                  << search_time_lim << std::endl;
     }
-    std::cout << "return first solution, using step size "
-              << search_step_size << " deg and time limit "
-              << search_time_lim << std::endl;
-
+    else
+    {
+        std::cout << "[INPUT] RRT* search will use time limit "
+                  << search_time_lim << std::endl;
+    }
 
     if (reset)
     {
@@ -708,6 +717,7 @@ int main(int argc, char* argv[])
     float step_size_deg = 15;
     bool reset = false;
     bool first_sol = false;
+    planner algo = ARASTAR;
 
     for (int i = 1; i < argc; i++)
     {
@@ -743,6 +753,10 @@ int main(int argc, char* argv[])
         {
             reset = true;
         }
+        else if (std::string(argv[i]) == "-p")
+        {
+            algo = RRTSTAR;
+        }
     }
 
     lcm::LCM lcm;
@@ -754,7 +768,7 @@ int main(int argc, char* argv[])
 
     fetch_arm::INIT();
 
-    experiment_handler handler(obj_id, color, target_x, target_y,
+    experiment_handler handler(obj_id, color, target_x, target_y, algo,
                                time_lim, step_size_deg, first_sol, reset);
 
     lcm.subscribe("ARM_STATUS", &experiment_handler::handle_status_message,
