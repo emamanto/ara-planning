@@ -488,13 +488,11 @@ void experiment_handler::compute_next_plan()
         }
 
         std::vector<pose> plan_in_poses = rrtstar::plan(apos, end_pose);
-        //plan_in_poses.push_back(end_pose);
-
         current_plan = convert(plan_in_poses);
     }
 
-    current_plan = shortcut<arm_state, action>(current_plan,
-                                               arm_state(apos));
+    //current_plan = shortcut<arm_state, action>(current_plan,
+    //                                           arm_state(apos));
     std::cout << "[CONTROL] Shortcutted plan to " << current_plan.size()
               << " actions" << std::endl;
 
