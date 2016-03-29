@@ -51,7 +51,8 @@ set( exp_srcs experiment_main.cpp
   FetchArm.cpp
   ProbCogSearchStates.cpp
   3DCollisionWorld.cpp
-  ProbCogArmCollision.cpp )
+  ProbCogArmCollision.cpp
+  RRTStarPlanner.cpp )
 
 set( headers ArmSim.h
   Visualizer.h
@@ -118,7 +119,7 @@ target_link_libraries(
   experiment
   lcm
   fcl
-  #ompl
+  ompl
   ${Boost_LIBRARIES}
 )
 

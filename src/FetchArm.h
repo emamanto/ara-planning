@@ -25,7 +25,7 @@ typedef std::vector<float> point_3d;
 typedef std::vector<float> orientation;
 typedef std::vector<float> action;
 
-pose subtract(pose from, pose minus);
+action subtract(pose end, pose begin);
 point_3d translation_from_xform(Eigen::Matrix4f xform);
 orientation eulers_from_xform(Eigen::Matrix4f xform);
 

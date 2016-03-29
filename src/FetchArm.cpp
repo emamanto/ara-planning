@@ -12,12 +12,12 @@ std::vector<joint> fetch_arm::configuration = std::vector<joint>();
 std::vector<action> fetch_arm::big_prims = std::vector<action>();
 std::vector<action> fetch_arm::small_prims = std::vector<action>();
 
-pose subtract(pose from, pose minus)
+action subtract(pose end, pose begin)
 {
     pose result;
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
-        result.push_back(from.at(i) - minus.at(i));
+        result.push_back(end.at(i) - begin.at(i));
     }
     return result;
 }

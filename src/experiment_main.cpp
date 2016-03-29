@@ -415,17 +415,84 @@ void experiment_handler::compute_next_plan()
               << arm_state::target[2]
               << std::endl;
 
-    std::vector<search_result<arm_state, action> > latest_search;
-    search_request<arm_state, action> req(arm_state(apos),
-                                          fetch_arm::big_primitives(),
-                                          fetch_arm::small_primitives(),
-                                          search_time_lim,
-                                          true,
-                                          search_first_sol);
-    arastar<arm_state, action>(req);
+    if (planning_algo == ARASTAR)
+    {
+        std::vector<search_result<arm_state, action> > latest_search;
+        search_request<arm_state, action> req(arm_state(apos),
+                                              fetch_arm::big_primitives(),
+                                              fetch_arm::small_primitives(),
+                                              search_time_lim,
+                                              true,
+                                              search_first_sol);
+        arastar<arm_state, action>(req);
 
-    latest_search = req.copy_solutions();
-    current_plan = latest_search.at(latest_search.size()-1).path;
+        latest_search = req.copy_solutions();
+        current_plan = latest_search.at(latest_search.size()-1).path;
+    }
+    else
+    {
+        // Find target joint pose with IK
+        bool valid_sol = false;
+        pose end_pose;
+        pose ik_start = apos;
+        int iterations = 0;
+
+        while (!valid_sol)
+        {
+            iterations++;
+            if (iterations > 500) break;
+
+            Eigen::Matrix4f target_xform =
+                fetch_arm::translation_matrix(arm_state::target[0],
+                                              arm_state::target[1],
+                                              arm_state::target[2]);
+            target_xform *= fetch_arm::rotation_matrix(M_PI/2, Y_AXIS);
+
+            action ik_sol = fetch_arm::solve_ik(ik_start, target_xform);
+
+            for (action::iterator i = ik_sol.begin();
+                 i != ik_sol.end(); i++)
+            {
+                if (*i != 0)
+                {
+                    valid_sol = true;
+                    break;
+                }
+            }
+
+            end_pose = fetch_arm::apply(ik_start, ik_sol);
+
+            valid_sol = (valid_sol && arm_state(end_pose).valid());
+
+            if (valid_sol)
+            {
+                std::cout << "[SEARCH] Got an RRT* end pose on IK iteration "
+                          << iterations << std::endl;
+                break;
+            }
+
+            for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+            {
+                float prop = (((float)rand())/((float)RAND_MAX));
+                ik_start.at(i) = (prop*(fetch_arm::get_joint_max(i) -
+                                        fetch_arm::get_joint_min(i)))
+                    + fetch_arm::get_joint_min(i);
+            }
+        }
+
+        if (!valid_sol)
+        {
+            std::cout << "[SEARCH] Failed to find an RRT* end pose"
+                      << std::endl;
+            exit(1);
+        }
+
+        std::vector<pose> plan_in_poses = rrtstar::plan(apos, end_pose);
+        //plan_in_poses.push_back(end_pose);
+
+        current_plan = convert(plan_in_poses);
+    }
+
     current_plan = shortcut<arm_state, action>(current_plan,
                                                arm_state(apos));
     std::cout << "[CONTROL] Shortcutted plan to " << current_plan.size()
@@ -682,6 +749,16 @@ void experiment_handler::request_hand_motion(bool opening)
     {
         std::cout << "[ERROR] Invalid hand request" << std::endl;
     }
+}
+
+std::vector<action> experiment_handler::convert(std::vector<pose> pose_plan)
+{
+    std::vector<action> result;
+    for (int i = 1; i < pose_plan.size(); i++)
+    {
+        result.push_back(subtract(pose_plan.at(i), pose_plan.at(i-1)));
+    }
+    return result;
 }
 
 void experiment_handler::print_stage(stage s)

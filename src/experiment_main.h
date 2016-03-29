@@ -1,6 +1,7 @@
 #include <boost/timer/timer.hpp>
 #include "ProbCogSearchStates.h"
 #include "Search.h"
+#include "RRTStarPlanner.h"
 #include "ProbCogArmCollision.h"
 #include "Shortcut.h"
 #include "dynamixel_status_list_t.hpp"
@@ -42,6 +43,8 @@ private:
     bool motion_done();
     void request_hand_motion(bool opening);
     void print_stage(stage s);
+
+    std::vector<action> convert(std::vector<pose> pose_plan);
 
     pose apos;
     pose dpos;

@@ -71,7 +71,7 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
     // construct an instance of  space information from this state space
     ob::SpaceInformationPtr si(new ob::SpaceInformation(space));
     og::RRTstar* rrts = new og::RRTstar(si);
-    rrts->setPrune(false);
+
     ob::PlannerPtr rrt_planner(rrts);
 
     // set the bounds for state space
@@ -86,7 +86,7 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
     space->as<ob::RealVectorStateSpace>()->setBounds(bounds);
 
     // define a simple setup class
-    og::SimpleSetup ss(si);
+    og::SimpleSetup ss(space);
 
     // set state validity checking for this space
     ss.setStateValidityChecker(boost::bind(&isStateValid, _1));
