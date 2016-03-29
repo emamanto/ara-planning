@@ -487,7 +487,11 @@ void experiment_handler::compute_next_plan()
             exit(1);
         }
 
-        std::vector<pose> plan_in_poses = rrtstar::plan(apos, end_pose);
+        //std::vector<pose> plan_in_poses = rrtstar::plan(apos, end_pose);
+        std::vector<pose> plan_in_poses;
+        plan_in_poses.push_back(apos);
+        plan_in_poses.push_back(end_pose);
+        std::cout << plan_in_poses.size() << std::endl;
         current_plan = convert(plan_in_poses);
     }
 
