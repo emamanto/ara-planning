@@ -437,16 +437,21 @@ void experiment_handler::compute_next_plan()
         pose ik_start = apos;
         int iterations = 0;
 
+        Eigen::Matrix4f target_xform =
+            fetch_arm::translation_matrix(arm_state::target[0],
+                                          arm_state::target[1],
+                                          arm_state::target[2]);
+        target_xform *= fetch_arm::rotation_matrix(M_PI/2, Y_AXIS);
+
+        std::cout << arm_state::target[0] << " "
+                  << arm_state::target[1] << " "
+                  << arm_state::target[2] << std::endl;
+
+
         while (!valid_sol)
         {
             iterations++;
             if (iterations > 500) break;
-
-            Eigen::Matrix4f target_xform =
-                fetch_arm::translation_matrix(arm_state::target[0],
-                                              arm_state::target[1],
-                                              arm_state::target[2]);
-            target_xform *= fetch_arm::rotation_matrix(M_PI/2, Y_AXIS);
 
             action ik_sol = fetch_arm::solve_ik(ik_start, target_xform);
 
@@ -462,12 +467,19 @@ void experiment_handler::compute_next_plan()
 
             end_pose = fetch_arm::apply(ik_start, ik_sol);
 
-            valid_sol = (valid_sol && arm_state(end_pose).valid());
+            float d = fetch_arm::ee_dist_to(end_pose, arm_state::target);
+            valid_sol = (valid_sol &&
+                         arm_state(end_pose).valid() &&
+                         d < 0.005);
 
             if (valid_sol)
             {
                 std::cout << "[SEARCH] Got an RRT* end pose on IK iteration "
                           << iterations << std::endl;
+
+                point_3d p = fetch_arm::ee_xyz(end_pose);
+                std::cout << "EE at " << p[0] << ", " << p[1]
+                          << " " << p[2] << std::endl;
                 break;
             }
 
@@ -756,9 +768,37 @@ void experiment_handler::request_hand_motion(bool opening)
 std::vector<action> experiment_handler::convert(std::vector<pose> pose_plan)
 {
     std::vector<action> result;
+    std::cout << "Begin pose: ";
+        for (pose::iterator j = pose_plan.at(0).begin();
+             j != pose_plan.at(0).end(); j++)
+        {
+            std::cout << *j << " ";
+        }
+    std::cout << std::endl;
+
+
     for (int i = 1; i < pose_plan.size(); i++)
     {
-        result.push_back(subtract(pose_plan.at(i), pose_plan.at(i-1)));
+        action a = subtract(pose_plan.at(i), pose_plan.at(i-1));
+
+        std::cout << "\tAction: ";
+        for (action::iterator j = a.begin();
+             j != a.end(); j++)
+        {
+            std::cout << *j << " ";
+        }
+        std::cout << std::endl;
+
+
+        std::cout << "Pose: ";
+        for (pose::iterator k = pose_plan.at(i).begin();
+             k != pose_plan.at(i).end(); k++)
+        {
+            std::cout << *k << " ";
+        }
+        std::cout << std::endl;
+
+        result.push_back(a);
     }
     return result;
 }

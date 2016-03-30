@@ -348,7 +348,7 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
         }
     }
 
-    //std::cout << "Failed IK" << std::endl;
+    std::cout << "Failed IK" << std::endl;
     return action(num_joints, 0);
 }
 
