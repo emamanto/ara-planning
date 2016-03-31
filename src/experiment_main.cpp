@@ -154,6 +154,14 @@ void experiment_handler::handle_status_message(
         {
             plan_index++;
 
+            std::cout << "Achieved pose: ";
+            for (pose::iterator j = apos.begin();
+                 j != apos.end(); j++)
+            {
+                std::cout << *j << " ";
+            }
+            std::cout << std::endl;
+
             if (current_plan.at(plan_index).size() == 1)
             {
                 request_hand_motion(current_plan[plan_index][0]);
@@ -188,6 +196,16 @@ void experiment_handler::handle_status_message(
                       << current_min_distance
                       << " m" <<std::endl;
 
+            point_3d p = fetch_arm::ee_xyz(apos);
+            std::cout << "Ended plan with EE at " << p[0] << ", " << p[1]
+                      << " " << p[2] << std::endl;
+            std::cout << "Ended pose: ";
+            for (pose::iterator j = apos.begin();
+                 j != apos.end(); j++)
+            {
+                std::cout << *j << " ";
+            }
+
             print_stage(GRASP);
             compute_grasp_plan();
             current_stage = GRASP;
@@ -221,6 +239,15 @@ void experiment_handler::handle_status_message(
                       << current_min_distance
                       << " m" <<std::endl;
 
+            point_3d p = fetch_arm::ee_xyz(apos);
+            std::cout << "Ended plan with EE at " << p[0] << ", " << p[1]
+                      << " " << p[2] << std::endl;
+            std::cout << "Ended pose: ";
+            for (pose::iterator j = apos.begin();
+                 j != apos.end(); j++)
+            {
+                std::cout << *j << " ";
+            }
 
             print_stage(DROP);
             compute_drop_plan();
@@ -499,12 +526,45 @@ void experiment_handler::compute_next_plan()
             exit(1);
         }
 
-        //std::vector<pose> plan_in_poses = rrtstar::plan(apos, end_pose);
-        std::vector<pose> plan_in_poses;
-        plan_in_poses.push_back(apos);
-        plan_in_poses.push_back(end_pose);
+        std::vector<pose> plan_in_poses = rrtstar::plan(apos, end_pose);
         std::cout << plan_in_poses.size() << std::endl;
         current_plan = convert(plan_in_poses);
+
+        std::cout << "Applying plan..." << std::endl;
+        std::cout << "BEGIN PLAN" << std::endl;
+        pose tmp = apos;
+        std::cout << "Pose: ";
+        for (pose::iterator j = tmp.begin();
+             j != tmp.end(); j++)
+        {
+            std::cout << *j << " ";
+        }
+        std::cout << std::endl;
+
+        for (std::vector<action>::iterator i = current_plan.begin();
+             i != current_plan.end(); i++)
+        {
+            std::cout << "\tAction: ";
+            for (action::iterator j = i->begin();
+                 j != i->end(); j++)
+            {
+                std::cout << *j << " ";
+            }
+            std::cout << std::endl;
+
+            tmp = fetch_arm::apply(tmp, *i);
+            std::cout << "Pose: ";
+            for (pose::iterator j = tmp.begin();
+                 j != tmp.end(); j++)
+            {
+                std::cout << *j << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "END PLAN" << std::endl;
+        point_3d p = fetch_arm::ee_xyz(end_pose);
+        std::cout << "Should end plan with EE at " << p[0] << ", " << p[1]
+                  << " " << p[2] << std::endl;
     }
 
     //current_plan = shortcut<arm_state, action>(current_plan,
