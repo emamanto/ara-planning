@@ -161,6 +161,11 @@ void experiment_handler::handle_status_message(
                 std::cout << *j << " ";
             }
             std::cout << std::endl;
+            std::cout << "EE: ";
+            point_3d p = fetch_arm::ee_xyz(apos);
+            std::cout << p[0] << ", " << p[1]
+                      << " " << p[2] << std::endl;
+
 
             if (current_plan.at(plan_index).size() == 1)
             {
@@ -205,6 +210,7 @@ void experiment_handler::handle_status_message(
             {
                 std::cout << *j << " ";
             }
+            std::cout << std::endl;
 
             print_stage(GRASP);
             compute_grasp_plan();
@@ -505,6 +511,14 @@ void experiment_handler::compute_next_plan()
                           << iterations << std::endl;
 
                 point_3d p = fetch_arm::ee_xyz(end_pose);
+                std::cout << "Pose: ";
+                for (pose::iterator j = end_pose.begin();
+                     j != end_pose.end(); j++)
+                {
+                    std::cout << *j << " ";
+                }
+                std::cout << std::endl;
+
                 std::cout << "EE at " << p[0] << ", " << p[1]
                           << " " << p[2] << std::endl;
                 break;
@@ -540,6 +554,10 @@ void experiment_handler::compute_next_plan()
             std::cout << *j << " ";
         }
         std::cout << std::endl;
+        std::cout << "EE: ";
+        point_3d ps = fetch_arm::ee_xyz(tmp);
+        std::cout << ps[0] << ", " << ps[1]
+                  << " " << ps[2] << std::endl;
 
         for (std::vector<action>::iterator i = current_plan.begin();
              i != current_plan.end(); i++)
@@ -560,7 +578,12 @@ void experiment_handler::compute_next_plan()
                 std::cout << *j << " ";
             }
             std::cout << std::endl;
+            std::cout << "EE: ";
+            point_3d p = fetch_arm::ee_xyz(tmp);
+            std::cout << p[0] << ", " << p[1]
+                      << " " << p[2] << std::endl;
         }
+
         std::cout << "END PLAN" << std::endl;
         point_3d p = fetch_arm::ee_xyz(end_pose);
         std::cout << "Should end plan with EE at " << p[0] << ", " << p[1]
@@ -829,12 +852,17 @@ std::vector<action> experiment_handler::convert(std::vector<pose> pose_plan)
 {
     std::vector<action> result;
     std::cout << "Begin pose: ";
-        for (pose::iterator j = pose_plan.at(0).begin();
-             j != pose_plan.at(0).end(); j++)
-        {
-            std::cout << *j << " ";
-        }
+    for (pose::iterator j = pose_plan.at(0).begin();
+         j != pose_plan.at(0).end(); j++)
+    {
+        std::cout << *j << " ";
+    }
     std::cout << std::endl;
+    std::cout << "Begin EE: ";
+    point_3d p = fetch_arm::ee_xyz(pose_plan.at(0));
+    std::cout << p[0] << ", " << p[1]
+              << " " << p[2] << std::endl;
+
 
 
     for (int i = 1; i < pose_plan.size(); i++)
@@ -857,6 +885,10 @@ std::vector<action> experiment_handler::convert(std::vector<pose> pose_plan)
             std::cout << *k << " ";
         }
         std::cout << std::endl;
+        std::cout << "EE: ";
+        point_3d ps = fetch_arm::ee_xyz(pose_plan.at(i));
+        std::cout << ps[0] << ", " << ps[1]
+                  << " " << ps[2] << std::endl;
 
         result.push_back(a);
     }

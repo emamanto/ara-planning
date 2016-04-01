@@ -38,6 +38,7 @@
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/SimpleSetup.h>
 
 #include <ompl/config.h>
@@ -81,7 +82,7 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
 
     // define a simple setup class
     og::SimpleSetup ss(space);
-    og::RRTstar* rrts = new og::RRTstar(ss.getSpaceInformation());
+    og::RRTConnect* rrts = new og::RRTConnect(ss.getSpaceInformation());
     ob::PlannerPtr rrt_planner(rrts);
 
     // set state validity checking for this space
@@ -91,11 +92,27 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
     ob::ScopedState<> start(space);
     ob::ScopedState<> goal(space);
 
+    std::cout << "RRT start pose: ";
+    for (pose::iterator j = b.begin();
+         j != b.end(); j++)
+    {
+        std::cout << *j << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "RRT end pose: ";
+    for (pose::iterator j = e.begin();
+         j != e.end(); j++)
+    {
+        std::cout << *j << " ";
+    }
+    std::cout << std::endl;
+
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
 
-        start[i] = b[i];
-        goal[i] = e[i];
+        start[i] = b.at(i);
+        goal[i] = e.at(i);
     }
 
     // set the start and goal states
