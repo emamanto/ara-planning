@@ -39,7 +39,6 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <ompl/geometric/SimpleSetup.h>
 
 #include <ompl/config.h>
 #include <iostream>
@@ -50,6 +49,48 @@ namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
 namespace rrtstar{
+
+FetchMotionValidator::FetchMotionValidator(ompl::base::SpaceInformationPtr& sip)
+    : ob::MotionValidator(sip)
+{}
+
+bool FetchMotionValidator::checkMotion(const ob::State* s1,
+                                       const ob::State* s2) const
+{
+    const ob::RealVectorStateSpace::StateType *s1vec =
+        s1->as<ob::RealVectorStateSpace::StateType>();
+    pose start;
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+    {
+        start.push_back(s1vec->values[i]);
+    }
+
+    const ob::RealVectorStateSpace::StateType *s2vec =
+        s2->as<ob::RealVectorStateSpace::StateType>();
+    pose end;
+    for (int i = 0; i < fetch_arm::get_num_joints(); i++)
+    {
+       end.push_back(s2vec->values[i]);
+    }
+
+    action act = subtract(end, start);
+    arm_state as(start);
+
+    return as.action_valid(act);
+}
+
+// This fxn isn't called by RRT-Connect or RRT*
+// My implementation of the last valid state was just not
+// working, but it looks like it doesn't matter.
+bool FetchMotionValidator::checkMotion(const ob::State* s1,
+                                       const ob::State* s2,
+                                       std::pair<ob::State *, double> &lastValid) const
+{
+    bool valid = checkMotion(s1, s2);
+
+    return valid;
+}
+
 bool isStateValid(const ob::State *state)
 {
     // cast the abstract state type to the type we expect
@@ -59,7 +100,7 @@ bool isStateValid(const ob::State *state)
     pose p;
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
-        p.push_back((*vecstate)[i]);
+        p.push_back(vecstate->values[i]);
     }
     return arm_state(p).valid();
 }
@@ -82,11 +123,16 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
 
     // define a simple setup class
     og::SimpleSetup ss(space);
-    og::RRTConnect* rrts = new og::RRTConnect(ss.getSpaceInformation());
-    ob::PlannerPtr rrt_planner(rrts);
-
     // set state validity checking for this space
     ss.setStateValidityChecker(boost::bind(&isStateValid, _1));
+
+    ob::SpaceInformationPtr si = ss.getSpaceInformation();
+    si->setMotionValidator(ob::MotionValidatorPtr(new FetchMotionValidator(si)));
+    si->setup();
+
+    og::RRTConnect* rrts = new og::RRTConnect(si);
+    ob::PlannerPtr rrt_planner(rrts);
+
     ss.setPlanner(rrt_planner);
 
     ob::ScopedState<> start(space);
@@ -120,7 +166,7 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
 
     // this call is optional, but we put it in to get more output information
     ss.setup();
-    ss.print();
+    //ss.print();
 
     rrt_planner->setProblemDefinition(ss.getProblemDefinition());
 
@@ -144,7 +190,7 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
         pose p;
         for (int i = 0; i < fetch_arm::get_num_joints(); i++)
         {
-            p.push_back((*s)[i]);
+            p.push_back(s->values[i]);
         }
         plan.push_back(p);
     }

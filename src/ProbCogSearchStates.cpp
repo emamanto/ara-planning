@@ -43,7 +43,6 @@ bool arm_state::action_valid(action a)
 {
     bool is_collision = subdivision_collision_check<arm_state, action>(position, a, 0);
     return !is_collision;
-    return true;
 }
 
 float arm_state::cost(action a)
