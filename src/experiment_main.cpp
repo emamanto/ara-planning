@@ -495,12 +495,25 @@ void experiment_handler::compute_next_plan()
 
     std::cout << "[CONTROL] Initial plan has " << current_plan.size()
               << " actions" << std::endl;
+    float joint_dist = 0;
+    for (std::vector<action>::iterator i = current_plan.begin();
+         i != current_plan.end(); i++)
+    {
+        for (action::iterator j = i->begin(); j != i->end(); j++)
+        {
+            joint_dist += fabs(*j);
+        }
+    }
+    std::cout << "[STATS] Initial pre-shortcutting plan length in joint space = "
+              << joint_dist << " rad" << std::endl;
+
+
     current_plan = shortcut<arm_state, action>(current_plan,
                                                arm_state(apos));
     std::cout << "[CONTROL] Shortcutted plan to " << current_plan.size()
               << " actions" << std::endl;
 
-    float joint_dist = 0;
+    joint_dist = 0;
     for (std::vector<action>::iterator i = current_plan.begin();
          i != current_plan.end(); i++)
     {
