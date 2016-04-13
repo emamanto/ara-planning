@@ -48,7 +48,7 @@
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-namespace rrtstar{
+namespace rrtplanners{
 
 FetchMotionValidator::FetchMotionValidator(ompl::base::SpaceInformationPtr& sip)
     : ob::MotionValidator(sip)
@@ -105,7 +105,7 @@ bool isStateValid(const ob::State *state)
     return arm_state(p).valid();
 }
 
-std::vector<pose> plan(pose b, pose e, float time_limit)
+std::vector<pose> plan(pose b, pose e, float time_limit, bool is_rrtc)
 {
     // construct the state space we are planning in
     ob::StateSpacePtr space(new ob::RealVectorStateSpace(fetch_arm::get_num_joints()));
@@ -130,8 +130,18 @@ std::vector<pose> plan(pose b, pose e, float time_limit)
     si->setMotionValidator(ob::MotionValidatorPtr(new FetchMotionValidator(si)));
     si->setup();
 
-    og::RRTConnect* rrts = new og::RRTConnect(si);
-    ob::PlannerPtr rrt_planner(rrts);
+    ob::PlannerPtr rrt_planner;
+
+    if (is_rrtc)
+    {
+        og::RRTConnect* rrtc = new og::RRTConnect(si);
+        rrt_planner = ob::PlannerPtr(rrtc);
+    }
+    else
+    {
+        og::RRTstar* rrts = new og::RRTstar(si);
+        rrt_planner = ob::PlannerPtr(rrts);
+    }
 
     ss.setPlanner(rrt_planner);
 

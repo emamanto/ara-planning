@@ -1,7 +1,7 @@
 #include "ProbCogSearchStates.h"
 #include <ompl/geometric/SimpleSetup.h>
 
-namespace rrtstar
+namespace rrtplanners
 {
 
 class FetchMotionValidator : public ompl::base::MotionValidator
@@ -16,5 +16,5 @@ public:
                      std::pair<ompl::base::State *, double> &lastValid) const;
 };
 
-std::vector<pose> plan(pose b, pose e, float time_limit = 1.0);
+std::vector<pose> plan(pose b, pose e, float time_limit, bool is_rrtc);
 }

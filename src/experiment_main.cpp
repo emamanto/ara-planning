@@ -64,9 +64,14 @@ experiment_handler::experiment_handler(int obj_id,
                   << search_step_size << " deg and time limit "
                   << search_time_lim << std::endl;
     }
-    else
+    else if (planning_algo == RRTSTAR)
     {
         std::cout << "[INPUT] RRT* search will use time limit "
+                  << search_time_lim << std::endl;
+    }
+    else
+    {
+        std::cout << "[INPUT] RRT-Connect search will use time limit "
                   << search_time_lim << std::endl;
     }
 
@@ -489,7 +494,15 @@ void experiment_handler::compute_next_plan()
             exit(1);
         }
 
-        std::vector<pose> plan_in_poses = rrtstar::plan(apos, end_pose);
+        std::vector<pose> plan_in_poses;
+        if (planning_algo == RRTSTAR)
+        {
+            plan_in_poses = rrtplanners::plan(apos, end_pose, 1.0, false);
+        }
+        else
+        {
+            plan_in_poses = rrtplanners::plan(apos, end_pose, 1.0, true);
+        }
         current_plan = convert(plan_in_poses);
     }
 
@@ -846,9 +859,17 @@ int main(int argc, char* argv[])
         {
             reset = true;
         }
-        else if (std::string(argv[i]) == "-p")
+        else if (std::string(argv[i]) == "-a")
         {
-            algo = RRTSTAR;
+            std::string a = std::string(argv[i + 1]);
+            if (a == "rrts") algo = RRTSTAR;
+            else if (a == "rrtc") algo = RRTCONNECT;
+            else if (a == "ara") algo = ARASTAR;
+            else
+            {
+                std::cout << "You gave a nonsense algorithm" << std::endl;
+                return 1;
+            }
         }
     }
 

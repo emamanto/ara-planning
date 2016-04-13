@@ -10,7 +10,7 @@
 
 enum stage{REACH, GRASP, MOVE, DROP};
 enum status{SEARCH, EXECUTE, WAIT};
-enum planner{ARASTAR, RRTSTAR};
+enum planner{ARASTAR, RRTSTAR, RRTCONNECT};
 
 class experiment_handler
 {
