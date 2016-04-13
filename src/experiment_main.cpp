@@ -497,12 +497,12 @@ void experiment_handler::compute_next_plan()
         std::vector<pose> plan_in_poses;
         if (planning_algo == RRTSTAR)
         {
-            plan_in_poses = rrtplanners::plan(apos, end_pose, 1.0, false);
+            plan_in_poses = rrtplanners::plan(apos, end_pose, time_lim, false);
             plan_in_poses.push_back(end_pose);
         }
         else
         {
-            plan_in_poses = rrtplanners::plan(apos, end_pose, 1.0, true);
+            plan_in_poses = rrtplanners::plan(apos, end_pose, time_lim, true);
         }
         current_plan = convert(plan_in_poses);
     }
