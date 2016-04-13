@@ -498,6 +498,7 @@ void experiment_handler::compute_next_plan()
         if (planning_algo == RRTSTAR)
         {
             plan_in_poses = rrtplanners::plan(apos, end_pose, 1.0, false);
+            plan_in_poses.push_back(end_pose);
         }
         else
         {
