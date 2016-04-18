@@ -12,7 +12,7 @@ std::vector<joint> fetch_arm::configuration = std::vector<joint>();
 std::vector<action> fetch_arm::big_prims = std::vector<action>();
 std::vector<action> fetch_arm::small_prims = std::vector<action>();
 
-action subtract(pose end, pose begin)
+action subtract(pose& end, pose& begin)
 {
     pose result;
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
@@ -352,7 +352,7 @@ action fetch_arm::solve_ik(pose from, Eigen::Matrix4f xform)
     return action(num_joints, 0);
 }
 
-pose fetch_arm::apply(pose from, action act)
+pose fetch_arm::apply(pose& from, action& act)
 {
     pose end = from;
     for (int i = 0; i < num_joints; i++)
@@ -364,7 +364,7 @@ pose fetch_arm::apply(pose from, action act)
     return end;
 }
 
-pose fetch_arm::apply(pose from, std::vector<action> plan)
+pose fetch_arm::apply(pose& from, std::vector<action>& plan)
 {
     pose end = from;
     for (std::vector<action>::iterator i = plan.begin();
@@ -373,6 +373,15 @@ pose fetch_arm::apply(pose from, std::vector<action> plan)
         end = apply(end, *i);
     }
     return end;
+}
+
+void fetch_arm::fast_apply(pose& from, action& act, pose& result)
+{
+    result.clear();
+    for (int i = 0; i < num_joints; i++)
+    {
+        result.push_back(from.at(i) + act.at(i));
+    }
 }
 
 void fetch_arm::set_primitive_change(float big_rad)

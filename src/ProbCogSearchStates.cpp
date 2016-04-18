@@ -35,7 +35,8 @@ bool arm_state::operator > (const arm_state& other) const
 
 arm_state arm_state::apply(action a)
 {
-    pose child = fetch_arm::apply(position, a);
+    pose child;
+    fetch_arm::fast_apply(position, a, child);
     return arm_state(child);
 }
 

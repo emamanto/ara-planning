@@ -25,7 +25,7 @@ typedef std::vector<float> point_3d;
 typedef std::vector<float> orientation;
 typedef std::vector<float> action;
 
-action subtract(pose end, pose begin);
+action subtract(pose& end, pose& begin);
 point_3d translation_from_xform(Eigen::Matrix4f xform);
 orientation eulers_from_xform(Eigen::Matrix4f xform);
 
@@ -68,8 +68,10 @@ public:
     static float get_default_torque(int joint_number)
     { return configuration.at(joint_number).default_torque; }
 
-    static pose apply(pose from, action act);
-    static pose apply(pose from, std::vector<action> plan);
+    static pose apply(pose& from, action& act);
+    static pose apply(pose& from, std::vector<action>& plan);
+
+    static void fast_apply(pose& from, action& act, pose& result);
 
     static void set_primitive_change(float big_rad);
     static std::vector<action>& big_primitives()

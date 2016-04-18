@@ -67,13 +67,12 @@ bool FetchMotionValidator::checkMotion(const ob::State* s1,
 
     const ob::RealVectorStateSpace::StateType *s2vec =
         s2->as<ob::RealVectorStateSpace::StateType>();
-    pose end;
+    action act;
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
-       end.push_back(s2vec->values[i]);
+        act.push_back(s2vec->values[i] - s1vec->values[i]);
     }
 
-    action act = subtract(end, start);
     arm_state as(start);
 
     return as.action_valid(act);
@@ -141,28 +140,13 @@ std::vector<pose> plan(pose b, pose e, float time_limit, bool is_rrtc)
     {
         og::RRTstar* rrts = new og::RRTstar(si);
         rrt_planner = ob::PlannerPtr(rrts);
+        std::cout << "Delay? " << rrts->getDelayCC() << std::endl;
     }
 
     ss.setPlanner(rrt_planner);
 
     ob::ScopedState<> start(space);
     ob::ScopedState<> goal(space);
-
-    std::cout << "RRT start pose: ";
-    for (pose::iterator j = b.begin();
-         j != b.end(); j++)
-    {
-        std::cout << *j << " ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "RRT end pose: ";
-    for (pose::iterator j = e.begin();
-         j != e.end(); j++)
-    {
-        std::cout << *j << " ";
-    }
-    std::cout << std::endl;
 
     for (int i = 0; i < fetch_arm::get_num_joints(); i++)
     {
@@ -183,14 +167,17 @@ std::vector<pose> plan(pose b, pose e, float time_limit, bool is_rrtc)
     // attempt to solve the problem within time limit
     ob::PlannerStatus solved = ss.solve(time_limit);
 
-    if (solved)
+    if (solved && ss.haveExactSolutionPath())
     {
-        std::cout << "Found solution:" << std::endl;
+        //std::cout << "Found solution" << std::endl;
         // print the path to screen
-        ss.getSolutionPath().print(std::cout);
+        //ss.getSolutionPath().print(std::cout);
     }
     else
-        std::cout << "No solution found" << std::endl;
+    {
+        std::cout << "[SEARCH] No solution found" << std::endl;
+        return std::vector<pose>();
+    }
 
     std::vector<pose> plan;
     for (int i = 0; i < ss.getSolutionPath().getStateCount(); i++)

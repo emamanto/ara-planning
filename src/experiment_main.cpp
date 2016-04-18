@@ -509,6 +509,11 @@ void experiment_handler::compute_next_plan()
         current_plan = convert(plan_in_poses);
     }
 
+    if (current_plan.size() == 0)
+    {
+        exit(1);
+    }
+
     std::cout << "[CONTROL] Initial plan has " << current_plan.size()
               << " actions" << std::endl;
     float joint_dist = 0;
